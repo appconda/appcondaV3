@@ -112,13 +112,13 @@ const createSession = async (
     const userFromRequest = await Authorization.skip(() => dbForProject.getDocument('users', userId));
 
     if (userFromRequest.isEmpty()) {
-        throw new Error('USER_INVALID_TOKEN');
+        throw new Exception('USER_INVALID_TOKEN');
     }
 
     const verifiedToken = Auth.tokenVerify(userFromRequest.getAttribute('tokens', []), null, secret);
 
     if (!verifiedToken) {
-        throw new Error('USER_INVALID_TOKEN');
+        throw new Exception('USER_INVALID_TOKEN');
     }
 
     user.setAttributes(userFromRequest.getArrayCopy());
@@ -170,7 +170,7 @@ const createSession = async (
     ]));
 
     await dbForProject.purgeCachedDocument('users', user.getId());
-    await Authorization.skip(() => dbForProject.deleteDocument('tokens', verifiedToken.getId()));
+    await Authorization.skip(async () => await dbForProject.deleteDocument('tokens', verifiedToken.getId()));
     await dbForProject.purgeCachedDocument('users', user.getId());
 
     if (verifiedToken.getAttribute('type') === Auth.TOKEN_TYPE_MAGIC_URL || verifiedToken.getAttribute('type') === Auth.TOKEN_TYPE_EMAIL) {
@@ -184,7 +184,7 @@ const createSession = async (
     try {
         await dbForProject.updateDocument('users', user.getId(), user);
     } catch (error) {
-        throw new Error('GENERAL_SERVER_ERROR: Failed saving user to DB');
+        throw new Exception('GENERAL_SERVER_ERROR: Failed saving user to DB');
     }
 
     queueForEvents
