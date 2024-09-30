@@ -732,12 +732,13 @@
     pako "^2.1.0"
     validator "^13.12.0"
 
-"@tuval/http@1.0.7":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.7.tgz#2d5743b41489d1f1e508c655655830ebb05589b9"
-  integrity sha512-tmjlXUtQJBjMRmt/FhebcXWRgcyC4Gp650ib0LtMcwwQJ8HjoXfBavyBOYPyoYJ68mEVtg9jys3w2IhIMpGlRg==
+"@tuval/http@1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.10.tgz#b52cbec67adef096151a31d7b4e42dbc44b2c766"
+  integrity sha512-8RVMxFLTzTmjUoYv4OPgPhwcc0gpdQBmZvQZmETIk7MjNVVu+IhsrbLdEJQODxTMogiHObnPRomWnNf1+KMRgA==
   dependencies:
     "@tuval/cache" "^1.0.2"
+    "@tuval/core" "^2.0.1"
     diskusage "^1.2.0"
     googleapis "^144.0.0"
     ioredis "^5.4.1"
@@ -747,13 +748,12 @@
     pako "^2.1.0"
     validator "^13.12.0"
 
-"@tuval/http@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.8.tgz#65a023d0f5cb4d462595ce1a7a57ead08548c5e8"
-  integrity sha512-bv7h1rnjT1cU2d4UKxrK1FbUuJF6CwsOPlbTlyTKo8x94PvpFC5ZABTrbpxZ36qAGHBS986GRh2paglcNts5Qg==
+"@tuval/http@1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.7.tgz#2d5743b41489d1f1e508c655655830ebb05589b9"
+  integrity sha512-tmjlXUtQJBjMRmt/FhebcXWRgcyC4Gp650ib0LtMcwwQJ8HjoXfBavyBOYPyoYJ68mEVtg9jys3w2IhIMpGlRg==
   dependencies:
     "@tuval/cache" "^1.0.2"
-    "@tuval/core" "^2.0.1"
     diskusage "^1.2.0"
     googleapis "^144.0.0"
     ioredis "^5.4.1"
@@ -839,6 +839,11 @@
     "@types/express-serve-static-core" "^4.17.33"
     "@types/qs" "*"
     "@types/serve-static" "*"
+
+"@types/luxon@~3.4.0":
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/@types/luxon/-/luxon-3.4.2.tgz#e4fc7214a420173cea47739c33cdf10874694db7"
+  integrity sha512-TifLZlFudklWlMBfhubvgqTXRzLDI5pCbGa4P8a3wPyUQSW+1xQ5eDsreP9DWHX3tjq1ke96uYG/nwundroWcA==
 
 "@types/maxmind@^2.0.5":
   version "2.0.5"
@@ -1718,6 +1723,21 @@ create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.npmjs.org/create-require/-/create-require-1.1.1.tgz"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
+
+cron-parser@^4.9.0:
+  version "4.9.0"
+  resolved "https://registry.yarnpkg.com/cron-parser/-/cron-parser-4.9.0.tgz#0340694af3e46a0894978c6f52a6dbb5c0f11ad5"
+  integrity sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==
+  dependencies:
+    luxon "^3.2.1"
+
+cron@^3.1.7:
+  version "3.1.7"
+  resolved "https://registry.yarnpkg.com/cron/-/cron-3.1.7.tgz#3423d618ba625e78458fff8cb67001672d49ba0d"
+  integrity sha512-tlBg7ARsAMQLzgwqVxy8AZl/qlTc5nibqYwtNGoCrd+cV+ugI+tvZC1oT/8dFH8W455YrywGykx/KMmAqOr7Jw==
+  dependencies:
+    "@types/luxon" "~3.4.0"
+    luxon "~3.4.0"
 
 croner@~4.1.92:
   version "4.1.97"
@@ -3355,6 +3375,16 @@ lru.min@^1.0.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/lru.min/-/lru.min-1.1.1.tgz#146e01e3a183fa7ba51049175de04667d5701f0e"
   integrity sha512-FbAj6lXil6t8z4z3j0E5mfRlPzxkySotzUHwRXjlpRh10vc6AI6WN62ehZj82VG7M20rqogJ0GLwar2Xa05a8Q==
+
+luxon@^3.2.1:
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/luxon/-/luxon-3.5.0.tgz#6b6f65c5cd1d61d1fd19dbf07ee87a50bf4b8e20"
+  integrity sha512-rh+Zjr6DNfUYR3bPwJEnuwDdqMbxZW7LOQfUN4B54+Cl+0o5zaU9RJ6bcidfDtC1cWCZXQ+nvX8bf6bAji37QQ==
+
+luxon@~3.4.0:
+  version "3.4.4"
+  resolved "https://registry.yarnpkg.com/luxon/-/luxon-3.4.4.tgz#cf20dc27dc532ba41a169c43fdcc0063601577af"
+  integrity sha512-zobTr7akeGHnv7eBOXcRgMeCP6+uyYsczwmeRCauvpvaAltgNyTbLH/+VaEAPUeWBT+1GuNmz4wC/6jtQzbbVA==
 
 lx-helpers@^0.5.1:
   version "0.5.1"

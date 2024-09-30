@@ -190,7 +190,7 @@ App.post('/v1/account')
     .inject('dbForProject')
     .inject('queueForEvents')
     .inject('hooks')
-    .action(async (userId: string, email: string, password: string, name: string, 
+    .action(async (userId: string, email: string, password: string, name: string,
         request: Request, response: Response, user: Document, project: Document, dbForProject: Database, queueForEvents: Event, hooks: Hooks) => {
 
         email = email.toLowerCase();
@@ -2930,7 +2930,7 @@ App.post('/v1/account/recovery')
 
 
 
-    App.put('/v1/account/recovery')
+App.put('/v1/account/recovery')
     .desc('Create password recovery (confirmation)')
     .groups(['api', 'account'])
     .label('scope', 'sessions.write')
@@ -3010,7 +3010,7 @@ App.post('/v1/account/recovery')
         response.dynamic(recoveryDocument, Response.MODEL_TOKEN);
     });
 
-    App.post('/v1/account/verification')
+App.post('/v1/account/verification')
     .desc('Create email verification')
     .groups(['api', 'account'])
     .label('scope', 'account')
@@ -3175,7 +3175,7 @@ App.post('/v1/account/recovery')
             .dynamic(verification, Response.MODEL_TOKEN);
     });
 
-    App.put('/v1/account/verification')
+App.put('/v1/account/verification')
     .desc('Create email verification (confirmation)')
     .groups(['api', 'account'])
     .label('scope', 'public')
@@ -3344,7 +3344,7 @@ App.post('/v1/account/verification/phone')
             .dynamic(verification, Response.MODEL_TOKEN);
     });
 
-    App.put('/v1/account/verification/phone')
+App.put('/v1/account/verification/phone')
     .desc('Update phone verification (confirmation)')
     .groups(['api', 'account'])
     .label('scope', 'public')
@@ -3490,10 +3490,862 @@ App.get('/v1/account/mfa/factors')
     });
 
 
+App.post('/v1/account/mfa/authenticators/:type')
+    .desc('Create Authenticator')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.mfa')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createMfaAuthenticator')
+    .label('sdk.description', '/docs/references/account/create-mfa-authenticator.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MFA_TYPE)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .param('type', '', new WhiteList([Type.TOTP]), `Type of authenticator. Must be ${Type.TOTP}`)
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('project')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (type: string, requestTimestamp: Date | null, response: Response, project: Document, user: Document, dbForProject: Database, queueForEvents: Event) => {
+        const otp = (() => {
+            switch (type) {
+                case Type.TOTP:
+                    return new TOTP();
+                default:
+                    throw new Error('Unknown type.');
+            }
+        })();
+
+        otp.setLabel(user.getAttribute('email'));
+        otp.setIssuer(project.getAttribute('name'));
+
+        let authenticator = TOTP.getAuthenticatorFromUser(user);
+
+        if (authenticator) {
+            if (authenticator.getAttribute('verified')) {
+                throw new Error('USER_AUTHENTICATOR_ALREADY_VERIFIED');
+            }
+            await dbForProject.deleteDocument('authenticators', authenticator.getId());
+        }
+
+        authenticator = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': Type.TOTP,
+            'verified': false,
+            'data': {
+                'secret': otp.getSecret(),
+            },
+            '$permissions': [
+                Permission.read(Role.user(user.getId())),
+                Permission.update(Role.user(user.getId())),
+                Permission.delete(Role.user(user.getId())),
+            ]
+        });
+
+        const model = new Document({
+            'secret': otp.getSecret(),
+            'uri': otp.getProvisioningUri()
+        });
+
+        await dbForProject.createDocument('authenticators', authenticator);
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents.setParam('userId', user.getId());
+
+        response.dynamic(model, Response.MODEL_MFA_TYPE);
+    });
+
+
+App.put('/v1/account/mfa/authenticators/:type')
+    .desc('Verify Authenticator')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.mfa')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateMfaAuthenticator')
+    .label('sdk.description', '/docs/references/account/update-mfa-authenticator.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .param('type', '', new WhiteList([Type.TOTP]), 'Type of authenticator.')
+    .param('otp', '', new Text(256), 'Valid verification token.')
+    .inject('response')
+    .inject('user')
+    .inject('session')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (type: string, otp: string, response: Response, user: Document, session: Document, dbForProject: Database, queueForEvents: Event) => {
+        const authenticator = (() => {
+            switch (type) {
+                case Type.TOTP:
+                    return TOTP.getAuthenticatorFromUser(user);
+                default:
+                    return null;
+            }
+        })();
+
+        if (authenticator === null) {
+            throw new Error('USER_AUTHENTICATOR_NOT_FOUND');
+        }
+
+        if (authenticator.getAttribute('verified')) {
+            throw new Error('USER_AUTHENTICATOR_ALREADY_VERIFIED');
+        }
+
+        const success = (() => {
+            switch (type) {
+                case Type.TOTP:
+                    return Challenge.TOTP.verify(user, otp);
+                default:
+                    return false;
+            }
+        })();
+
+        if (!success) {
+            throw new Error('USER_INVALID_TOKEN');
+        }
+
+        authenticator.setAttribute('verified', true);
+
+        await dbForProject.updateDocument('authenticators', authenticator.getId(), authenticator);
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        let factors = session.getAttribute('factors', []);
+        factors.push(type);
+        factors = Array.from(new Set(factors));
+
+        session.setAttribute('factors', factors);
+        await dbForProject.updateDocument('sessions', session.getId(), session);
+
+        queueForEvents.setParam('userId', user.getId());
+
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.post('/v1/account/mfa/recovery-codes')
+    .desc('Create MFA Recovery Codes')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.mfa')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createMfaRecoveryCodes')
+    .label('sdk.description', '/docs/references/account/create-mfa-recovery-codes.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MFA_RECOVERY_CODES)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (response: Response, user: Document, dbForProject: Database, queueForEvents: Event) => {
+        let mfaRecoveryCodes = user.getAttribute('mfaRecoveryCodes', []);
+
+        if (mfaRecoveryCodes.length > 0) {
+            throw new Error('USER_RECOVERY_CODES_ALREADY_EXISTS');
+        }
+
+        mfaRecoveryCodes = Type.generateBackupCodes();
+        user.setAttribute('mfaRecoveryCodes', mfaRecoveryCodes);
+        await dbForProject.updateDocument('users', user.getId(), user);
+
+        queueForEvents.setParam('userId', user.getId());
+
+        const document = new Document({
+            'recoveryCodes': mfaRecoveryCodes
+        });
+
+        response.dynamic(document, Response.MODEL_MFA_RECOVERY_CODES);
+    });
+
+
+App.patch('/v1/account/mfa/recovery-codes')
+    .desc('Regenerate MFA Recovery Codes')
+    .groups(['api', 'account', 'mfaProtected'])
+    .label('event', 'users.[userId].update.mfa')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateMfaRecoveryCodes')
+    .label('sdk.description', '/docs/references/account/update-mfa-recovery-codes.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MFA_RECOVERY_CODES)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .inject('dbForProject')
+    .inject('response')
+    .inject('user')
+    .inject('queueForEvents')
+    .action(async (dbForProject: Database, response: Response, user: Document, queueForEvents: Event) => {
+        let mfaRecoveryCodes = user.getAttribute('mfaRecoveryCodes', []);
+        if (mfaRecoveryCodes.length === 0) {
+            throw new Error('USER_RECOVERY_CODES_NOT_FOUND');
+        }
+
+        mfaRecoveryCodes = Type.generateBackupCodes();
+        user.setAttribute('mfaRecoveryCodes', mfaRecoveryCodes);
+        await dbForProject.updateDocument('users', user.getId(), user);
+
+        queueForEvents.setParam('userId', user.getId());
+
+        const document = new Document({
+            'recoveryCodes': mfaRecoveryCodes
+        });
+
+        response.dynamic(document, Response.MODEL_MFA_RECOVERY_CODES);
+    });
+
+App.get('/v1/account/mfa/recovery-codes')
+    .desc('Get MFA Recovery Codes')
+    .groups(['api', 'account', 'mfaProtected'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'getMfaRecoveryCodes')
+    .label('sdk.description', '/docs/references/account/get-mfa-recovery-codes.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MFA_RECOVERY_CODES)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .inject('response')
+    .inject('user')
+    .action(async (response: Response, user: Document) => {
+        const mfaRecoveryCodes = user.getAttribute('mfaRecoveryCodes', []);
+
+        if (mfaRecoveryCodes.length === 0) {
+            throw new Error('USER_RECOVERY_CODES_NOT_FOUND');
+        }
+
+        const document = new Document({
+            'recoveryCodes': mfaRecoveryCodes
+        });
+
+        response.dynamic(document, Response.MODEL_MFA_RECOVERY_CODES);
+    });
+
+App.delete('/v1/account/mfa/authenticators/:type')
+    .desc('Delete Authenticator')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].delete.mfa')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'deleteMfaAuthenticator')
+    .label('sdk.description', '/docs/references/account/delete-mfa-authenticator.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .param('type', '', new WhiteList([Type.TOTP]), 'Type of authenticator.')
+    .param('otp', '', new Text(256), 'Valid verification token.')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (type: string, otp: string, response: Response, user: Document, dbForProject: Database, queueForEvents: Event) => {
+        const authenticator = (() => {
+            switch (type) {
+                case Type.TOTP:
+                    return TOTP.getAuthenticatorFromUser(user);
+                default:
+                    return null;
+            }
+        })();
+
+        if (!authenticator) {
+            throw new Error('USER_AUTHENTICATOR_NOT_FOUND');
+        }
+
+        let success = (() => {
+            switch (type) {
+                case Type.TOTP:
+                    return Challenge.TOTP.verify(user, otp);
+                default:
+                    return false;
+            }
+        })();
+
+        if (!success) {
+            let mfaRecoveryCodes = user.getAttribute('mfaRecoveryCodes', []);
+            if (mfaRecoveryCodes.includes(otp)) {
+                mfaRecoveryCodes = mfaRecoveryCodes.filter(code => code !== otp);
+                user.setAttribute('mfaRecoveryCodes', mfaRecoveryCodes);
+                await dbForProject.updateDocument('users', user.getId(), user);
+                success = true;
+            }
+        }
+
+        if (!success) {
+            throw new Error('USER_INVALID_TOKEN');
+        }
+
+        await dbForProject.deleteDocument('authenticators', authenticator.getId());
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents.setParam('userId', user.getId());
+
+        response.noContent();
+    });
 
 
 
+App.post('/v1/account/mfa/challenge')
+    .desc('Create MFA Challenge')
+    .groups(['api', 'account', 'mfa'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].challenges.[challengeId].create')
+    .label('audits.event', 'challenge.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createMfaChallenge')
+    .label('sdk.description', '/docs/references/account/create-mfa-challenge.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MFA_CHALLENGE)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'url:{url},token:{param-token}')
+    .param('factor', '', new WhiteList([Type.EMAIL, Type.PHONE, Type.TOTP, Type.RECOVERY_CODE]), `Factor used for verification. Must be one of following: ${Type.EMAIL}, ${Type.PHONE}, ${Type.TOTP}, ${Type.RECOVERY_CODE}.`)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('user')
+    .inject('locale')
+    .inject('project')
+    .inject('request')
+    .inject('queueForEvents')
+    .inject('queueForMessaging')
+    .inject('queueForMails')
+    .action(async (factor: string, response: Response, dbForProject: Database, user: Document, locale: Locale, project: Document, request: Request, queueForEvents: Event, queueForMessaging: Messaging, queueForMails: Mail) => {
+        const expire = DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_CONFIRM);
+        const code = Auth.codeGenerator();
+        let challenge = new Document({
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': factor,
+            'token': Auth.tokenGenerator(),
+            'code': code,
+            'expire': expire,
+            '$permissions': [
+                Permission.read(Role.user(user.getId())),
+                Permission.update(Role.user(user.getId())),
+                Permission.delete(Role.user(user.getId())),
+            ],
+        });
 
+        challenge = await dbForProject.createDocument('challenges', challenge);
+
+        switch (factor) {
+            case Type.PHONE:
+                if (!System.getEnv('_APP_SMS_PROVIDER')) {
+                    throw new Error('Phone provider not configured');
+                }
+                if (!user.getAttribute('phone')) {
+                    throw new Error('USER_PHONE_NOT_FOUND');
+                }
+                if (!user.getAttribute('phoneVerification')) {
+                    throw new Error('USER_PHONE_NOT_VERIFIED');
+                }
+
+                let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/sms-base.tpl');
+
+                const customTemplate = project.getAttribute('templates', [])[`sms.mfaChallenge-${locale.default}`] ?? [];
+                if (customTemplate) {
+                    message = customTemplate['message'] ?? message;
+                }
+
+                let messageContent = Template.fromString(locale.getText("sms.verification.body"));
+                messageContent
+                    .setParam('{{project}}', project.getAttribute('name'))
+                    .setParam('{{secret}}', code);
+                messageContent = strip_tags(messageContent.render());
+                message = message.setParam('{{token}}', messageContent);
+
+                message = message.render();
+
+                queueForMessaging
+                    .setType(MESSAGE_SEND_TYPE_INTERNAL)
+                    .setMessage(new Document({
+                        '$id': challenge.getId(),
+                        'data': {
+                            'content': code,
+                        },
+                    }))
+                    .setRecipients([user.getAttribute('phone')])
+                    .setProviderType(MESSAGE_TYPE_SMS);
+                break;
+            case Type.EMAIL:
+                if (!System.getEnv('_APP_SMTP_HOST')) {
+                    throw new Error('SMTP disabled');
+                }
+                if (!user.getAttribute('email')) {
+                    throw new Error('USER_EMAIL_NOT_FOUND');
+                }
+                if (!user.getAttribute('emailVerification')) {
+                    throw new Error('USER_EMAIL_NOT_VERIFIED');
+                }
+
+                let subject = locale.getText("emails.mfaChallenge.subject");
+                const customEmailTemplate = project.getAttribute('templates', [])[`email.mfaChallenge-${locale.default}`] ?? [];
+
+                const detector = new Detector(request.getUserAgent('UNKNOWN'));
+                const agentOs = detector.getOS();
+                const agentClient = detector.getClient();
+                const agentDevice = detector.getDevice();
+
+                let emailMessage = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-mfa-challenge.tpl');
+                emailMessage
+                    .setParam('{{hello}}', locale.getText("emails.mfaChallenge.hello"))
+                    .setParam('{{description}}', locale.getText("emails.mfaChallenge.description"))
+                    .setParam('{{clientInfo}}', locale.getText("emails.mfaChallenge.clientInfo"))
+                    .setParam('{{thanks}}', locale.getText("emails.mfaChallenge.thanks"))
+                    .setParam('{{signature}}', locale.getText("emails.mfaChallenge.signature"));
+
+                let body = emailMessage.render();
+
+                const smtp = project.getAttribute('smtp', []);
+                const smtpEnabled = smtp['enabled'] ?? false;
+
+                let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
+                let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+                let replyTo = "";
+
+                if (smtpEnabled) {
+                    if (smtp['senderEmail']) {
+                        senderEmail = smtp['senderEmail'];
+                    }
+                    if (smtp['senderName']) {
+                        senderName = smtp['senderName'];
+                    }
+                    if (smtp['replyTo']) {
+                        replyTo = smtp['replyTo'];
+                    }
+
+                    queueForMails
+                        .setSmtpHost(smtp['host'] ?? '')
+                        .setSmtpPort(smtp['port'] ?? '')
+                        .setSmtpUsername(smtp['username'] ?? '')
+                        .setSmtpPassword(smtp['password'] ?? '')
+                        .setSmtpSecure(smtp['secure'] ?? '');
+
+                    if (customEmailTemplate) {
+                        if (customEmailTemplate['senderEmail']) {
+                            senderEmail = customEmailTemplate['senderEmail'];
+                        }
+                        if (customEmailTemplate['senderName']) {
+                            senderName = customEmailTemplate['senderName'];
+                        }
+                        if (customEmailTemplate['replyTo']) {
+                            replyTo = customEmailTemplate['replyTo'];
+                        }
+
+                        body = customEmailTemplate['message'] ?? '';
+                        subject = customEmailTemplate['subject'] ?? subject;
+                    }
+
+                    queueForMails
+                        .setSmtpReplyTo(replyTo)
+                        .setSmtpSenderEmail(senderEmail)
+                        .setSmtpSenderName(senderName);
+                }
+
+                const emailVariables = {
+                    'direction': locale.getText('settings.direction'),
+                    'user': user.getAttribute('name'),
+                    'project': project.getAttribute('name'),
+                    'otp': code,
+                    'agentDevice': agentDevice['deviceBrand'] ?? 'UNKNOWN',
+                    'agentClient': agentClient['clientName'] ?? 'UNKNOWN',
+                    'agentOs': agentOs['osName'] ?? 'UNKNOWN'
+                };
+
+                queueForMails
+                    .setSubject(subject)
+                    .setBody(body)
+                    .setVariables(emailVariables)
+                    .setRecipient(user.getAttribute('email'))
+                    .trigger();
+                break;
+        }
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('challengeId', challenge.getId());
+
+        response.dynamic(challenge, Response.MODEL_MFA_CHALLENGE);
+    });
+
+App.put('/v1/account/mfa/challenge')
+    .desc('Create MFA Challenge (confirmation)')
+    .groups(['api', 'account', 'mfa'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .label('audits.event', 'challenges.update')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateMfaChallenge')
+    .label('sdk.description', '/docs/references/account/update-mfa-challenge.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'userId:{param-userId}')
+    .param('challengeId', '', new Text(256), 'ID of the challenge.')
+    .param('otp', '', new Text(256), 'Valid verification token.')
+    .inject('project')
+    .inject('response')
+    .inject('user')
+    .inject('session')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (challengeId: string, otp: string, project: Document, response: Response, user: Document, session: Document, dbForProject: Database, queueForEvents: Event) => {
+        const challenge = await dbForProject.getDocument('challenges', challengeId);
+
+        if (challenge.isEmpty()) {
+            throw new Error('USER_INVALID_TOKEN');
+        }
+
+        const type = challenge.getAttribute('type');
+
+        const recoveryCodeChallenge = async (challenge: Document, user: Document, otp: string) => {
+            if (challenge.isSet('type') && challenge.getAttribute('type') === Type.RECOVERY_CODE.toLowerCase()) {
+                let mfaRecoveryCodes = user.getAttribute('mfaRecoveryCodes', []);
+                if (mfaRecoveryCodes.includes(otp)) {
+                    mfaRecoveryCodes = mfaRecoveryCodes.filter(code => code !== otp);
+                    user.setAttribute('mfaRecoveryCodes', mfaRecoveryCodes);
+                    await dbForProject.updateDocument('users', user.getId(), user);
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        };
+
+        const success = await (async () => {
+            switch (type) {
+                case Type.TOTP:
+                    return Challenge.TOTP.challenge(challenge, user, otp);
+                case Type.PHONE:
+                    return Challenge.Phone.challenge(challenge, user, otp);
+                case Type.EMAIL:
+                    return Challenge.Email.challenge(challenge, user, otp);
+                case Type.RECOVERY_CODE.toLowerCase():
+                    return recoveryCodeChallenge(challenge, user, otp);
+                default:
+                    return false;
+            }
+        })();
+
+        if (!success) {
+            throw new Error('USER_INVALID_TOKEN');
+        }
+
+        await dbForProject.deleteDocument('challenges', challengeId);
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        let factors = session.getAttribute('factors', []);
+        factors.push(type);
+        factors = Array.from(new Set(factors));
+
+        session
+            .setAttribute('factors', factors)
+            .setAttribute('mfaUpdatedAt', DateTime.now());
+
+        await dbForProject.updateDocument('sessions', session.getId(), session);
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('sessionId', session.getId());
+
+        response.dynamic(session, Response.MODEL_SESSION);
+    });
+
+App.post('/v1/account/targets/push')
+    .desc('Create push target')
+    .groups(['api', 'account'])
+    .label('scope', 'targets.write')
+    .label('audits.event', 'target.create')
+    .label('audits.resource', 'target/response.$id')
+    .label('event', 'users.[userId].targets.[targetId].create')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createPushTarget')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TARGET)
+    .param('targetId', '', new CustomId(), 'Target ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('identifier', '', new Text(Database.LENGTH_KEY), 'The target identifier (token, email, phone etc.)')
+    .param('providerId', '', new UID(), 'Provider ID. Message will be sent to this target from the specified provider ID. If no provider ID is set the first setup provider will be used.', true)
+    .inject('queueForEvents')
+    .inject('user')
+    .inject('request')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async (targetId: string, identifier: string, providerId: string, queueForEvents: Event, user: Document, request: Request, response: Response, dbForProject: Database) => {
+        targetId = targetId === 'unique()' ? ID.unique() : targetId;
+
+        const provider = await Authorization.skip(async () => await dbForProject.getDocument('providers', providerId));
+
+        const target = await Authorization.skip(async () => await dbForProject.getDocument('targets', targetId));
+
+        if (!target.isEmpty()) {
+            throw new Error('USER_TARGET_ALREADY_EXISTS');
+        }
+
+        const detector = new Detector(request.getUserAgent());
+        detector.skipBotDetection(); // OPTIONAL: If called, bot detection will completely be skipped (bots will be detected as regular devices then)
+
+        const device = detector.getDevice();
+
+        const sessionId = Auth.sessionVerify(user.getAttribute('sessions'), Auth.secret);
+        const session = await dbForProject.getDocument('sessions', sessionId);
+
+        try {
+            const newTarget = await dbForProject.createDocument('targets', new Document({
+                '$id': targetId,
+                '$permissions': [
+                    Permission.read(Role.user(user.getId())),
+                    Permission.update(Role.user(user.getId())),
+                    Permission.delete(Role.user(user.getId())),
+                ],
+                'providerId': providerId ? providerId : null,
+                'providerInternalId': providerId ? provider.getInternalId() : null,
+                'providerType': MESSAGE_TYPE_PUSH,
+                'userId': user.getId(),
+                'userInternalId': user.getInternalId(),
+                'sessionId': session.getId(),
+                'sessionInternalId': session.getInternalId(),
+                'identifier': identifier,
+                'name': `${device.deviceBrand} ${device.deviceModel}`
+            }));
+        } catch (error) {
+            if (error instanceof Duplicate) {
+                throw new Error('USER_TARGET_ALREADY_EXISTS');
+            }
+            throw error;
+        }
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('targetId', targetId);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(newTarget, Response.MODEL_TARGET);
+    });
+
+App.put('/v1/account/targets/:targetId/push')
+    .desc('Update push target')
+    .groups(['api', 'account'])
+    .label('scope', 'targets.write')
+    .label('audits.event', 'target.update')
+    .label('audits.resource', 'target/response.$id')
+    .label('event', 'users.[userId].targets.[targetId].update')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updatePushTarget')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TARGET)
+    .param('targetId', '', new UID(), 'Target ID.')
+    .param('identifier', '', new Text(Database.LENGTH_KEY), 'The target identifier (token, email, phone etc.)')
+    .inject('queueForEvents')
+    .inject('user')
+    .inject('request')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async (targetId: string, identifier: string, queueForEvents: Event, user: Document, request: Request, response: Response, dbForProject: Database) => {
+        const target = await Authorization.skip(async () => await dbForProject.getDocument('targets', targetId));
+
+        if (target.isEmpty()) {
+            throw new Error('USER_TARGET_NOT_FOUND');
+        }
+
+        if (user.getId() !== target.getAttribute('userId')) {
+            throw new Error('USER_TARGET_NOT_FOUND');
+        }
+
+        if (identifier) {
+            target.setAttribute('identifier', identifier);
+        }
+
+        const detector = new Detector(request.getUserAgent());
+        detector.skipBotDetection(); // OPTIONAL: If called, bot detection will completely be skipped (bots will be detected as regular devices then)
+
+        const device = detector.getDevice();
+
+        target.setAttribute('name', `${device.deviceBrand} ${device.deviceModel}`);
+
+        await dbForProject.updateDocument('targets', target.getId(), target);
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('targetId', target.getId());
+
+        response.dynamic(target, Response.MODEL_TARGET);
+    });
+
+App.delete('/v1/account/targets/:targetId/push')
+    .desc('Delete push target')
+    .groups(['api', 'account'])
+    .label('scope', 'targets.write')
+    .label('audits.event', 'target.delete')
+    .label('audits.resource', 'target/response.$id')
+    .label('event', 'users.[userId].targets.[targetId].delete')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'deletePushTarget')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TARGET)
+    .param('targetId', '', new UID(), 'Target ID.')
+    .inject('queueForEvents')
+    .inject('queueForDeletes')
+    .inject('user')
+    .inject('request')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async (targetId: string, queueForEvents: Event, queueForDeletes: Delete, user: Document, request: Request, response: Response, dbForProject: Database) => {
+        const target = await Authorization.skip(async () => await dbForProject.getDocument('targets', targetId));
+
+        if (target.isEmpty()) {
+            throw new Error('USER_TARGET_NOT_FOUND');
+        }
+
+        if (user.getInternalId() !== target.getAttribute('userInternalId')) {
+            throw new Error('USER_TARGET_NOT_FOUND');
+        }
+
+        await dbForProject.deleteDocument('targets', target.getId());
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForDeletes
+            .setType(DELETE_TYPE_TARGET)
+            .setDocument(target);
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('targetId', target.getId())
+            .setPayload(response.output(target, Response.MODEL_TARGET));
+
+        response.noContent();
+    });
+
+App.get('/v1/account/identities')
+    .desc('List Identities')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'listIdentities')
+    .label('sdk.description', '/docs/references/account/list-identities.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_IDENTITY_LIST)
+    .label('sdk.offline.model', '/account/identities')
+    .param('queries', [], new Identities(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Identities.ALLOWED_ATTRIBUTES.join(', ')}`, true)
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .action(async (queries: string[], response: Response, user: Document, dbForProject: Database) => {
+        try {
+            queries = Query.parseQueries(queries);
+        } catch (e) {
+            throw new Error(`GENERAL_QUERY_INVALID: ${e.message}`);
+        }
+
+        queries.push(Query.equal('userInternalId', [user.getInternalId()]));
+
+        const cursor = queries.find(query => [Query.TYPE_CURSOR_AFTER, Query.TYPE_CURSOR_BEFORE].includes(query.getMethod()));
+        if (cursor) {
+            const identityId = cursor.getValue();
+            const cursorDocument = await dbForProject.getDocument('identities', identityId);
+
+            if (cursorDocument.isEmpty()) {
+                throw new Error(`GENERAL_CURSOR_NOT_FOUND: Identity '${identityId}' for the 'cursor' value not found.`);
+            }
+
+            cursor.setValue(cursorDocument);
+        }
+
+        const filterQueries = Query.groupByType(queries).filters;
+
+        const results = await dbForProject.find('identities', queries);
+        const total = await dbForProject.count('identities', filterQueries, APP_LIMIT_COUNT);
+
+        response.dynamic(new Document({
+            'identities': results,
+            'total': total,
+        }), Response.MODEL_IDENTITY_LIST);
+    });
+
+App.delete('/v1/account/identities/:identityId')
+    .desc('Delete identity')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].identities.[identityId].delete')
+    .label('audits.event', 'identity.delete')
+    .label('audits.resource', 'identity/{request.$identityId}')
+    .label('audits.userId', '{user.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'deleteIdentity')
+    .label('sdk.description', '/docs/references/account/delete-identity.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .param('identityId', '', new UID(), 'Identity ID.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (identityId: string, response: Response, dbForProject: Database, queueForEvents: Event) => {
+        const identity = await dbForProject.getDocument('identities', identityId);
+
+        if (identity.isEmpty()) {
+            throw new Error('USER_IDENTITY_NOT_FOUND');
+        }
+
+        await dbForProject.deleteDocument('identities', identityId);
+
+        queueForEvents
+            .setParam('userId', identity.getAttribute('userId'))
+            .setParam('identityId', identity.getId())
+            .setPayload(response.output(identity, Response.MODEL_IDENTITY));
+
+        response.noContent();
+    });
 
 
 
