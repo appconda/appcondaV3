@@ -18,7 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@langchain/openai": "^0.0.28",
-    "@tuval/auth": "^1.0.4",
+    "@tuval/auth": "1.0.6",
     "@tuval/config": "^1.0.7",
     "@tuval/core": "2.0.5",
     "@tuval/database": "^1.0.4",

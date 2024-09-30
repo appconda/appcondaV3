@@ -630,10 +630,10 @@
     "@tufjs/canonical-json" "2.0.0"
     minimatch "^9.0.3"
 
-"@tuval/auth@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.4.tgz#ab1bb1cfaba51d0c44d8aca6882ca54aba8f39eb"
-  integrity sha512-yz3NJCimyr0i2apkb4Gm4sCZGcx7BJI9OX60Oy0cgfBiyoVtF1idi2Pkgu3xi8HnoEBtRJl3XUHyWS7rd9x02A==
+"@tuval/auth@1.0.6":
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.6.tgz#6c7ba11108af28ac27c6469108b70dc712336233"
+  integrity sha512-+ykzvljjVOIzhiW/CJzqgLM4W1S2F6wk5Qedfodu7Nhj+QdEeY6qwfcQ371ZQ95nwAd6uUmeaFFkpppvcNl5/w==
   dependencies:
     "@tuval/core" "^2.0.5"
     argon2 "^0.41.1"

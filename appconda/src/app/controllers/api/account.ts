@@ -4,11 +4,12 @@ import { Authorization, DateTime, Document, Exception, ID, Permission, Role, Tex
 import { Locale } from '@tuval/locale'
 import { Auth } from '@tuval/auth'
 import { Config } from '@tuval/config'
-import { App, Request, Response } from '@tuval/http'
+import { App, Request } from '@tuval/http'
 import { Detector } from '../../../Appconda/Detector/Detector'
 import * as maxmind from 'maxmind'
 import { Event } from '../../../Appconda/Event/Event'
-import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, DELETE_TYPE_DOCUMENT, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, DELETE_TYPE_DOCUMENT, DELETE_TYPE_SESSION_TARGETS, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
+import { Response } from '../../../Appconda/Tuval/Response'
 
 var path = require('path');
 
@@ -645,7 +646,7 @@ App.patch('/v1/account/sessions/:sessionId')
             : sessionId;
         const sessions = user.getAttribute('sessions', []);
 
-        let session = null;
+        let session: Document | null = null;
         for (const value of sessions) {
             if (sessionId === value.getId()) {
                 session = value;
@@ -977,7 +978,7 @@ App.post('/v1/account/sessions/token')
     .inject('locale')
     .inject('geodb')
     .inject('queueForEvents')
-    .action($createSession);
+    .action(createSession);
 
 App.post('/v1/account/sessions/token')
     .desc('Create session')
@@ -1221,7 +1222,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         }
 
         if (error) {
-            const message = `The ${providerName} OAuth2 provider returned an error: ${error}`;
+            let message = `The ${providerName} OAuth2 provider returned an error: ${error}`;
             if (error_description) {
                 message += `: ${error_description}`;
             }
