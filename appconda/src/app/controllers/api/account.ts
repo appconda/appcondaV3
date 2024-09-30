@@ -1,15 +1,25 @@
 
-import { Database, Query } from '@tuval/database'
-import { Authorization, DateTime, Document, Exception, ID, Permission, Role, Text } from '@tuval/core'
+import { Database, Query, Duplicate, UID } from '@tuval/database'
+import { ArrayList, Authorization, DateTime, Document, Exception,URLValidator,
+     Host, ID, Permission, Role, Text, WhiteList, 
+     Boolean} from '@tuval/core'
 import { Locale } from '@tuval/locale'
-import { Auth } from '@tuval/auth'
+import { Auth, Password, PasswordDictionary, PersonalData, Phrase } from '@tuval/auth'
 import { Config } from '@tuval/config'
 import { App, Request } from '@tuval/http'
+import { Type } from '@tuval/auth'
 import { Detector } from '../../../Appconda/Detector/Detector'
-import * as maxmind from 'maxmind'
+import _default, * as maxmind from 'maxmind'
 import { Event } from '../../../Appconda/Event/Event'
-import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, DELETE_TYPE_DOCUMENT, DELETE_TYPE_SESSION_TARGETS, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_EMAIL_TEAM, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_USERS, APP_NAME, DELETE_TYPE_DOCUMENT, DELETE_TYPE_SESSION_TARGETS, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
 import { Response } from '../../../Appconda/Tuval/Response'
+import { CustomId } from '../../../Appconda/Tuval/Database/Validators/CustomId'
+import { Email } from '../../../Appconda/Network/Validators/Email'
+import { Delete } from '../../../Appconda/Event/Delete'
+import { Hooks } from '../../../Appconda/Hooks/Hooks'
+import { APP_PLATFORM_SERVER } from '../../config/platforms'
+import { OpenSSL } from '../../../Appconda/OpenSSL/OpenSSL'
+import { Template } from '../../../Appconda/Template/Template'
 
 var path = require('path');
 
@@ -211,7 +221,7 @@ App.post('/v1/account')
         const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
         if (limit !== 0) {
-            const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+            const total = await dbForProject.count('users', [], APP_LIMIT_USERS);
 
             if (total >= limit) {
                 if (project.getId() === 'console') {
@@ -479,14 +489,14 @@ App.delete('/v1/account/sessions')
                     .setType(DELETE_TYPE_SESSION_TARGETS)
                     .setDocument(session)
                     .trigger();
+
+                queueForEvents
+                    .setParam('userId', user.getId())
+                    .setParam('sessionId', session.getId());
             }
         }
 
         await dbForProject.purgeCachedDocument('users', user.getId());
-
-        queueForEvents
-            .setParam('userId', user.getId())
-            .setParam('sessionId', session.getId());
 
         response.noContent();
     });
@@ -510,7 +520,7 @@ App.get('/v1/account/sessions/:sessionId')
     .inject('user')
     .inject('locale')
     .inject('project')
-    .action(async (sessionId: string | null, response: Response, user: Document, locale: Locale, project: Document) => {
+    .action(async (sessionId: boolean | string | null, response: Response, user: Document, locale: Locale, project: Document) => {
 
         const roles = Authorization.getRoles();
         const isPrivilegedUser = Auth.isPrivilegedUser(roles);
@@ -562,7 +572,7 @@ App.delete('/v1/account/sessions/:sessionId')
     .inject('queueForEvents')
     .inject('queueForDeletes')
     .inject('project')
-    .action(async (sessionId: string | null, requestTimestamp: Date | null, request: Request, response: Response, user: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForDeletes: Delete, project: Document) => {
+    .action(async (sessionId: boolean | string | null, requestTimestamp: Date | null, request: Request, response: Response, user: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForDeletes: Delete, project: Document) => {
 
         const protocol = request.getProtocol();
         sessionId = (sessionId === 'current')
@@ -639,7 +649,7 @@ App.patch('/v1/account/sessions/:sessionId')
     .inject('dbForProject')
     .inject('project')
     .inject('queueForEvents')
-    .action(async (sessionId: string | null, response: Response, user: Document, dbForProject: Database, project: Document, queueForEvents: Event) => {
+    .action(async (sessionId: boolean | string | null, response: Response, user: Document, dbForProject: Database, project: Document, queueForEvents: Event) => {
 
         sessionId = (sessionId === 'current')
             ? Auth.sessionVerify(user.getAttribute('sessions'), Auth.secret)
@@ -681,7 +691,7 @@ App.patch('/v1/account/sessions/:sessionId')
         }
 
         // Save changes
-        await dbForProject.updateDocument('sessions', sessionId, session);
+        await dbForProject.updateDocument('sessions', sessionId as any, session);
         await dbForProject.purgeCachedDocument('users', user.getId());
 
         queueForEvents
@@ -723,7 +733,9 @@ App.post('/v1/account/sessions/email')
     .inject('geodb')
     .inject('queueForEvents')
     .inject('hooks')
-    .action(async (email: string, password: string, request: Request, response: Response, user: Document, dbForProject: Database, project: Document, locale: Locale, geodb: Reader, queueForEvents: Event, hooks: Hooks) => {
+    .action(async (email: string, password: string, request: Request, response: Response,
+        user: Document, dbForProject: Database, project: Document, locale: Locale,
+        geodb: Reader, queueForEvents: Event, hooks: Hooks) => {
         email = email.toLowerCase();
         const protocol = request.getProtocol();
 
@@ -793,7 +805,7 @@ App.post('/v1/account/sessions/email')
             response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), secret) }));
         }
 
-        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration));
+        const expire: string = DateTime.formatTz(DateTime.addSeconds(new Date(), duration)) as string;
 
         response
             .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
@@ -854,7 +866,7 @@ App.post('/v1/account/sessions/anonymous')
         const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
         if (limit !== 0) {
-            const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+            const total = await dbForProject.count('users', [], APP_LIMIT_USERS);
 
             if (total >= limit) {
                 throw new Error('USER_COUNT_EXCEEDED');
@@ -933,7 +945,7 @@ App.post('/v1/account/sessions/anonymous')
             response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), secret) }));
         }
 
-        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration));
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration)) as string;
 
         response
             .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
@@ -1012,7 +1024,7 @@ App.post('/v1/account/sessions/token')
 App.get('/v1/account/sessions/oauth2/:provider')
     .desc('Create OAuth2 session')
     .groups(['api', 'account'])
-    .label('error', __DIR__. '/../../views/general/error.phtml')
+    .label('error', __dirname + '../../views/general/error.phtml')
     .label('scope', 'sessions.write')
     .label('sdk.auth', [])
     .label('sdk.hide', [APP_PLATFORM_SERVER])
@@ -1024,7 +1036,7 @@ App.get('/v1/account/sessions/oauth2/:provider')
     .label('sdk.methodType', 'webAuth')
     .label('abuse-limit', 50)
     .label('abuse-key', 'ip:{ip}')
-    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 Provider. Currently, supported providers are: ' + Object.keys(Config.getParam('oAuthProviders')).filter(node => !node.mock).join(', ') + '.')
+    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 Provider. Currently, supported providers are: ' + Object.keys(Config.getParam('oAuthProviders')).filter((node: any) => !node.mock).join(', ') + '.')
     .param('success', '', clients => new Host(clients), 'URL to redirect back to your app after a successful login attempt.  Only URLs from hostnames in your project\'s platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
     .param('failure', '', clients => new Host(clients), 'URL to redirect back to your app after a failed login attempt.  Only URLs from hostnames in your project\'s platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
     .param('scopes', [], new ArrayList(new Text(APP_LIMIT_ARRAY_ELEMENT_SIZE), APP_LIMIT_ARRAY_PARAMS_SIZE), 'A list of custom OAuth2 scopes. Check each provider internal docs for a list of supported scopes. Maximum of ' + APP_LIMIT_ARRAY_PARAMS_SIZE + ' scopes are allowed, each ' + APP_LIMIT_ARRAY_ELEMENT_SIZE + ' characters long.', true)
@@ -1045,8 +1057,9 @@ App.get('/v1/account/sessions/oauth2/:provider')
         let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
 
         if (appSecret && appSecret.version) {
-            const key = System.getEnv(`_APP_OPENSSL_KEY_V${appSecret.version}`);
-            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, key, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+            const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
+            const buffer = Buffer.from(key, 'utf-8');
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, buffer, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
         }
 
         if (!appId || !appSecret) {
@@ -1083,7 +1096,7 @@ App.get('/v1/account/sessions/oauth2/:provider')
 App.get('/v1/account/sessions/oauth2/callback/:provider/:projectId')
     .desc('OAuth2 callback')
     .groups(['account'])
-    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('error', __dirname + '../../views/general/error.phtml')
     .label('scope', 'public')
     .label('docs', false)
     .param('projectId', '', new Text(1024), 'Project ID.')
@@ -1112,7 +1125,7 @@ App.get('/v1/account/sessions/oauth2/callback/:provider/:projectId')
 App.post('/v1/account/sessions/oauth2/callback/:provider/:projectId')
     .desc('OAuth2 callback')
     .groups(['account'])
-    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('error', _default + '../../views/general/error.phtml')
     .label('scope', 'public')
     .label('origin', '*')
     .label('docs', false)
@@ -1143,7 +1156,7 @@ App.post('/v1/account/sessions/oauth2/callback/:provider/:projectId')
 App.get('/v1/account/sessions/oauth2/:provider/redirect')
     .desc('OAuth2 redirect')
     .groups(['api', 'account', 'session'])
-    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('error', __dirname + '../../views/general/error.phtml')
     .label('event', 'users.[userId].sessions.[sessionId].create')
     .label('scope', 'public')
     .label('audits.event', 'session.create')
@@ -1168,7 +1181,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         const protocol = request.getProtocol();
         const callback = `${protocol}://${request.getHostname()}/v1/account/sessions/oauth2/callback/${provider}/${project.getId()}`;
         const defaultState = { success: project.getAttribute('url', ''), failure: '' };
-        const validateURL = new URL();
+        const validateURL = new URLValidator();
         const appId = project.getAttribute('oAuthProviders', {})[`${provider}Appid`] ?? '';
         let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
         const providerEnabled = project.getAttribute('oAuthProviders', {})[`${provider}Enabled`] ?? false;
@@ -1203,8 +1216,8 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
             throw new Error('PROJECT_INVALID_FAILURE_URL');
         }
 
-        const failureRedirect = (type, message = null, code = null) => {
-            const exception = new Error(type);
+        const failureRedirect = (type, message?, code?) => {
+            const exception = new Exception(type);
             if (parsedState.failure) {
                 const failureURL = new URL(parsedState.failure);
                 failureURL.searchParams.set('error', JSON.stringify({
@@ -1218,7 +1231,8 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         };
 
         if (!providerEnabled) {
-            failureRedirect('PROJECT_PROVIDER_DISABLED', 'This provider is disabled. Please enable the provider from your console to continue.');
+            failureRedirect('PROJECT_PROVIDER_DISABLED', 
+                'This provider is disabled. Please enable the provider from your console to continue.');
         }
 
         if (error) {
@@ -1234,8 +1248,9 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         }
 
         if (appSecret && appSecret.version) {
-            const key = System.getEnv(`_APP_OPENSSL_KEY_V${appSecret.version}`);
-            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, key, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+            const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
+            const bufferUtf8 = Buffer.from(key, "utf-8");
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, bufferUtf8, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
         }
 
         let accessToken, refreshToken, accessTokenExpiry;
@@ -1243,7 +1258,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
             accessToken = await oauth2.getAccessToken(code);
             refreshToken = await oauth2.getRefreshToken(code);
             accessTokenExpiry = await oauth2.getAccessTokenExpiry(code);
-        } catch (ex) {
+        } catch (ex: Exception) {
             failureRedirect(ex.name, `Failed to obtain access token. The ${providerName} OAuth2 provider returned an error: ${ex.message}`, ex.code);
         }
 
@@ -1328,7 +1343,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
                 const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
                 if (limit !== 0) {
-                    const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+                    const total = await dbForProject.count('users',[],  APP_LIMIT_USERS );
 
                     if (total >= limit) {
                         failureRedirect('USER_COUNT_EXCEEDED');
@@ -1504,7 +1519,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
                     'secret': Auth.hash(secret),
                     'userAgent': request.getUserAgent('UNKNOWN'),
                     'ip': request.getIP(),
-                    'factors': [TYPE.EMAIL, 'oauth2'],
+                    'factors': [Type.EMAIL, 'oauth2'],
                     'countryCode': record ? record['country']['iso_code'].toLowerCase() : '--',
                     'expire': DateTime.addSeconds(new Date(), duration)
                 },
@@ -1568,7 +1583,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
 App.get('/v1/account/tokens/oauth2/:provider')
     .desc('Create OAuth2 token')
     .groups(['api', 'account'])
-    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('error', __dirname + '../../views/general/error.phtml')
     .label('scope', 'sessions.write')
     .label('sdk.auth', [])
     .label('sdk.namespace', 'account')
@@ -1600,8 +1615,9 @@ App.get('/v1/account/tokens/oauth2/:provider')
         let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
 
         if (appSecret && appSecret.version) {
-            const key = System.getEnv(`_APP_OPENSSL_KEY_V${appSecret.version}`);
-            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, key, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+            const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
+            const bufferUtf8 = Buffer.from(key, "utf-8");
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, bufferUtf8, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
         }
 
         if (!appId || !appSecret) {
@@ -1665,13 +1681,20 @@ App.post('/v1/account/tokens/magic-url')
     .inject('queueForEvents')
     .inject('queueForMails')
     .action(async (userId: string, email: string, url: string, phrase: boolean, request: Request, response: Response, user: Document, project: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForMails: Mail) => {
-        if (!System.getEnv('_APP_SMTP_HOST')) {
+        if (!process.env._APP_SMTP_HOST) {
             throw new Error('SMTP disabled');
         }
+
+        export function htmlentities(str: string): string {
+            return str.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+                return `&#${i.charCodeAt(0)};`;
+            });
+        }
+        
         url = htmlentities(url);
 
         if (phrase) {
-            phrase = Phrase.generate();
+            phrase = Phrase.generate() as any;
         }
 
         const roles = Authorization.getRoles();
@@ -1732,7 +1755,7 @@ App.post('/v1/account/tokens/magic-url')
         }
 
         const tokenSecret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_MAGIC_URL);
-        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_CONFIRM));
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_CONFIRM)) as string;
 
         const token = new Document({
             '$id': ID.unique(),
@@ -1774,7 +1797,7 @@ App.post('/v1/account/tokens/magic-url')
         const agentClient = detector.getClient();
         const agentDevice = detector.getDevice();
 
-        const message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-magic-url.tpl');
+        const message = Template.fromFile(__dirname + '../../config/locale/templates/email-magic-url.tpl');
         message
             .setParam('{{hello}}', locale.getText("emails.magicSession.hello"))
             .setParam('{{optionButton}}', locale.getText("emails.magicSession.optionButton"))
@@ -1795,8 +1818,8 @@ App.post('/v1/account/tokens/magic-url')
         const smtp = project.getAttribute('smtp', {});
         const smtpEnabled = smtp['enabled'] ?? false;
 
-        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
-        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+        let senderEmail = process.env._APP_SYSTEM_EMAIL_ADDRESS || APP_EMAIL_TEAM;
+        let senderName = process.env._APP_SYSTEM_EMAIL_NAME || `${APP_NAME} Server`;
         let replyTo = "";
 
         if (smtpEnabled) {
@@ -1860,7 +1883,7 @@ App.post('/v1/account/tokens/magic-url')
         token.setAttribute('secret', tokenSecret);
 
         queueForEvents
-            .setPayload(response.output(token, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+            .setPayload(response.output(token, Response.MODEL_TOKEN),  ['secret'] );
 
         if (!isPrivilegedUser && !isAppUser) {
             token.setAttribute('secret', '');
@@ -1904,12 +1927,12 @@ App.post('/v1/account/tokens/email')
     .inject('queueForEvents')
     .inject('queueForMails')
     .action(async (userId: string, email: string, phrase: boolean, request: Request, response: Response, user: Document, project: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForMails: Mail) => {
-        if (!System.getEnv('_APP_SMTP_HOST')) {
+        if (!process.env._APP_SMTP_HOST) {
             throw new Error('SMTP disabled');
         }
 
         if (phrase) {
-            phrase = Phrase.generate();
+            phrase = Phrase.generate() as any;
         }
 
         const roles = Authorization.getRoles();
@@ -1923,7 +1946,7 @@ App.post('/v1/account/tokens/email')
             const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
             if (limit !== 0) {
-                const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+                const total = await dbForProject.count('users', [],  APP_LIMIT_USERS );
 
                 if (total >= limit) {
                     throw new Error('USER_COUNT_EXCEEDED');
@@ -1991,7 +2014,7 @@ App.post('/v1/account/tokens/email')
 
         await dbForProject.purgeCachedDocument('users', user.getId());
 
-        const subject = locale.getText("emails.otpSession.subject");
+        let subject = locale.getText("emails.otpSession.subject");
         const customTemplate = project.getAttribute('templates', {})[`email.otpSession-${locale.default}`] ?? [];
 
         const detector = new Detector(request.getUserAgent('UNKNOWN'));
@@ -1999,7 +2022,7 @@ App.post('/v1/account/tokens/email')
         const agentClient = detector.getClient();
         const agentDevice = detector.getDevice();
 
-        const message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-otp.tpl');
+        const message = Template.fromFile(__dirname + '../../config/locale/templates/email-otp.tpl');
         message
             .setParam('{{hello}}', locale.getText("emails.otpSession.hello"))
             .setParam('{{description}}', locale.getText("emails.otpSession.description"))
@@ -2013,13 +2036,13 @@ App.post('/v1/account/tokens/email')
             message.setParam('{{securityPhrase}}', '');
         }
 
-        const body = message.render();
+        let body = message.render();
 
         const smtp = project.getAttribute('smtp', {});
         const smtpEnabled = smtp['enabled'] ?? false;
 
-        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
-        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+        let senderEmail = process.env._APP_SYSTEM_EMAIL_ADDRESS || APP_EMAIL_TEAM;
+        let senderName = process.env._APP_SYSTEM_EMAIL_NAME || `${APP_NAME} Server`;
         let replyTo = "";
 
         if (smtpEnabled) {

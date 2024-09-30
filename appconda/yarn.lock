@@ -548,6 +548,40 @@
   dependencies:
     debug "^4.3.1"
 
+"@redis/bloom@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@redis/bloom/-/bloom-1.2.0.tgz#d3fd6d3c0af3ef92f26767b56414a370c7b63b71"
+  integrity sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==
+
+"@redis/client@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@redis/client/-/client-1.6.0.tgz#dcf4ae1319763db6fdddd6de7f0af68a352c30ea"
+  integrity sha512-aR0uffYI700OEEH4gYnitAnv3vzVGXCFvYfdpu/CJKvk4pHfLPEy/JSZyrpQ+15WhXe1yJRXLtfQ84s4mEXnPg==
+  dependencies:
+    cluster-key-slot "1.1.2"
+    generic-pool "3.9.0"
+    yallist "4.0.0"
+
+"@redis/graph@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@redis/graph/-/graph-1.1.1.tgz#8c10df2df7f7d02741866751764031a957a170ea"
+  integrity sha512-FEMTcTHZozZciLRl6GiiIB4zGm5z5F3F6a6FZCyrfxdKOhFlGkiAqlexWMBzCi4DcRoyiOsuLfW+cjlGWyExOw==
+
+"@redis/json@1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@redis/json/-/json-1.0.7.tgz#016257fcd933c4cbcb9c49cde8a0961375c6893b"
+  integrity sha512-6UyXfjVaTBTJtKNG4/9Z8PSpKE6XgSyEb8iwaqDcy+uKrd/DGYHTWkUdnQDyzm727V7p21WUMhsqz5oy65kPcQ==
+
+"@redis/search@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@redis/search/-/search-1.2.0.tgz#50976fd3f31168f585666f7922dde111c74567b8"
+  integrity sha512-tYoDBbtqOVigEDMAcTGsRlMycIIjwMCgD8eR2t0NANeQmgK/lvxNAvYyb6bZDD4frHRhIHkJu2TBRvB0ERkOmw==
+
+"@redis/time-series@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@redis/time-series/-/time-series-1.1.0.tgz#cba454c05ec201bd5547aaf55286d44682ac8eb5"
+  integrity sha512-c1Q99M5ljsIuc4YdaCwfUEXsofakb9c8+Zse2qxTadu8TalLXuAESzLvFAvNVbkmSlvlzIQOLpBCmWI9wTOt+g==
+
 "@sigstore/bundle@^2.3.0", "@sigstore/bundle@^2.3.1":
   version "2.3.1"
   resolved "https://registry.npmjs.org/@sigstore/bundle/-/bundle-2.3.1.tgz"
@@ -630,12 +664,12 @@
     "@tufjs/canonical-json" "2.0.0"
     minimatch "^9.0.3"
 
-"@tuval/auth@1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.6.tgz#6c7ba11108af28ac27c6469108b70dc712336233"
-  integrity sha512-+ykzvljjVOIzhiW/CJzqgLM4W1S2F6wk5Qedfodu7Nhj+QdEeY6qwfcQ371ZQ95nwAd6uUmeaFFkpppvcNl5/w==
+"@tuval/auth@1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.8.tgz#cb8551719a52ca075f5f96256120d91b71ae4237"
+  integrity sha512-CAQD47SuH1y7+uESF+kuh795qkHG5H+pNUScLnLW5+1X9C5UAsHUyFF4JuRp+w4kWEJbxaKazl7CF06CL97U2g==
   dependencies:
-    "@tuval/core" "^2.0.5"
+    "@tuval/core" "^2.0.7"
     argon2 "^0.41.1"
     bcrypt "^5.1.1"
     crypto-js "^4.2.0"
@@ -686,10 +720,10 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
-"@tuval/core@2.0.5", "@tuval/core@^2.0.1", "@tuval/core@^2.0.5":
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.5.tgz#c3a706a3f06c2b559539e454c9c2cb4ac9902dec"
-  integrity sha512-rQahP+TL7PKRcXyu6TQT0s171lJrrcwjYdu+e7WpHX5kgEdv9vnF7UIow1UsTBP2BemlG3i+UrOydJGKbKBp0w==
+"@tuval/core@2.0.10":
+  version "2.0.10"
+  resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.10.tgz#2c1d8d3323340802232f5aa22892f6ccf941910c"
+  integrity sha512-RpmEpaFWJhL/cCNSRrcdP6sPIbjhL6Z1fezOWnVjMmN196BElWvPtFo/ZnqA0f2gG294JJXWdPG8Y/ZlsxFNmg==
   dependencies:
     "@tuval/cache" "^1.0.2"
     diskusage "^1.2.0"
@@ -716,10 +750,40 @@
     pako "^2.1.0"
     validator "^13.12.0"
 
-"@tuval/database@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@tuval/database/-/database-1.0.4.tgz#04b93d3b8e407177cbb3ad57c9ff4af89236d578"
-  integrity sha512-cxYo+rSrKKq9eVZCYQ6XxmsSsGAxT9DlSoWbSOEqLjt9RZpjZoVKipzWDuTsADmB/0AsZJjqSLcKFLSa7v8DPQ==
+"@tuval/core@^2.0.1", "@tuval/core@^2.0.5":
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.5.tgz#c3a706a3f06c2b559539e454c9c2cb4ac9902dec"
+  integrity sha512-rQahP+TL7PKRcXyu6TQT0s171lJrrcwjYdu+e7WpHX5kgEdv9vnF7UIow1UsTBP2BemlG3i+UrOydJGKbKBp0w==
+  dependencies:
+    "@tuval/cache" "^1.0.2"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    pako "^2.1.0"
+    validator "^13.12.0"
+
+"@tuval/core@^2.0.7":
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.7.tgz#8972aaaf173ebdc454a421aa2b166b18449096c4"
+  integrity sha512-ddv+5qX4RtA0LQmzOTYh84OBYebrdhiWXEvOnzgxbhScpM9SSL3RExgHacayEN6BDRbm5gCoTTuJEjoV9b3X0w==
+  dependencies:
+    "@tuval/cache" "^1.0.2"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    pako "^2.1.0"
+    validator "^13.12.0"
+
+"@tuval/database@1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@tuval/database/-/database-1.0.7.tgz#a15a6715a25b921b71669cb1ef8fdb5a8017f9c6"
+  integrity sha512-PIncH6Re/QGMexMiNWBmA9Fbn0f49lHeD1FbaAHTvrfyp2TOoNNKs5JoFw1LKyvdVQr1OLzgUQZj4VnSNV7b1g==
   dependencies:
     "@tuval/cache" "^1.0.2"
     "@tuval/http" "1.0.7"
@@ -732,10 +796,10 @@
     pako "^2.1.0"
     validator "^13.12.0"
 
-"@tuval/http@1.0.10":
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.10.tgz#b52cbec67adef096151a31d7b4e42dbc44b2c766"
-  integrity sha512-8RVMxFLTzTmjUoYv4OPgPhwcc0gpdQBmZvQZmETIk7MjNVVu+IhsrbLdEJQODxTMogiHObnPRomWnNf1+KMRgA==
+"@tuval/http@1.0.12":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.12.tgz#9d6fbab7677dcfd1bd4cd200426d5bb84600897e"
+  integrity sha512-wdAxYeFIaxCk9axKGnVlbazK8mHeEkcndY9hnoVbcfCxioL4udyMkUAzazmLEkW4++YWKEKgHGidHRVzXyJwZw==
   dependencies:
     "@tuval/cache" "^1.0.2"
     "@tuval/core" "^2.0.1"
@@ -1563,7 +1627,7 @@ cli-tableau@^2.0.0:
   dependencies:
     chalk "3.0.0"
 
-cluster-key-slot@^1.1.0:
+cluster-key-slot@1.1.2, cluster-key-slot@^1.1.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/cluster-key-slot/-/cluster-key-slot-1.1.2.tgz#88ddaa46906e303b5de30d3153b7d9fe0a0c19ac"
   integrity sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==
@@ -2451,6 +2515,11 @@ generate-function@^2.3.1:
   integrity sha512-eeB5GfMNeevm/GRYq20ShmsaGcmI81kIX2K9XQx5miC8KdHaC6Jm0qQ8ZNeGOi7wYB8OsdxKs+Y2oVuTFuVwKQ==
   dependencies:
     is-property "^1.0.2"
+
+generic-pool@3.9.0:
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/generic-pool/-/generic-pool-3.9.0.tgz#36f4a678e963f4fdb8707eab050823abc4e8f5e4"
+  integrity sha512-hymDOu5B53XvN4QT9dBmZxPX4CWhBPPLguTZ9MMFeFa/Kg0xWVfylOVNlJji/E7yTZWFd/q9GO5TxDLq156D7g==
 
 get-intrinsic@^1.1.3, get-intrinsic@^1.2.4:
   version "1.2.4"
@@ -4694,6 +4763,18 @@ redis-parser@^3.0.0:
   dependencies:
     redis-errors "^1.0.0"
 
+redis@^4.7.0:
+  version "4.7.0"
+  resolved "https://registry.yarnpkg.com/redis/-/redis-4.7.0.tgz#b401787514d25dd0cfc22406d767937ba3be55d6"
+  integrity sha512-zvmkHEAdGMn+hMRXuMBtu4Vo5P6rHQjLoHftu+lBqq8ZTA3RCVC/WzD790bkKKiNFp7d5/9PcSD19fJyyRvOdQ==
+  dependencies:
+    "@redis/bloom" "1.2.0"
+    "@redis/client" "1.6.0"
+    "@redis/graph" "1.1.1"
+    "@redis/json" "1.0.7"
+    "@redis/search" "1.2.0"
+    "@redis/time-series" "1.1.0"
+
 reflect-metadata@^0.2.2:
   version "0.2.2"
   resolved "https://registry.npmjs.org/reflect-metadata/-/reflect-metadata-0.2.2.tgz"
@@ -5876,7 +5957,7 @@ xtend@^4.0.0:
   resolved "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz"
   integrity sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==
 
-yallist@^4.0.0:
+yallist@4.0.0, yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmjs.org/yallist/-/yallist-4.0.0.tgz"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
