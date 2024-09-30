@@ -1,5 +1,4 @@
 import { Filter } from './Response/Filter';
-import { Model } from './Response/Model';
 import { Account } from './Response/Model/Account';
 import { AlgoArgon2 } from './Response/Model/AlgoArgon2';
 import { AlgoBcrypt } from './Response/Model/AlgoBcrypt';
@@ -101,6 +100,8 @@ import { Exception } from 'exception';
 
 import { Route, Response as TuvalResponse } from '@tuval/http';
 import { Response as ExpressResponse } from 'express';
+import { Model } from './Response/Model';
+import { Document } from '@tuval/core';
 
 
 // HTTP content types
@@ -546,7 +547,7 @@ export class Response extends TuvalResponse {
         const modelInstance = this.getModel(model);
         const output: Record<string, any> = {};
 
-        modelInstance.filter(data);
+        modelInstance.filter(new Document(data));
 
         if (modelInstance.isAny()) {
             this.payload = { ...data };
@@ -571,11 +572,11 @@ export class Response extends TuvalResponse {
                     if (item instanceof Document) {
                         const ruleType = Array.isArray(rule.type)
                             ? rule.type.find((type) => {
-                                  const conditions = this.getModel(type).conditions;
-                                  return Object.entries(conditions).every(
-                                      ([attr, val]) => item[attr] === val
-                                  );
-                              }) || rule.type[0]
+                                const conditions = this.getModel(type).conditions;
+                                return Object.entries(conditions).every(
+                                    ([attr, val]) => item[attr] === val
+                                );
+                            }) || rule.type[0]
                             : rule.type;
 
                         if (!this.models[ruleType]) {

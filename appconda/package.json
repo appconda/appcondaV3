@@ -25,6 +25,7 @@
     "@tuval/http": "1.0.10",
     "@tuval/locale": "^1.0.5",
     "@tuval/queue": "^1.0.6",
+    "@tuval/storage": "1.0.5",
     "angel-eval": "^1.0.7",
     "async_hooks": "^1.0.0",
     "aws-sdk": "^2.1691.0",
