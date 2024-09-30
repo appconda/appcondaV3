@@ -686,10 +686,10 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
-"@tuval/auth@1.0.12":
-  version "1.0.12"
-  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.12.tgz#6cf5b79695f1294a9f730a633703dc4949461503"
-  integrity sha512-JgAE8+jX83qUErIyXpGlElvkI1/8mDrt7oW0qdTiOpjIGwmKZAhs2iLUXNlnycQoUmu/QPQizpfGXdbpBfxslg==
+"@tuval/auth@1.0.13":
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.13.tgz#419ba15aa9ac76abdcde345464c0b457e6a7db91"
+  integrity sha512-ns6nlV0mn0F1LF4wM0I1TmEQcg8HbxlXQDElAhvxPlKXb08hjIypZ4BpG1ikyYMHkmVhueve3SV4jdPk1JVBvw==
   dependencies:
     "@tuval/core" "^2.0.10"
     argon2 "^0.41.1"
