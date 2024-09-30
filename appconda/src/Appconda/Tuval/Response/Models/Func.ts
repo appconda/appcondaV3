@@ -51,7 +51,7 @@ export class Func extends Model {
             })
             .addRule('logging', {
                 type: Model.TYPE_BOOLEAN,
-                description: 'Whether executions will be logged. When set to false, executions will not be logged, but will reduce resource used by your Appwrite project.',
+                description: 'Whether executions will be logged. When set to false, executions will not be logged, but will reduce resource used by your Appconda project.',
                 default: true,
                 example: false,
             })
@@ -121,7 +121,7 @@ export class Func extends Model {
                 type: Model.TYPE_STRING,
                 description: 'VCS (Version Control System) Repository ID',
                 default: '',
-                example: 'appwrite',
+                example: 'appconda',
             })
             .addRule('providerBranch', {
                 type: Model.TYPE_STRING,

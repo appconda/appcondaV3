@@ -8,9 +8,9 @@ export class ConsoleVariables extends Model {
         this
             .addRule('_APP_DOMAIN_TARGET', {
                 type: Model.TYPE_STRING,
-                description: 'CNAME target for your Appwrite custom domains.',
+                description: 'CNAME target for your Appconda custom domains.',
                 default: '',
-                example: 'appwrite.io',
+                example: 'appconda.io',
             })
             .addRule('_APP_STORAGE_LIMIT', {
                 type: Model.TYPE_INTEGER,

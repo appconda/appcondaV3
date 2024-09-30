@@ -16,13 +16,13 @@ export class ProviderRepository extends Model {
                 type: Model.TYPE_STRING,
                 description: 'VCS (Version Control System) repository name.',
                 default: '',
-                example: 'appwrite',
+                example: 'appconda',
             })
             .addRule('organization', {
                 type: Model.TYPE_STRING,
                 description: 'VCS (Version Control System) organization name',
                 default: '',
-                example: 'appwrite',
+                example: 'appconda',
                 array: false,
             })
             .addRule('provider', {

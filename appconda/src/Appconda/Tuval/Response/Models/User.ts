@@ -92,7 +92,7 @@ export class User extends Model {
                 type: Model.TYPE_STRING,
                 description: 'User email address.',
                 default: '',
-                example: 'john@appwrite.io',
+                example: 'john@appconda.io',
             })
             .addRule('phone', {
                 type: Model.TYPE_STRING,

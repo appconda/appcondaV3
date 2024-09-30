@@ -125,7 +125,7 @@ class Client {
 
         let formData = null;
 
-        // Compute FormData for axios and appwrite.
+        // Compute FormData for axios and appconda.
         if (contentType.startsWith('multipart/form-data')) {
             const form = new FormData();
             

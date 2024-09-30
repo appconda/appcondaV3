@@ -271,8 +271,8 @@ class Storage extends Service {
      *
      * Create a new file. Before using this route, you should create a new bucket
      * resource using either a [server
-     * integration](https://appwrite.io/docs/server/storage#storageCreateBucket)
-     * API or directly from your Appwrite console.
+     * integration](https://appconda.io/docs/server/storage#storageCreateBucket)
+     * API or directly from your Appconda console.
      * 
      * Larger files should be uploaded using multiple requests with the
      * [content-range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range)
@@ -281,10 +281,10 @@ class Storage extends Service {
      * 
      * When the first request is sent, the server will return the **File** object,
      * and the subsequent part request must include the file's **id** in
-     * `x-appwrite-id` header to allow the server to know that the partial upload
+     * `x-appconda-id` header to allow the server to know that the partial upload
      * is for the existing file and not for a new one.
      * 
-     * If you're creating a new file using one of the Appwrite SDKs, all the
+     * If you're creating a new file using one of the Appconda SDKs, all the
      * chunking logic will be managed by the SDK internally.
      * 
      *
@@ -361,7 +361,7 @@ class Storage extends Service {
             }
 
             if (id) {
-                apiHeaders['x-appwrite-id'] = id;
+                apiHeaders['x-appconda-id'] = id;
             }
 
             payload['file'] = {

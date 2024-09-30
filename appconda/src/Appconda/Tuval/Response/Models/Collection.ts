@@ -26,7 +26,7 @@ export class Collection extends Model {
             })
             .addRule('$permissions', {
                 type: Model.TYPE_STRING,
-                description: 'Collection permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).',
+                description: 'Collection permissions. [Learn more about permissions](https://appconda.io/docs/permissions).',
                 default: '',
                 example: ['read("any")'],
                 array: true,
@@ -51,7 +51,7 @@ export class Collection extends Model {
             })
             .addRule('documentSecurity', {
                 type: Model.TYPE_BOOLEAN,
-                description: 'Whether document-level permissions are enabled. [Learn more about permissions](https://appwrite.io/docs/permissions).',
+                description: 'Whether document-level permissions are enabled. [Learn more about permissions](https://appconda.io/docs/permissions).',
                 default: '',
                 example: true,
             })

@@ -19,13 +19,13 @@ export class Origin extends Validator {
 
     public static readonly SCHEME_TYPE_HTTP = 'http';
     public static readonly SCHEME_TYPE_HTTPS = 'https';
-    public static readonly SCHEME_TYPE_IOS = 'appwrite-ios';
-    public static readonly SCHEME_TYPE_MACOS = 'appwrite-macos';
-    public static readonly SCHEME_TYPE_WATCHOS = 'appwrite-watchos';
-    public static readonly SCHEME_TYPE_TVOS = 'appwrite-tvos';
-    public static readonly SCHEME_TYPE_ANDROID = 'appwrite-android';
-    public static readonly SCHEME_TYPE_WINDOWS = 'appwrite-windows';
-    public static readonly SCHEME_TYPE_LINUX = 'appwrite-linux';
+    public static readonly SCHEME_TYPE_IOS = 'appconda-ios';
+    public static readonly SCHEME_TYPE_MACOS = 'appconda-macos';
+    public static readonly SCHEME_TYPE_WATCHOS = 'appconda-watchos';
+    public static readonly SCHEME_TYPE_TVOS = 'appconda-tvos';
+    public static readonly SCHEME_TYPE_ANDROID = 'appconda-android';
+    public static readonly SCHEME_TYPE_WINDOWS = 'appconda-windows';
+    public static readonly SCHEME_TYPE_LINUX = 'appconda-linux';
 
     protected platforms: { [key: string]: string } = {
         [Origin.SCHEME_TYPE_HTTP]: 'Web',

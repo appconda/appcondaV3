@@ -725,7 +725,7 @@ App.patch('/v1/account/sessions/:sessionId')
         // Refresh OAuth access token
         const provider = session.getAttribute('provider', '');
         const refreshToken = session.getAttribute('providerRefreshToken', '');
-        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+        const className = `Appconda\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
 
         if (provider && className in globalThis) {
             const appId = project.getAttribute('oAuthProviders', {})[`${provider}Appid`] ?? '';
@@ -1114,7 +1114,7 @@ App.get('/v1/account/sessions/oauth2/:provider')
             throw new Error('This provider is disabled. Please configure the provider app ID and app secret key from your ' + APP_NAME + ' console to continue.');
         }
 
-        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+        const className = `Appconda\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
 
         if (!(className in globalThis)) {
             throw new Error('PROJECT_PROVIDER_UNSUPPORTED');
@@ -1234,7 +1234,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
         const providerEnabled = project.getAttribute('oAuthProviders', {})[`${provider}Enabled`] ?? false;
 
-        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+        const className = `Appconda\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
 
         if (!globalThis[className]) {
             throw new Error('PROJECT_PROVIDER_UNSUPPORTED');
@@ -1292,7 +1292,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         }
 
         if (!code) {
-            failureRedirect('USER_OAUTH2_PROVIDER_ERROR', 'Missing OAuth2 code. Please contact the Appwrite team for additional support.');
+            failureRedirect('USER_OAUTH2_PROVIDER_ERROR', 'Missing OAuth2 code. Please contact the Appconda team for additional support.');
         }
 
         if (appSecret && appSecret.version) {
@@ -1674,7 +1674,7 @@ App.get('/v1/account/tokens/oauth2/:provider')
             throw new Error('This provider is disabled. Please configure the provider app ID and app secret key from your console to continue.');
         }
 
-        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+        const className = `Appconda\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
 
         if (!(className in globalThis)) {
             throw new Error('PROJECT_PROVIDER_UNSUPPORTED');
@@ -2487,7 +2487,7 @@ App.get('/v1/account/logs')
     .label('sdk.response.code', Response.STATUS_CODE_OK)
     .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
     .label('sdk.response.model', Response.MODEL_LOG_LIST)
-    .param('queries', [], new Queries([new Limit(), new Offset()]), 'Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Only supported methods are limit and offset', true)
+    .param('queries', [], new Queries([new Limit(), new Offset()]), 'Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appconda.io/docs/queries). Only supported methods are limit and offset', true)
     .inject('response')
     .inject('request')
     .inject('user')
@@ -4370,7 +4370,7 @@ App.get('/v1/account/identities')
     .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
     .label('sdk.response.model', Response.MODEL_IDENTITY_LIST)
     .label('sdk.offline.model', '/account/identities')
-    .param('queries', [], new Identities(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Identities.ALLOWED_ATTRIBUTES.join(', ')}`, true)
+    .param('queries', [], new Identities(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appconda.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Identities.ALLOWED_ATTRIBUTES.join(', ')}`, true)
     .inject('response')
     .inject('user')
     .inject('dbForProject')

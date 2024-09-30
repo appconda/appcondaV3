@@ -22,7 +22,7 @@ export class Log extends Model {
                 type: Model.TYPE_STRING,
                 description: 'User Email.',
                 default: '',
-                example: 'john@appwrite.io',
+                example: 'john@appconda.io',
             })
             .addRule('userName', {
                 type: Model.TYPE_STRING,
@@ -50,7 +50,7 @@ export class Log extends Model {
             })
             .addRule('osCode', {
                 type: Model.TYPE_STRING,
-                description: 'Operating system code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/os.json).',
+                description: 'Operating system code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/os.json).',
                 default: '',
                 example: 'Mac',
             })
@@ -74,7 +74,7 @@ export class Log extends Model {
             })
             .addRule('clientCode', {
                 type: Model.TYPE_STRING,
-                description: 'Client code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/clients.json).',
+                description: 'Client code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/clients.json).',
                 default: '',
                 example: 'CM',
             })

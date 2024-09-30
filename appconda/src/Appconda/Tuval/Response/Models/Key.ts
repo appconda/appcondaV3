@@ -62,7 +62,7 @@ export class Key extends Model {
                 type: Model.TYPE_STRING,
                 description: 'List of SDK user agents that used this key.',
                 default: null,
-                example: 'appwrite:flutter',
+                example: 'appconda:flutter',
                 array: true,
             });
     }

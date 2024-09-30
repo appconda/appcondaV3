@@ -205,7 +205,7 @@ class Account extends Service {
      * Update the currently logged in user's phone number. After updating the
      * phone number, the phone verification status will be reset. A confirmation
      * SMS is not sent automatically, however you can use the [POST
-     * /account/verification/phone](https://appwrite.io/docs/references/cloud/client-web/account#createPhoneVerification)
+     * /account/verification/phone](https://appconda.io/docs/references/cloud/client-web/account#createPhoneVerification)
      * endpoint to send a confirmation SMS.
      *
      * @param {string} phone
@@ -291,7 +291,7 @@ class Account extends Service {
      * app password reset URL with the secret key and email address values
      * attached to the URL query string. Use the query string params to submit a
      * request to the [PUT
-     * /account/recovery](https://appwrite.io/docs/references/cloud/client-web/account#updateRecovery)
+     * /account/recovery](https://appconda.io/docs/references/cloud/client-web/account#updateRecovery)
      * endpoint to complete the process. The verification link sent to the user's
      * email address is valid for 1 hour.
      *
@@ -331,7 +331,7 @@ class Account extends Service {
      * Use this endpoint to complete the user account password reset. Both the
      * **userId** and **secret** arguments will be passed as query parameters to
      * the redirect URL you have provided when sending your request to the [POST
-     * /account/recovery](https://appwrite.io/docs/references/cloud/client-web/account#createRecovery)
+     * /account/recovery](https://appconda.io/docs/references/cloud/client-web/account#createRecovery)
      * endpoint.
      * 
      * Please note that in order to avoid a [Redirect
@@ -476,7 +476,7 @@ class Account extends Service {
      * Logout the user. Use 'current' as the session ID to logout on this device,
      * use a session ID to logout on another device. If you're looking to logout
      * the user on all devices, use [Delete
-     * Sessions](https://appwrite.io/docs/references/cloud/client-web/account#deleteSessions)
+     * Sessions](https://appconda.io/docs/references/cloud/client-web/account#deleteSessions)
      * instead.
      *
      * @param {string} sessionId
@@ -525,7 +525,7 @@ class Account extends Service {
      * should redirect the user back to your app and allow you to complete the
      * verification process by verifying both the **userId** and **secret**
      * parameters. Learn more about how to [complete the verification
-     * process](https://appwrite.io/docs/references/cloud/client-web/account#updateVerification).
+     * process](https://appconda.io/docs/references/cloud/client-web/account#updateVerification).
      * The verification link sent to the user's email address is valid for 7 days.
      * 
      * Please note that in order to avoid a [Redirect
@@ -599,9 +599,9 @@ class Account extends Service {
      * Use this endpoint to send a verification SMS to the currently logged in
      * user. This endpoint is meant for use after updating a user's phone number
      * using the
-     * [accountUpdatePhone](https://appwrite.io/docs/references/cloud/client-web/account#updatePhone)
+     * [accountUpdatePhone](https://appconda.io/docs/references/cloud/client-web/account#updatePhone)
      * endpoint. Learn more about how to [complete the verification
-     * process](https://appwrite.io/docs/references/cloud/client-web/account#updatePhoneVerification).
+     * process](https://appconda.io/docs/references/cloud/client-web/account#updatePhoneVerification).
      * The verification code sent to the user's phone number is valid for 15
      * minutes.
      *

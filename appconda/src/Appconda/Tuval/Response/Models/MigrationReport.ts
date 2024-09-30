@@ -56,7 +56,7 @@ export class MigrationReport extends Model {
             })
             .addRule('version', {
                 type: Model.TYPE_STRING,
-                description: 'Version of the Appwrite instance to be migrated.',
+                description: 'Version of the Appconda instance to be migrated.',
                 default: '',
                 example: '1.4.0',
             });

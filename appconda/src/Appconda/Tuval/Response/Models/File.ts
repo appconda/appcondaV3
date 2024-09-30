@@ -32,7 +32,7 @@ export class File extends Model {
             })
             .addRule('$permissions', {
                 type: Model.TYPE_STRING,
-                description: 'File permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).',
+                description: 'File permissions. [Learn more about permissions](https://appconda.io/docs/permissions).',
                 default: [],
                 example: ['read("any")'],
                 array: true,

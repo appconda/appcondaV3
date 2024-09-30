@@ -28,7 +28,7 @@ export class Rule extends Model {
                 type: Model.TYPE_STRING,
                 description: 'Domain name.',
                 default: '',
-                example: 'appwrite.company.com',
+                example: 'appconda.company.com',
             })
             .addRule('resourceType', {
                 type: Model.TYPE_STRING,

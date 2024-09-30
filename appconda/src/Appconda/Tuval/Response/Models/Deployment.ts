@@ -142,7 +142,7 @@ export class Deployment extends Model {
                 type: Model.TYPE_STRING,
                 description: 'The branch of the vcs repository',
                 default: '',
-                example: 'https://github.com/vermakhushboo/appwrite/tree/0.7.x',
+                example: 'https://github.com/vermakhushboo/appconda/tree/0.7.x',
             });
     }
 

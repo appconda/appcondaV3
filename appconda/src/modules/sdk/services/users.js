@@ -93,7 +93,7 @@ class Users extends Service {
      *
      * Create a new user. Password provided must be hashed with the
      * [Argon2](https://en.wikipedia.org/wiki/Argon2) algorithm. Use the [POST
-     * /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to
+     * /users](https://appconda.io/docs/server/users#usersCreate) endpoint to
      * create users with a plain text password.
      *
      * @param {string} userId
@@ -145,7 +145,7 @@ class Users extends Service {
      *
      * Create a new user. Password provided must be hashed with the
      * [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt) algorithm. Use the [POST
-     * /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to
+     * /users](https://appconda.io/docs/server/users#usersCreate) endpoint to
      * create users with a plain text password.
      *
      * @param {string} userId
@@ -246,7 +246,7 @@ class Users extends Service {
      *
      * Create a new user. Password provided must be hashed with the
      * [MD5](https://en.wikipedia.org/wiki/MD5) algorithm. Use the [POST
-     * /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to
+     * /users](https://appconda.io/docs/server/users#usersCreate) endpoint to
      * create users with a plain text password.
      *
      * @param {string} userId
@@ -298,7 +298,7 @@ class Users extends Service {
      *
      * Create a new user. Password provided must be hashed with the
      * [PHPass](https://www.openwall.com/phpass/) algorithm. Use the [POST
-     * /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to
+     * /users](https://appconda.io/docs/server/users#usersCreate) endpoint to
      * create users with a plain text password.
      *
      * @param {string} userId
@@ -350,7 +350,7 @@ class Users extends Service {
      *
      * Create a new user. Password provided must be hashed with the
      * [Scrypt](https://github.com/Tarsnap/scrypt) algorithm. Use the [POST
-     * /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to
+     * /users](https://appconda.io/docs/server/users#usersCreate) endpoint to
      * create users with a plain text password.
      *
      * @param {string} userId
@@ -448,7 +448,7 @@ class Users extends Service {
      * Create a new user. Password provided must be hashed with the [Scrypt
      * Modified](https://gist.github.com/Meldiron/eecf84a0225eccb5a378d45bb27462cc)
      * algorithm. Use the [POST
-     * /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to
+     * /users](https://appconda.io/docs/server/users#usersCreate) endpoint to
      * create users with a plain text password.
      *
      * @param {string} userId
@@ -527,7 +527,7 @@ class Users extends Service {
      *
      * Create a new user. Password provided must be hashed with the
      * [SHA](https://en.wikipedia.org/wiki/Secure_Hash_Algorithm) algorithm. Use
-     * the [POST /users](https://appwrite.io/docs/server/users#usersCreate)
+     * the [POST /users](https://appconda.io/docs/server/users#usersCreate)
      * endpoint to create users with a plain text password.
      *
      * @param {string} userId
@@ -608,7 +608,7 @@ class Users extends Service {
      * released and can be reused, all user-related resources like documents or
      * storage files should be deleted before user deletion. If you want to keep
      * ID reserved, use the
-     * [updateStatus](https://appwrite.io/docs/server/users#usersUpdateStatus)
+     * [updateStatus](https://appconda.io/docs/server/users#usersUpdateStatus)
      * endpoint instead.
      *
      * @param {string} userId
@@ -667,7 +667,7 @@ class Users extends Service {
      * Labels can be used to grant access to resources. While teams are a way for
      * user's to share access to a resource, labels can be defined by the
      * developer to grant access without an invitation. See the [Permissions
-     * docs](https://appwrite.io/docs/permissions) for more info.
+     * docs](https://appconda.io/docs/permissions) for more info.
      *
      * @param {string} userId
      * @param {string[]} labels

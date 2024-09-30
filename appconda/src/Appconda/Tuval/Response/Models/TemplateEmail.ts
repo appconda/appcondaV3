@@ -15,13 +15,13 @@ export class TemplateEmail extends Template {
                 type: Template.TYPE_STRING,
                 description: 'Email of the sender',
                 default: '',
-                example: 'mail@appwrite.io',
+                example: 'mail@appconda.io',
             })
             .addRule('replyTo', {
                 type: Template.TYPE_STRING,
                 description: 'Reply to email address',
                 default: '',
-                example: 'emails@appwrite.io',
+                example: 'emails@appconda.io',
             })
             .addRule('subject', {
                 type: Template.TYPE_STRING,

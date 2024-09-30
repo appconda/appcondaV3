@@ -66,7 +66,7 @@ export class Detector {
         if (this.userAgent.includes('AppwriteCLI')) {
             const version = this.userAgent.split(' ')[0].split('/')[1];
             client = {
-                name: 'Appwrite CLI',
+                name: 'Appconda CLI',
                 version: version,
                 major: '',
             };

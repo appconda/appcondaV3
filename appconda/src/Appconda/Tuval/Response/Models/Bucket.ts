@@ -27,14 +27,14 @@ export class Bucket extends Model {
             })
             .addRule('$permissions', {
                 type: Model.TYPE_STRING,
-                description: 'Bucket permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).',
+                description: 'Bucket permissions. [Learn more about permissions](https://appconda.io/docs/permissions).',
                 default: [],
                 example: ['read("any")'],
                 array: true,
             })
             .addRule('fileSecurity', {
                 type: Model.TYPE_BOOLEAN,
-                description: 'Whether file-level security is enabled. [Learn more about permissions](https://appwrite.io/docs/permissions).',
+                description: 'Whether file-level security is enabled. [Learn more about permissions](https://appconda.io/docs/permissions).',
                 default: false,
                 example: true,
             })

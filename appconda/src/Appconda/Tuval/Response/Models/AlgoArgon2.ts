@@ -6,7 +6,7 @@ export class AlgoArgon2 extends Model {
     constructor() {
         super();
 
-        // No options if imported. If hashed by Appwrite, following configuration is available:
+        // No options if imported. If hashed by Appconda, following configuration is available:
         this
             .addRule('type', {
                 type: Model.TYPE_STRING,

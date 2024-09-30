@@ -46,7 +46,7 @@ class Functions extends Service {
      * Create function
      *
      * Create a new function. You can pass a list of
-     * [permissions](https://appwrite.io/docs/permissions) to allow different
+     * [permissions](https://appconda.io/docs/permissions) to allow different
      * project users or team with access to execute the function using the client
      * API.
      *
@@ -378,8 +378,8 @@ class Functions extends Service {
      * 
      * This endpoint accepts a tar.gz file compressed with your code. Make sure to
      * include any dependencies your code has within the compressed file. You can
-     * learn more about code packaging in the [Appwrite Cloud Functions
-     * tutorial](https://appwrite.io/docs/functions).
+     * learn more about code packaging in the [Appconda Cloud Functions
+     * tutorial](https://appconda.io/docs/functions).
      * 
      * Use the "command" param to set the entrypoint used to execute your code.
      *
@@ -454,7 +454,7 @@ class Functions extends Service {
             }
 
             if (id) {
-                apiHeaders['x-appwrite-id'] = id;
+                apiHeaders['x-appconda-id'] = id;
             }
 
             payload['code'] = {
@@ -636,7 +636,7 @@ class Functions extends Service {
     /**
      * Create build
      *
-     * Create a new build for an Appwrite Function deployment. This endpoint can
+     * Create a new build for an Appconda Function deployment. This endpoint can
      * be used to retry a failed build.
      *
      * @param {string} functionId

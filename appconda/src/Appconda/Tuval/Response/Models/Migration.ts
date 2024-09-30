@@ -40,7 +40,7 @@ export class Migration extends Model {
                 type: Model.TYPE_STRING,
                 description: 'A string containing the type of source of the migration.',
                 default: '',
-                example: 'Appwrite',
+                example: 'Appconda',
             })
             .addRule('resources', {
                 type: Model.TYPE_STRING,

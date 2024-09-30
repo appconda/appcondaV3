@@ -7,7 +7,7 @@ export class HealthVersion extends Model {
 
         this.addRule('version', {
             type: Model.TYPE_STRING,
-            description: 'Version of the Appwrite instance.',
+            description: 'Version of the Appconda instance.',
             default: '',
             example: '0.11.0',
         });

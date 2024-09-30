@@ -40,7 +40,7 @@ export class Membership extends Model {
                 type: Model.TYPE_STRING,
                 description: 'User email address.',
                 default: '',
-                example: 'john@appwrite.io',
+                example: 'john@appconda.io',
             })
             .addRule('teamId', {
                 type: Model.TYPE_STRING,

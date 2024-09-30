@@ -14,7 +14,7 @@ export class HealthTime extends Model {
             })
             .addRule('localTime', {
                 type: Model.TYPE_INTEGER,
-                description: 'Current unix timestamp of local server where Appwrite runs.',
+                description: 'Current unix timestamp of local server where Appconda runs.',
                 default: 0,
                 example: 1639490844,
             })

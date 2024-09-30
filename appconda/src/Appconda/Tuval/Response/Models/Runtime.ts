@@ -34,7 +34,7 @@ export class Runtime extends Model {
                 type: Model.TYPE_STRING,
                 description: 'Image name of Docker Hub.',
                 default: '',
-                example: 'appwrite/runtime-for-python:3.8',
+                example: 'appconda/runtime-for-python:3.8',
             })
             .addRule('logo', {
                 type: Model.TYPE_STRING,

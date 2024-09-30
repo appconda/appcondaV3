@@ -20,7 +20,7 @@ export class BaseList extends Model {
 
             let description: string;
             if (namesWithCap.includes(name)) {
-                description = `Total number of ${key} documents that matched your query used as reference for offset pagination. When the \`total\` number of ${key} documents available is greater than 5000, total returned will be capped at 5000, and cursor pagination should be used. Read more about [pagination](https://appwrite.io/docs/pagination).`;
+                description = `Total number of ${key} documents that matched your query used as reference for offset pagination. When the \`total\` number of ${key} documents available is greater than 5000, total returned will be capped at 5000, and cursor pagination should be used. Read more about [pagination](https://appconda.io/docs/pagination).`;
             } else {
                 description = `Total number of ${key} documents that matched your query.`;
             }

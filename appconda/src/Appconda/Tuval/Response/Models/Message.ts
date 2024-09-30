@@ -85,8 +85,8 @@ export class Message extends Model {
                 description: 'Data of the message.',
                 default: [],
                 example: {
-                    subject: 'Welcome to Appwrite',
-                    content: 'Hi there, welcome to Appwrite family.',
+                    subject: 'Welcome to Appconda',
+                    content: 'Hi there, welcome to Appconda family.',
                 },
             })
             .addRule('status', {

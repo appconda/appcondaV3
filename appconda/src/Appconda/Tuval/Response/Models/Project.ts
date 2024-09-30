@@ -171,25 +171,25 @@ export class Project extends Model {
                 type: Model.TYPE_STRING,
                 description: 'SMTP sender name',
                 default: '',
-                example: 'John Appwrite',
+                example: 'John Appconda',
             })
             .addRule('smtpSenderEmail', {
                 type: Model.TYPE_STRING,
                 description: 'SMTP sender email',
                 default: '',
-                example: 'john@appwrite.io',
+                example: 'john@appconda.io',
             })
             .addRule('smtpReplyTo', {
                 type: Model.TYPE_STRING,
                 description: 'SMTP reply to email',
                 default: '',
-                example: 'support@appwrite.io',
+                example: 'support@appconda.io',
             })
             .addRule('smtpHost', {
                 type: Model.TYPE_STRING,
                 description: 'SMTP server host name',
                 default: '',
-                example: 'mail.appwrite.io',
+                example: 'mail.appconda.io',
             })
             .addRule('smtpPort', {
                 type: Model.TYPE_INTEGER,
@@ -323,7 +323,7 @@ export class Project extends Model {
         for (const key in providers) {
             const provider = providers[key];
             if (!provider.enabled) {
-                // Disabled by Appwrite configuration, exclude from response
+                // Disabled by Appconda configuration, exclude from response
                 continue;
             }
 

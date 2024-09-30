@@ -203,24 +203,24 @@ class Teams extends Service {
      *
      * Invite a new member to join your team. Provide an ID for existing users, or
      * invite unregistered users using an email or phone number. If initiated from
-     * a Client SDK, Appwrite will send an email or sms with a link to join the
+     * a Client SDK, Appconda will send an email or sms with a link to join the
      * team to the invited user, and an account will be created for them if one
      * doesn't exist. If initiated from a Server SDK, the new member will be added
      * automatically to the team.
      * 
-     * You only need to provide one of a user ID, email, or phone number. Appwrite
+     * You only need to provide one of a user ID, email, or phone number. Appconda
      * will prioritize accepting the user ID > email > phone number if you provide
      * more than one of these parameters.
      * 
      * Use the `url` parameter to redirect the user from the invitation email to
      * your app. After the user is redirected, use the [Update Team Membership
-     * Status](https://appwrite.io/docs/references/cloud/client-web/teams#updateMembershipStatus)
+     * Status](https://appconda.io/docs/references/cloud/client-web/teams#updateMembershipStatus)
      * endpoint to allow the user to accept the invitation to the team. 
      * 
      * Please note that to avoid a [Redirect
      * Attack](https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.md)
-     * Appwrite will accept the only redirect URLs under the domains you have
-     * added as a platform on the Appwrite Console.
+     * Appconda will accept the only redirect URLs under the domains you have
+     * added as a platform on the Appconda Console.
      * 
      *
      * @param {string} teamId
@@ -307,7 +307,7 @@ class Teams extends Service {
      *
      * Modify the roles of a team member. Only team members with the owner role
      * have access to this endpoint. Learn more about [roles and
-     * permissions](https://appwrite.io/docs/permissions).
+     * permissions](https://appconda.io/docs/permissions).
      * 
      *
      * @param {string} teamId
@@ -426,7 +426,7 @@ class Teams extends Service {
      *
      * Get the team's shared preferences by its unique ID. If a preference doesn't
      * need to be shared by all team members, prefer storing them in [user
-     * preferences](https://appwrite.io/docs/references/cloud/client-web/account#getPrefs).
+     * preferences](https://appconda.io/docs/references/cloud/client-web/account#getPrefs).
      *
      * @param {string} teamId
      * @throws {RealmoceanException}

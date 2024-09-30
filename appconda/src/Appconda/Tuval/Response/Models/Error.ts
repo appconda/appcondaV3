@@ -20,7 +20,7 @@ export class Error extends Model {
             })
             .addRule('type', {
                 type: Model.TYPE_STRING,
-                description: 'Error type. You can learn more about all the error types at https://appwrite.io/docs/error-codes#errorTypes',
+                description: 'Error type. You can learn more about all the error types at https://appconda.io/docs/error-codes#errorTypes',
                 default: 'unknown',
                 example: 'not_found',
             })

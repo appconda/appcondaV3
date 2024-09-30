@@ -17,7 +17,7 @@ class Health extends Service {
     /**
      * Get HTTP
      *
-     * Check the Appwrite HTTP server is up and responsive.
+     * Check the Appconda HTTP server is up and responsive.
      *
      * @throws {RealmoceanException}
      * @returns {Promise}
@@ -34,7 +34,7 @@ class Health extends Service {
     /**
      * Get antivirus
      *
-     * Check the Appwrite Antivirus server is up and connection is successful.
+     * Check the Appconda Antivirus server is up and connection is successful.
      *
      * @throws {RealmoceanException}
      * @returns {Promise}
@@ -51,7 +51,7 @@ class Health extends Service {
     /**
      * Get cache
      *
-     * Check the Appwrite in-memory cache servers are up and connection is
+     * Check the Appconda in-memory cache servers are up and connection is
      * successful.
      *
      * @throws {RealmoceanException}
@@ -69,7 +69,7 @@ class Health extends Service {
     /**
      * Get DB
      *
-     * Check the Appwrite database servers are up and connection is successful.
+     * Check the Appconda database servers are up and connection is successful.
      *
      * @throws {RealmoceanException}
      * @returns {Promise}
@@ -86,7 +86,7 @@ class Health extends Service {
     /**
      * Get pubsub
      *
-     * Check the Appwrite pub-sub servers are up and connection is successful.
+     * Check the Appconda pub-sub servers are up and connection is successful.
      *
      * @throws {RealmoceanException}
      * @returns {Promise}
@@ -103,7 +103,7 @@ class Health extends Service {
     /**
      * Get queue
      *
-     * Check the Appwrite queue messaging servers are up and connection is
+     * Check the Appconda queue messaging servers are up and connection is
      * successful.
      *
      * @throws {RealmoceanException}
@@ -121,7 +121,7 @@ class Health extends Service {
     /**
      * Get builds queue
      *
-     * Get the number of builds that are waiting to be processed in the Appwrite
+     * Get the number of builds that are waiting to be processed in the Appconda
      * internal queue server.
      *
      * @param {number} threshold
@@ -145,7 +145,7 @@ class Health extends Service {
      * Get certificates queue
      *
      * Get the number of certificates that are waiting to be issued against
-     * [Letsencrypt](https://letsencrypt.org/) in the Appwrite internal queue
+     * [Letsencrypt](https://letsencrypt.org/) in the Appconda internal queue
      * server.
      *
      * @param {number} threshold
@@ -169,7 +169,7 @@ class Health extends Service {
      * Get databases queue
      *
      * Get the number of database changes that are waiting to be processed in the
-     * Appwrite internal queue server.
+     * Appconda internal queue server.
      *
      * @param {string} name
      * @param {number} threshold
@@ -197,7 +197,7 @@ class Health extends Service {
      * Get deletes queue
      *
      * Get the number of background destructive changes that are waiting to be
-     * processed in the Appwrite internal queue server.
+     * processed in the Appconda internal queue server.
      *
      * @param {number} threshold
      * @throws {RealmoceanException}
@@ -239,7 +239,7 @@ class Health extends Service {
     /**
      * Get logs queue
      *
-     * Get the number of logs that are waiting to be processed in the Appwrite
+     * Get the number of logs that are waiting to be processed in the Appconda
      * internal queue server.
      *
      * @param {number} threshold
@@ -262,7 +262,7 @@ class Health extends Service {
     /**
      * Get mails queue
      *
-     * Get the number of mails that are waiting to be processed in the Appwrite
+     * Get the number of mails that are waiting to be processed in the Appconda
      * internal queue server.
      *
      * @param {number} threshold
@@ -285,7 +285,7 @@ class Health extends Service {
     /**
      * Get messaging queue
      *
-     * Get the number of messages that are waiting to be processed in the Appwrite
+     * Get the number of messages that are waiting to be processed in the Appconda
      * internal queue server.
      *
      * @param {number} threshold
@@ -309,7 +309,7 @@ class Health extends Service {
      * Get migrations queue
      *
      * Get the number of migrations that are waiting to be processed in the
-     * Appwrite internal queue server.
+     * Appconda internal queue server.
      *
      * @param {number} threshold
      * @throws {RealmoceanException}
@@ -331,7 +331,7 @@ class Health extends Service {
     /**
      * Get webhooks queue
      *
-     * Get the number of webhooks that are waiting to be processed in the Appwrite
+     * Get the number of webhooks that are waiting to be processed in the Appconda
      * internal queue server.
      *
      * @param {number} threshold
@@ -354,7 +354,7 @@ class Health extends Service {
     /**
      * Get local storage
      *
-     * Check the Appwrite local storage device is up and connection is successful.
+     * Check the Appconda local storage device is up and connection is successful.
      *
      * @throws {RealmoceanException}
      * @returns {Promise}
@@ -371,7 +371,7 @@ class Health extends Service {
     /**
      * Get time
      *
-     * Check the Appwrite server time is synced with Google remote NTP server. We
+     * Check the Appconda server time is synced with Google remote NTP server. We
      * use this technology to smoothly handle leap seconds with no disruptive
      * events. The [Network Time
      * Protocol](https://en.wikipedia.org/wiki/Network_Time_Protocol) (NTP) is

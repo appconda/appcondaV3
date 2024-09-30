@@ -35,7 +35,7 @@ export class Installation extends Model {
                 type: Model.TYPE_STRING,
                 description: 'VCS (Version Control System) organization name.',
                 default: [],
-                example: 'appwrite',
+                example: 'appconda',
                 array: false,
             })
             .addRule('providerInstallationId', {

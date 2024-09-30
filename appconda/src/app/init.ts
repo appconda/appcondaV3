@@ -1,5 +1,5 @@
-export const APP_NAME = 'Appwrite';
-export const APP_DOMAIN = 'appwrite.io';
+export const APP_NAME = 'Appconda';
+export const APP_DOMAIN = 'appconda.io';
 export const APP_EMAIL_TEAM = 'team@localhost.test'; // Default email address
 export const APP_EMAIL_SECURITY = ''; // Default security email address
 export const APP_USERAGENT = `${APP_NAME}-Server v%s. Please report abuse at %s`;
@@ -43,18 +43,18 @@ export const APP_STORAGE_CACHE = '/storage/cache';
 export const APP_STORAGE_CERTIFICATES = '/storage/certificates';
 export const APP_STORAGE_CONFIG = '/storage/config';
 export const APP_STORAGE_READ_BUFFER = 20 * (1000 * 1000); // 20MB
-export const APP_SOCIAL_TWITTER = 'https://twitter.com/appwrite';
-export const APP_SOCIAL_TWITTER_HANDLE = 'appwrite';
-export const APP_SOCIAL_FACEBOOK = 'https://www.facebook.com/appwrite.io';
-export const APP_SOCIAL_LINKEDIN = 'https://www.linkedin.com/company/appwrite';
-export const APP_SOCIAL_INSTAGRAM = 'https://www.instagram.com/appwrite.io';
-export const APP_SOCIAL_GITHUB = 'https://github.com/appwrite';
-export const APP_SOCIAL_DISCORD = 'https://appwrite.io/discord';
+export const APP_SOCIAL_TWITTER = 'https://twitter.com/appconda';
+export const APP_SOCIAL_TWITTER_HANDLE = 'appconda';
+export const APP_SOCIAL_FACEBOOK = 'https://www.facebook.com/appconda.io';
+export const APP_SOCIAL_LINKEDIN = 'https://www.linkedin.com/company/appconda';
+export const APP_SOCIAL_INSTAGRAM = 'https://www.instagram.com/appconda.io';
+export const APP_SOCIAL_GITHUB = 'https://github.com/appconda';
+export const APP_SOCIAL_DISCORD = 'https://appconda.io/discord';
 export const APP_SOCIAL_DISCORD_CHANNEL = '564160730845151244';
-export const APP_SOCIAL_DEV = 'https://dev.to/appwrite';
-export const APP_SOCIAL_STACKSHARE = 'https://stackshare.io/appwrite';
-export const APP_SOCIAL_YOUTUBE = 'https://www.youtube.com/c/appwrite?sub_confirmation=1';
-export const APP_HOSTNAME_INTERNAL = 'appwrite';
+export const APP_SOCIAL_DEV = 'https://dev.to/appconda';
+export const APP_SOCIAL_STACKSHARE = 'https://stackshare.io/appconda';
+export const APP_SOCIAL_YOUTUBE = 'https://www.youtube.com/c/appconda?sub_confirmation=1';
+export const APP_HOSTNAME_INTERNAL = 'appconda';
 
 // Database Reconnect
 export const DATABASE_RECONNECT_SLEEP = 2;

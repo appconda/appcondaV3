@@ -39,7 +39,7 @@ export class Document extends Any {
             })
             .addRule('$permissions', {
                 type: Any.TYPE_STRING,
-                description: 'Document permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).',
+                description: 'Document permissions. [Learn more about permissions](https://appconda.io/docs/permissions).',
                 default: '',
                 example: ['read("any")'],
                 array: true,
