@@ -1,0 +1,24 @@
+{
+  "ts-node": {
+    // It is faster to skip typechecking.
+    // Remove if you want ts-node to do typechecking.
+    "transpileOnly": true,
+   
+  },
+    "compilerOptions": {
+      "target": "es6",
+      "module": "commonjs",
+      "outDir": "dist",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "noImplicitAny": false,
+      "experimentalDecorators": true
+    },
+    "exclude": [
+      "types"
+    ],
+    "include": [
+      "src/**/*.ts"
+, "src/core/ConfigService.ts", "src/core/ConfigService.ts", "src/services/_TestService.js", "src/modules/mining/utils/generic/intervaltree.js", "src/modules/mining/utils/generic/intervaltree.js", "src/modules/mining/utils/generic/numeric.js", "src/modules/mining/utils/generic/humanize-duration.js", "test/mining/csv_importing.ts", "src/modules/sdk/id.js"    ]
+  }

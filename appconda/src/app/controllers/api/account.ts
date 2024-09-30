@@ -1,0 +1,3571 @@
+
+import { Database, Query } from '@tuval/database'
+import { Authorization, DateTime, Document, Exception, ID, Permission, Role, Text } from '@tuval/core'
+import { Locale } from '@tuval/locale'
+import { Auth } from '@tuval/auth'
+import { Config } from '@tuval/config'
+import { App, Request, Response } from '@tuval/http'
+import { Detector } from '../../../Appconda/Detector/Detector'
+import * as maxmind from 'maxmind'
+import { Event } from '../../../Appconda/Event/Event'
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, DELETE_TYPE_DOCUMENT, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
+
+var path = require('path');
+
+const oauthDefaultSuccess = '/auth/oauth2/success';
+const oauthDefaultFailure = '/auth/oauth2/failure';
+
+let geoReader: maxmind.Reader<maxmind.CityResponse> | null = null;
+
+const initializeGeoReader = async () => {
+    if (!geoReader) {
+        geoReader = await maxmind.open<maxmind.CityResponse>(path.resolve(__dirname, 'assets/dbip/dbip-country-lite-2024-02.mmdb'));
+    }
+};
+
+const getGeoInfo = async (ip: string) => {
+    if (!geoReader) {
+        await initializeGeoReader();
+    }
+    if (geoReader) {
+        return geoReader.get(ip);
+    }
+    return null;
+};
+
+const createSession = async (
+    userId: string,
+    secret: string,
+    request: Request,
+    response: Response,
+    user: Document,
+    dbForProject: Database,
+    project: Document,
+    locale: Locale,
+    queueForEvents: Event
+) => {
+    const roles = Authorization.getRoles();
+    const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+    const isAppUser = Auth.isAppUser(roles);
+
+    const userFromRequest = await Authorization.skip(() => dbForProject.getDocument('users', userId));
+
+    if (userFromRequest.isEmpty()) {
+        throw new Error('USER_INVALID_TOKEN');
+    }
+
+    const verifiedToken = Auth.tokenVerify(userFromRequest.getAttribute('tokens', []), null, secret);
+
+    if (!verifiedToken) {
+        throw new Error('USER_INVALID_TOKEN');
+    }
+
+    user.setAttributes(userFromRequest.getArrayCopy());
+
+    const duration = project.getAttribute('auths', [])['duration'] || Auth.TOKEN_EXPIRATION_LOGIN_LONG;
+    const detector = new Detector(request.getUserAgent('UNKNOWN'));
+    const record: any = await getGeoInfo(request.getIP());
+    const sessionSecret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_SESSION);
+
+    const factor = (() => {
+        switch (verifiedToken.getAttribute('type')) {
+            case Auth.TOKEN_TYPE_MAGIC_URL:
+            case Auth.TOKEN_TYPE_OAUTH2:
+            case Auth.TOKEN_TYPE_EMAIL:
+                return 'email';
+            case Auth.TOKEN_TYPE_PHONE:
+                return 'phone';
+            case Auth.TOKEN_TYPE_GENERIC:
+                return 'token';
+            default:
+                throw new Error('USER_INVALID_TOKEN');
+        }
+    })();
+
+    const session = new Document({
+        ...{
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'provider': Auth.getSessionProviderByTokenType(verifiedToken.getAttribute('type')),
+            'secret': Auth.hash(sessionSecret),
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+            'factors': [factor],
+            'countryCode': record ? record['country']['iso_code'].toLowerCase() : '--',
+            'expire': DateTime.addSeconds(new Date(), duration)
+        },
+        ...detector.getOS(),
+        ...detector.getClient(),
+        ...detector.getDevice()
+    });
+
+    Authorization.setRole(Role.user(user.getId()).toString());
+
+    const createdSession = await dbForProject.createDocument('sessions', session.setAttribute('$permissions', [
+        Permission.read(Role.user(user.getId())),
+        Permission.update(Role.user(user.getId())),
+        Permission.delete(Role.user(user.getId())),
+    ]));
+
+    await dbForProject.purgeCachedDocument('users', user.getId());
+    await Authorization.skip(() => dbForProject.deleteDocument('tokens', verifiedToken.getId()));
+    await dbForProject.purgeCachedDocument('users', user.getId());
+
+    if (verifiedToken.getAttribute('type') === Auth.TOKEN_TYPE_MAGIC_URL || verifiedToken.getAttribute('type') === Auth.TOKEN_TYPE_EMAIL) {
+        user.setAttribute('emailVerification', true);
+    }
+
+    if (verifiedToken.getAttribute('type') === Auth.TOKEN_TYPE_PHONE) {
+        user.setAttribute('phoneVerification', true);
+    }
+
+    try {
+        await dbForProject.updateDocument('users', user.getId(), user);
+    } catch (error) {
+        throw new Error('GENERAL_SERVER_ERROR: Failed saving user to DB');
+    }
+
+    queueForEvents
+        .setParam('userId', user.getId())
+        .setParam('sessionId', createdSession.getId());
+
+    if (!Config.getParam('domainVerification')) {
+        response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), sessionSecret) }));
+    }
+
+    const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration)) as string;
+    const protocol = request.getProtocol();
+
+    response
+        .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), sessionSecret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+        .addCookie(Auth.cookieName, Auth.encodeSession(user.getId(), sessionSecret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'))
+        .setStatusCode(Response.STATUS_CODE_CREATED);
+
+    const countryName = locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown'));
+
+    session
+        .setAttribute('current', true)
+        .setAttribute('countryName', countryName)
+        .setAttribute('expire', expire)
+        .setAttribute('secret', (isPrivilegedUser || isAppUser) ? Auth.encodeSession(user.getId(), sessionSecret) : '');
+
+    response.dynamic(session, Response.MODEL_SESSION);
+};
+
+
+App
+    .init()
+    .inject('app')
+    .inject('request')
+    .action((app: App, request: Request) => {
+        console.log('Module Accounts Yuklendi');
+    })
+
+App.post('/v1/account')
+    .desc('Create account')
+    .groups(['api', 'account', 'auth'])
+    .label('event', 'users.[userId].create')
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'emailPassword')
+    .label('audits.event', 'user.create')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'create')
+    .label('sdk.description', '/docs/references/account/create.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('abuse-limit', 10)
+    .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('email', '', new Email(), 'User email.')
+    .param('password', '', (project, passwordsDictionary) => new PasswordDictionary(passwordsDictionary, project.getAttribute('auths', [])['passwordDictionary'] ?? false), 'New user password. Must be between 8 and 256 chars.', false, ['project', 'passwordsDictionary'])
+    .param('name', '', new Text(128), 'User name. Max length: 128 chars.', true)
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('project')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('hooks')
+    .action(async (userId: string, email: string, password: string, name: string, 
+        request: Request, response: Response, user: Document, project: Document, dbForProject: Database, queueForEvents: Event, hooks: Hooks) => {
+
+        email = email.toLowerCase();
+        if (project.getId() === 'console') {
+            const whitelistEmails = project.getAttribute('authWhitelistEmails');
+            const whitelistIPs = project.getAttribute('authWhitelistIPs');
+
+            if (whitelistEmails && !whitelistEmails.includes(email) && !whitelistEmails.includes(email.toUpperCase())) {
+                throw new Error('USER_EMAIL_NOT_WHITELISTED');
+            }
+
+            if (whitelistIPs && !whitelistIPs.includes(request.getIP())) {
+                throw new Error('USER_IP_NOT_WHITELISTED');
+            }
+        }
+
+        const limit = project.getAttribute('auths', [])['limit'] ?? 0;
+
+        if (limit !== 0) {
+            const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+
+            if (total >= limit) {
+                if (project.getId() === 'console') {
+                    throw new Error('USER_CONSOLE_COUNT_EXCEEDED');
+                }
+                throw new Error('USER_COUNT_EXCEEDED');
+            }
+        }
+
+        const identityWithMatchingEmail = await dbForProject.findOne('identities', [
+            Query.equal('providerEmail', [email]),
+        ]);
+        if (identityWithMatchingEmail && !identityWithMatchingEmail.isEmpty()) {
+            throw new Error('GENERAL_BAD_REQUEST');
+        }
+
+        if (project.getAttribute('auths', [])['personalDataCheck'] ?? false) {
+            const personalDataValidator = new PersonalData(userId, email, name, null);
+            if (!personalDataValidator.isValid(password)) {
+                throw new Error('USER_PASSWORD_PERSONAL_DATA');
+            }
+        }
+
+        hooks.trigger('passwordValidator', [dbForProject, project, password, user, true]);
+
+        const passwordHistory = project.getAttribute('auths', [])['passwordHistory'] ?? 0;
+        password = await Auth.passwordHash(password, Auth.DEFAULT_ALGO, Auth.DEFAULT_ALGO_OPTIONS) as any;
+        try {
+            userId = userId === 'unique()' ? ID.unique() : userId;
+            user.setAttributes({
+                '$id': userId,
+                '$permissions': [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(userId)),
+                    Permission.delete(Role.user(userId)),
+                ],
+                'email': email,
+                'emailVerification': false,
+                'status': true,
+                'password': password,
+                'passwordHistory': passwordHistory > 0 ? [password] : [],
+                'passwordUpdate': DateTime.now(),
+                'hash': Auth.DEFAULT_ALGO,
+                'hashOptions': Auth.DEFAULT_ALGO_OPTIONS,
+                'registration': DateTime.now(),
+                'reset': false,
+                'name': name,
+                'mfa': false,
+                'prefs': {},
+                'sessions': null,
+                'tokens': null,
+                'memberships': null,
+                'authenticators': null,
+                'search': [userId, email, name].join(' '),
+                'accessedAt': DateTime.now(),
+            });
+            user.removeAttribute('$internalId');
+            user = await Authorization.skip(() => dbForProject.createDocument('users', user));
+            try {
+                const target = await Authorization.skip(() => dbForProject.createDocument('targets', new Document({
+                    '$permissions': [
+                        Permission.read(Role.user(user.getId())),
+                        Permission.update(Role.user(user.getId())),
+                        Permission.delete(Role.user(user.getId())),
+                    ],
+                    'userId': user.getId(),
+                    'userInternalId': user.getInternalId(),
+                    'providerType': MESSAGE_TYPE_EMAIL,
+                    'identifier': email,
+                })));
+                user.setAttribute('targets', [...user.getAttribute('targets', []), target]);
+            } catch (error) {
+                if (error instanceof Duplicate) {
+                    const existingTarget = await dbForProject.findOne('targets', [
+                        Query.equal('identifier', [email]),
+                    ]);
+                    if (existingTarget) {
+                        user.setAttribute('targets', existingTarget, Document.SET_TYPE_APPEND);
+                    }
+                }
+            }
+
+            await dbForProject.purgeCachedDocument('users', user.getId());
+        } catch (error) {
+            if (error instanceof Duplicate) {
+                throw new Error('USER_ALREADY_EXISTS');
+            }
+            throw error;
+        }
+
+        Authorization.unsetRole(Role.guests().toString());
+        Authorization.setRole(Role.user(user.getId()).toString());
+        Authorization.setRole(Role.users().toString());
+
+        queueForEvents.setParam('userId', user.getId());
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.get('/v1/account')
+    .desc('Get account')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'get')
+    .label('sdk.description', '/docs/references/account/get.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .inject('response')
+    .inject('user')
+    .action((response: Response, user: Document) => {
+        if (user.isEmpty()) {
+            throw new Error('USER_NOT_FOUND');
+        }
+
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+
+App.delete('/v1/account')
+    .desc('Delete account')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].delete')
+    .label('scope', 'account')
+    .label('audits.event', 'user.delete')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'delete')
+    .label('sdk.description', '/docs/references/account/delete.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .inject('user')
+    .inject('project')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('queueForDeletes')
+    .action(async (user: Document, project: Document, response: Response, dbForProject: Database, queueForEvents: Event, queueForDeletes: Delete) => {
+        if (user.isEmpty()) {
+            throw new Exception('USER_NOT_FOUND');
+        }
+
+        if (project.getId() === 'console') {
+            const memberships = user.getAttribute('memberships', []);
+            for (const membership of memberships) {
+                if (membership.getAttribute('confirm', false)) {
+                    throw new Exception('USER_DELETION_PROHIBITED');
+                }
+            }
+        }
+
+        await dbForProject.deleteDocument('users', user.getId());
+
+        queueForDeletes
+            .setType(DELETE_TYPE_DOCUMENT)
+            .setDocument(user);
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setPayload(response.output(user, Response.MODEL_USER));
+
+        response.noContent();
+    });
+
+
+App.get('/v1/account/sessions')
+    .desc('List sessions')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'listSessions')
+    .label('sdk.description', '/docs/references/account/list-sessions.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION_LIST)
+    .label('sdk.offline.model', '/account/sessions')
+    .inject('response')
+    .inject('user')
+    .inject('locale')
+    .inject('project')
+    .action(async (response: Response, user: Document, locale: Locale, project: Document) => {
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        let sessions = user.getAttribute('sessions', []);
+        const current = Auth.sessionVerify(sessions, Auth.secret);
+
+        sessions = sessions.map((session: Document) => {
+            const countryName = locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown'));
+
+            session.setAttribute('countryName', countryName);
+            session.setAttribute('current', current === session.getId());
+            session.setAttribute('secret', (isPrivilegedUser || isAppUser) ? session.getAttribute('secret', '') : '');
+
+            return session;
+        });
+
+        response.dynamic(new Document({
+            'sessions': sessions,
+            'total': sessions.length,
+        }), Response.MODEL_SESSION_LIST);
+    });
+
+
+App.delete('/v1/account/sessions')
+    .desc('Delete sessions')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].sessions.[sessionId].delete')
+    .label('audits.event', 'session.delete')
+    .label('audits.resource', 'user/{user.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'deleteSessions')
+    .label('sdk.description', '/docs/references/account/delete-sessions.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .label('abuse-limit', 100)
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('queueForEvents')
+    .inject('queueForDeletes')
+    .action(async (request: Request, response: Response, user: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForDeletes: Delete) => {
+
+        const protocol = request.getProtocol();
+        const sessions = user.getAttribute('sessions', []);
+
+        for (const session of sessions) {
+            await dbForProject.deleteDocument('sessions', session.getId());
+
+            if (!Config.getParam('domainVerification')) {
+                response.addHeader('X-Fallback-Cookies', JSON.stringify([]));
+            }
+
+            session
+                .setAttribute('current', false)
+                .setAttribute('countryName', locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown')));
+
+            if (session.getAttribute('secret') === Auth.hash(Auth.secret)) {
+                session.setAttribute('current', true);
+
+                // If current session delete the cookies too
+                response
+                    .addCookie(`${Auth.cookieName}_legacy`, '', Date.now() - 3600, '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+                    .addCookie(Auth.cookieName, '', Date.now() - 3600, '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'));
+
+                // Use current session for events.
+                queueForEvents
+                    .setPayload(response.output(session, Response.MODEL_SESSION));
+
+                queueForDeletes
+                    .setType(DELETE_TYPE_SESSION_TARGETS)
+                    .setDocument(session)
+                    .trigger();
+            }
+        }
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('sessionId', session.getId());
+
+        response.noContent();
+    });
+
+
+App.get('/v1/account/sessions/:sessionId')
+    .desc('Get session')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'getSession')
+    .label('sdk.description', '/docs/references/account/get-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('sdk.offline.model', '/account/sessions')
+    .label('sdk.offline.key', '{sessionId}')
+    .param('sessionId', '', new UID(), 'Session ID. Use the string \'current\' to get the current device session.')
+    .inject('response')
+    .inject('user')
+    .inject('locale')
+    .inject('project')
+    .action(async (sessionId: string | null, response: Response, user: Document, locale: Locale, project: Document) => {
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        const sessions = user.getAttribute('sessions', []);
+        sessionId = (sessionId === 'current')
+            ? Auth.sessionVerify(user.getAttribute('sessions'), Auth.secret)
+            : sessionId;
+
+        for (const session of sessions) {
+            if (sessionId === session.getId()) {
+                const countryName = locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown'));
+
+                session
+                    .setAttribute('current', (session.getAttribute('secret') === Auth.hash(Auth.secret)))
+                    .setAttribute('countryName', countryName)
+                    .setAttribute('secret', (isPrivilegedUser || isAppUser) ? session.getAttribute('secret', '') : '');
+
+                return response.dynamic(session, Response.MODEL_SESSION);
+            }
+        }
+
+        throw new Error('USER_SESSION_NOT_FOUND');
+    });
+
+
+App.delete('/v1/account/sessions/:sessionId')
+    .desc('Delete session')
+    .groups(['api', 'account', 'mfa'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].sessions.[sessionId].delete')
+    .label('audits.event', 'session.delete')
+    .label('audits.resource', 'user/{user.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'deleteSession')
+    .label('sdk.description', '/docs/references/account/delete-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .label('abuse-limit', 100)
+    .param('sessionId', '', new UID(), 'Session ID. Use the string \'current\' to delete the current device session.')
+    .inject('requestTimestamp')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('queueForEvents')
+    .inject('queueForDeletes')
+    .inject('project')
+    .action(async (sessionId: string | null, requestTimestamp: Date | null, request: Request, response: Response, user: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForDeletes: Delete, project: Document) => {
+
+        const protocol = request.getProtocol();
+        sessionId = (sessionId === 'current')
+            ? Auth.sessionVerify(user.getAttribute('sessions'), Auth.secret)
+            : sessionId;
+
+        const sessions = user.getAttribute('sessions', []);
+
+        for (const [key, session] of sessions.entries()) {
+            if (sessionId !== session.getId()) {
+                continue;
+            }
+
+            await dbForProject.withRequestTimestamp(requestTimestamp, async () => {
+                return dbForProject.deleteDocument('sessions', session.getId());
+            });
+
+            sessions.splice(key, 1);
+
+            session.setAttribute('current', false);
+
+            if (session.getAttribute('secret') === Auth.hash(Auth.secret)) { // If current session delete the cookies too
+                session
+                    .setAttribute('current', true)
+                    .setAttribute('countryName', locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown')));
+
+                if (!Config.getParam('domainVerification')) {
+                    response.addHeader('X-Fallback-Cookies', JSON.stringify([]));
+                }
+
+                response
+                    .addCookie(`${Auth.cookieName}_legacy`, '', Date.now() - 3600, '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+                    .addCookie(Auth.cookieName, '', Date.now() - 3600, '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'));
+            }
+
+            await dbForProject.purgeCachedDocument('users', user.getId());
+
+            queueForEvents
+                .setParam('userId', user.getId())
+                .setParam('sessionId', session.getId())
+                .setPayload(response.output(session, Response.MODEL_SESSION));
+
+            queueForDeletes
+                .setType(DELETE_TYPE_SESSION_TARGETS)
+                .setDocument(session)
+                .trigger();
+
+            response.noContent();
+            return;
+        }
+
+        throw new Error('USER_SESSION_NOT_FOUND');
+    });
+
+App.patch('/v1/account/sessions/:sessionId')
+    .desc('Update session')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].sessions.[sessionId].update')
+    .label('audits.event', 'session.update')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateSession')
+    .label('sdk.description', '/docs/references/account/update-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .param('sessionId', '', new UID(), 'Session ID. Use the string \'current\' to update the current device session.')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('queueForEvents')
+    .action(async (sessionId: string | null, response: Response, user: Document, dbForProject: Database, project: Document, queueForEvents: Event) => {
+
+        sessionId = (sessionId === 'current')
+            ? Auth.sessionVerify(user.getAttribute('sessions'), Auth.secret)
+            : sessionId;
+        const sessions = user.getAttribute('sessions', []);
+
+        let session = null;
+        for (const value of sessions) {
+            if (sessionId === value.getId()) {
+                session = value;
+                break;
+            }
+        }
+
+        if (session === null) {
+            throw new Error('USER_SESSION_NOT_FOUND');
+        }
+
+        // Extend session
+        const authDuration = project.getAttribute('auths', [])['duration'] ?? Auth.TOKEN_EXPIRATION_LOGIN_LONG;
+        session.setAttribute('expire', DateTime.addSeconds(new Date(), authDuration));
+
+        // Refresh OAuth access token
+        const provider = session.getAttribute('provider', '');
+        const refreshToken = session.getAttribute('providerRefreshToken', '');
+        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+
+        if (provider && className in globalThis) {
+            const appId = project.getAttribute('oAuthProviders', {})[`${provider}Appid`] ?? '';
+            const appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
+
+            const oauth2 = new globalThis[className](appId, appSecret, '', [], []);
+            await oauth2.refreshTokens(refreshToken);
+
+            session
+                .setAttribute('providerAccessToken', oauth2.getAccessToken(''))
+                .setAttribute('providerRefreshToken', oauth2.getRefreshToken(''))
+                .setAttribute('providerAccessTokenExpiry', DateTime.addSeconds(new Date(), parseInt(oauth2.getAccessTokenExpiry(''))));
+        }
+
+        // Save changes
+        await dbForProject.updateDocument('sessions', sessionId, session);
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('sessionId', session.getId())
+            .setPayload(response.output(session, Response.MODEL_SESSION));
+
+        return response.dynamic(session, Response.MODEL_SESSION);
+    });
+
+
+App.post('/v1/account/sessions/email')
+    .alias('/v1/account/sessions')
+    .desc('Create email password session')
+    .groups(['api', 'account', 'auth', 'session'])
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'emailPassword')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createEmailPasswordSession')
+    .label('sdk.description', '/docs/references/account/create-session-email-password.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'url:{url},email:{param-email}')
+    .param('email', '', new Email(), 'User email.')
+    .param('password', '', new Password(), 'User password. Must be at least 8 chars.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('locale')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .inject('hooks')
+    .action(async (email: string, password: string, request: Request, response: Response, user: Document, dbForProject: Database, project: Document, locale: Locale, geodb: Reader, queueForEvents: Event, hooks: Hooks) => {
+        email = email.toLowerCase();
+        const protocol = request.getProtocol();
+
+        const profile = await dbForProject.findOne('users', [
+            Query.equal('email', [email]),
+        ]);
+
+        if (!profile || !profile.getAttribute('passwordUpdate') || !Auth.passwordVerify(password, profile.getAttribute('password'), profile.getAttribute('hash'), profile.getAttribute('hashOptions'))) {
+            throw new Error('USER_INVALID_CREDENTIALS');
+        }
+
+        if (profile.getAttribute('status') === false) { // Account is blocked
+            throw new Error('USER_BLOCKED'); // User is in status blocked
+        }
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        user.setAttributes(profile.getArrayCopy());
+
+        hooks.trigger('passwordValidator', [dbForProject, project, password, user, false]);
+
+        const duration = project.getAttribute('auths', [])['duration'] ?? Auth.TOKEN_EXPIRATION_LOGIN_LONG;
+        const detector = new Detector(request.getUserAgent('UNKNOWN'));
+        const record = geodb.get(request.getIP());
+        const secret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_SESSION);
+        const session = new Document({
+            ...{
+                '$id': ID.unique(),
+                'userId': user.getId(),
+                'userInternalId': user.getInternalId(),
+                'provider': Auth.SESSION_PROVIDER_EMAIL,
+                'providerUid': email,
+                'secret': Auth.hash(secret), // One way hash encryption to protect DB leak
+                'userAgent': request.getUserAgent('UNKNOWN'),
+                'ip': request.getIP(),
+                'factors': ['password'],
+                'countryCode': record ? record['country']['iso_code'].toLowerCase() : '--',
+                'expire': DateTime.addSeconds(new Date(), duration)
+            },
+            ...detector.getOS(),
+            ...detector.getClient(),
+            ...detector.getDevice()
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        // Re-hash if not using recommended algo
+        if (user.getAttribute('hash') !== Auth.DEFAULT_ALGO) {
+            user
+                .setAttribute('password', Auth.passwordHash(password, Auth.DEFAULT_ALGO, Auth.DEFAULT_ALGO_OPTIONS))
+                .setAttribute('hash', Auth.DEFAULT_ALGO)
+                .setAttribute('hashOptions', Auth.DEFAULT_ALGO_OPTIONS);
+            await dbForProject.updateDocument('users', user.getId(), user);
+        }
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        const createdSession = await dbForProject.createDocument('sessions', session.setAttribute('$permissions', [
+            Permission.read(Role.user(user.getId())),
+            Permission.update(Role.user(user.getId())),
+            Permission.delete(Role.user(user.getId())),
+        ]));
+
+        if (!Config.getParam('domainVerification')) {
+            response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), secret) }));
+        }
+
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration));
+
+        response
+            .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+            .addCookie(Auth.cookieName, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'))
+            .setStatusCode(Response.STATUS_CODE_CREATED);
+
+        const countryName = locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown'));
+
+        session
+            .setAttribute('current', true)
+            .setAttribute('countryName', countryName)
+            .setAttribute('secret', (isPrivilegedUser || isAppUser) ? Auth.encodeSession(user.getId(), secret) : '');
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('sessionId', session.getId());
+
+        response.dynamic(session, Response.MODEL_SESSION);
+    });
+
+
+App.post('/v1/account/sessions/anonymous')
+    .desc('Create anonymous session')
+    .groups(['api', 'account', 'auth', 'session'])
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'anonymous')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createAnonymousSession')
+    .label('sdk.description', '/docs/references/account/create-session-anonymous.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 50)
+    .label('abuse-key', 'ip:{ip}')
+    .inject('request')
+    .inject('response')
+    .inject('locale')
+    .inject('user')
+    .inject('project')
+    .inject('dbForProject')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action(async (request: Request, response: Response, locale: Locale, user: Document, project: Document, dbForProject: Database, geodb: Reader, queueForEvents: Event) => {
+        const protocol = request.getProtocol();
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        if (project.getId() === 'console') {
+            throw new Error('USER_ANONYMOUS_CONSOLE_PROHIBITED');
+        }
+
+        const limit = project.getAttribute('auths', [])['limit'] ?? 0;
+
+        if (limit !== 0) {
+            const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+
+            if (total >= limit) {
+                throw new Error('USER_COUNT_EXCEEDED');
+            }
+        }
+
+        const userId = ID.unique();
+        user.setAttributes({
+            '$id': userId,
+            '$permissions': [
+                Permission.read(Role.any()),
+                Permission.update(Role.user(userId)),
+                Permission.delete(Role.user(userId)),
+            ],
+            'email': null,
+            'emailVerification': false,
+            'status': true,
+            'password': null,
+            'hash': Auth.DEFAULT_ALGO,
+            'hashOptions': Auth.DEFAULT_ALGO_OPTIONS,
+            'passwordUpdate': null,
+            'registration': DateTime.now(),
+            'reset': false,
+            'name': null,
+            'mfa': false,
+            'prefs': {},
+            'sessions': null,
+            'tokens': null,
+            'memberships': null,
+            'authenticators': null,
+            'search': userId,
+            'accessedAt': DateTime.now(),
+        });
+        user.removeAttribute('$internalId');
+        await Authorization.skip(async () => dbForProject.createDocument('users', user));
+
+        // Create session token
+        const duration = project.getAttribute('auths', [])['duration'] ?? Auth.TOKEN_EXPIRATION_LOGIN_LONG;
+        const detector = new Detector(request.getUserAgent('UNKNOWN'));
+        const record = geodb.get(request.getIP());
+        const secret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_SESSION);
+
+        const session = new Document({
+            ...{
+                '$id': ID.unique(),
+                'userId': user.getId(),
+                'userInternalId': user.getInternalId(),
+                'provider': Auth.SESSION_PROVIDER_ANONYMOUS,
+                'secret': Auth.hash(secret), // One way hash encryption to protect DB leak
+                'userAgent': request.getUserAgent('UNKNOWN'),
+                'ip': request.getIP(),
+                'factors': ['anonymous'],
+                'countryCode': record ? record['country']['iso_code'].toLowerCase() : '--',
+                'expire': DateTime.addSeconds(new Date(), duration)
+            },
+            ...detector.getOS(),
+            ...detector.getClient(),
+            ...detector.getDevice()
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        const createdSession = await dbForProject.createDocument('sessions', session.setAttribute('$permissions', [
+            Permission.read(Role.user(user.getId())),
+            Permission.update(Role.user(user.getId())),
+            Permission.delete(Role.user(user.getId())),
+        ]));
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('sessionId', session.getId());
+
+        if (!Config.getParam('domainVerification')) {
+            response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), secret) }));
+        }
+
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration));
+
+        response
+            .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+            .addCookie(Auth.cookieName, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'))
+            .setStatusCode(Response.STATUS_CODE_CREATED);
+
+        const countryName = locale.getText(`countries.${session.getAttribute('countryCode').toLowerCase()}`, locale.getText('locale.country.unknown'));
+
+        session
+            .setAttribute('current', true)
+            .setAttribute('countryName', countryName)
+            .setAttribute('secret', (isPrivilegedUser || isAppUser) ? Auth.encodeSession(user.getId(), secret) : '');
+
+        response.dynamic(session, Response.MODEL_SESSION);
+    });
+
+
+App.post('/v1/account/sessions/token')
+    .desc('Create session')
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .groups(['api', 'account', 'session'])
+    .label('scope', 'sessions.write')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createSession')
+    .label('sdk.description', '/docs/references/account/create-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'ip:{ip},userId:{param-userId}')
+    .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('secret', '', new Text(256), 'Secret of a token generated by login methods. For example, the `createMagicURLToken` or `createPhoneToken` methods.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('locale')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action($createSession);
+
+App.post('/v1/account/sessions/token')
+    .desc('Create session')
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .groups(['api', 'account', 'session'])
+    .label('scope', 'sessions.write')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createSession')
+    .label('sdk.description', '/docs/references/account/create-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'ip:{ip},userId:{param-userId}')
+    .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('secret', '', new Text(256), 'Secret of a token generated by login methods. For example, the `createMagicURLToken` or `createPhoneToken` methods.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('locale')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action(createSession);
+
+App.get('/v1/account/sessions/oauth2/:provider')
+    .desc('Create OAuth2 session')
+    .groups(['api', 'account'])
+    .label('error', __DIR__. '/../../views/general/error.phtml')
+    .label('scope', 'sessions.write')
+    .label('sdk.auth', [])
+    .label('sdk.hide', [APP_PLATFORM_SERVER])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createOAuth2Session')
+    .label('sdk.description', '/docs/references/account/create-session-oauth2.md')
+    .label('sdk.response.code', Response.STATUS_CODE_MOVED_PERMANENTLY)
+    .label('sdk.response.type', Response.CONTENT_TYPE_HTML)
+    .label('sdk.methodType', 'webAuth')
+    .label('abuse-limit', 50)
+    .label('abuse-key', 'ip:{ip}')
+    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 Provider. Currently, supported providers are: ' + Object.keys(Config.getParam('oAuthProviders')).filter(node => !node.mock).join(', ') + '.')
+    .param('success', '', clients => new Host(clients), 'URL to redirect back to your app after a successful login attempt.  Only URLs from hostnames in your project\'s platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
+    .param('failure', '', clients => new Host(clients), 'URL to redirect back to your app after a failed login attempt.  Only URLs from hostnames in your project\'s platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
+    .param('scopes', [], new ArrayList(new Text(APP_LIMIT_ARRAY_ELEMENT_SIZE), APP_LIMIT_ARRAY_PARAMS_SIZE), 'A list of custom OAuth2 scopes. Check each provider internal docs for a list of supported scopes. Maximum of ' + APP_LIMIT_ARRAY_PARAMS_SIZE + ' scopes are allowed, each ' + APP_LIMIT_ARRAY_ELEMENT_SIZE + ' characters long.', true)
+    .inject('request')
+    .inject('response')
+    .inject('project')
+    .action(async (provider: string, success: string, failure: string, scopes: string[], request: Request, response: Response, project: Document) => {
+        const protocol = request.getProtocol();
+
+        const callback = `${protocol}://${request.getHostname()}/v1/account/sessions/oauth2/callback/${provider}/${project.getId()}`;
+        const providerEnabled = project.getAttribute('oAuthProviders', {})[`${provider}Enabled`] ?? false;
+
+        if (!providerEnabled) {
+            throw new Error('This provider is disabled. Please enable the provider from your ' + APP_NAME + ' console to continue.');
+        }
+
+        let appId = project.getAttribute('oAuthProviders', {})[`${provider}Appid`] ?? '';
+        let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
+
+        if (appSecret && appSecret.version) {
+            const key = System.getEnv(`_APP_OPENSSL_KEY_V${appSecret.version}`);
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, key, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+        }
+
+        if (!appId || !appSecret) {
+            throw new Error('This provider is disabled. Please configure the provider app ID and app secret key from your ' + APP_NAME + ' console to continue.');
+        }
+
+        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+
+        if (!(className in globalThis)) {
+            throw new Error('PROJECT_PROVIDER_UNSUPPORTED');
+        }
+
+        if (!success) {
+            success = `${protocol}://${request.getHostname()}${oauthDefaultSuccess}`;
+        }
+
+        if (!failure) {
+            failure = `${protocol}://${request.getHostname()}${oauthDefaultFailure}`;
+        }
+
+        const oauth2 = new globalThis[className](appId, appSecret, callback, {
+            success,
+            failure,
+            token: false,
+        }, scopes);
+
+        response
+            .addHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            .addHeader('Pragma', 'no-cache')
+            .redirect(oauth2.getLoginURL());
+    });
+
+
+App.get('/v1/account/sessions/oauth2/callback/:provider/:projectId')
+    .desc('OAuth2 callback')
+    .groups(['account'])
+    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('scope', 'public')
+    .label('docs', false)
+    .param('projectId', '', new Text(1024), 'Project ID.')
+    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 provider.')
+    .param('code', '', new Text(2048, 0), 'OAuth2 code. This is a temporary code that will be later exchanged for an access token.', true)
+    .param('state', '', new Text(2048), 'Login state params.', true)
+    .param('error', '', new Text(2048, 0), 'Error code returned from the OAuth2 provider.', true)
+    .param('error_description', '', new Text(2048, 0), 'Human-readable text providing additional information about the error returned from the OAuth2 provider.', true)
+    .inject('request')
+    .inject('response')
+    .action(async (projectId: string, provider: string, code: string, state: string, error: string, error_description: string, request: Request, response: Response) => {
+
+        const domain = request.getHostname();
+        const protocol = request.getProtocol();
+
+        const params = request.getParams();
+        params['project'] = projectId;
+        delete params['projectId'];
+
+        response
+            .addHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            .addHeader('Pragma', 'no-cache')
+            .redirect(`${protocol}://${domain}/v1/account/sessions/oauth2/${provider}/redirect?${new URLSearchParams(params).toString()}`);
+    });
+
+App.post('/v1/account/sessions/oauth2/callback/:provider/:projectId')
+    .desc('OAuth2 callback')
+    .groups(['account'])
+    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('scope', 'public')
+    .label('origin', '*')
+    .label('docs', false)
+    .param('projectId', '', new Text(1024), 'Project ID.')
+    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 provider.')
+    .param('code', '', new Text(2048, 0), 'OAuth2 code. This is a temporary code that will be later exchanged for an access token.', true)
+    .param('state', '', new Text(2048), 'Login state params.', true)
+    .param('error', '', new Text(2048, 0), 'Error code returned from the OAuth2 provider.', true)
+    .param('error_description', '', new Text(2048, 0), 'Human-readable text providing additional information about the error returned from the OAuth2 provider.', true)
+    .inject('request')
+    .inject('response')
+    .action(async (projectId: string, provider: string, code: string, state: string, error: string, error_description: string, request: Request, response: Response) => {
+
+        const domain = request.getHostname();
+        const protocol = request.getProtocol();
+
+        const params = request.getParams();
+        params['project'] = projectId;
+        delete params['projectId'];
+
+        response
+            .addHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            .addHeader('Pragma', 'no-cache')
+            .redirect(`${protocol}://${domain}/v1/account/sessions/oauth2/${provider}/redirect?${new URLSearchParams(params).toString()}`);
+    });
+
+
+App.get('/v1/account/sessions/oauth2/:provider/redirect')
+    .desc('OAuth2 redirect')
+    .groups(['api', 'account', 'session'])
+    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .label('scope', 'public')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{user.$id}')
+    .label('audits.userId', '{user.$id}')
+    .label('abuse-limit', 50)
+    .label('abuse-key', 'ip:{ip}')
+    .label('docs', false)
+    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 provider.')
+    .param('code', '', new Text(2048, 0), 'OAuth2 code. This is a temporary code that will be later exchanged for an access token.', true)
+    .param('state', '', new Text(2048), 'OAuth2 state params.', true)
+    .param('error', '', new Text(2048, 0), 'Error code returned from the OAuth2 provider.', true)
+    .param('error_description', '', new Text(2048, 0), 'Human-readable text providing additional information about the error returned from the OAuth2 provider.', true)
+    .inject('request')
+    .inject('response')
+    .inject('project')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action(async (provider: string, code: string, state: string, error: string, error_description: string, request: Request, response: Response, project: Document, user: Document, dbForProject: Database, geodb: Reader, queueForEvents: Event) => {
+        const protocol = request.getProtocol();
+        const callback = `${protocol}://${request.getHostname()}/v1/account/sessions/oauth2/callback/${provider}/${project.getId()}`;
+        const defaultState = { success: project.getAttribute('url', ''), failure: '' };
+        const validateURL = new URL();
+        const appId = project.getAttribute('oAuthProviders', {})[`${provider}Appid`] ?? '';
+        let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
+        const providerEnabled = project.getAttribute('oAuthProviders', {})[`${provider}Enabled`] ?? false;
+
+        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+
+        if (!globalThis[className]) {
+            throw new Error('PROJECT_PROVIDER_UNSUPPORTED');
+        }
+
+        const providers = Config.getParam('oAuthProviders');
+        const providerName = providers[provider]?.name ?? '';
+
+        const oauth2 = new globalThis[className](appId, appSecret, callback);
+
+        let parsedState;
+        if (state) {
+            try {
+                parsedState = { ...defaultState, ...oauth2.parseState(state) };
+            } catch (error) {
+                throw new Error('Failed to parse login state params as passed from OAuth2 provider');
+            }
+        } else {
+            parsedState = defaultState;
+        }
+
+        if (!validateURL.isValid(parsedState.success)) {
+            throw new Error('PROJECT_INVALID_SUCCESS_URL');
+        }
+
+        if (parsedState.failure && !validateURL.isValid(parsedState.failure)) {
+            throw new Error('PROJECT_INVALID_FAILURE_URL');
+        }
+
+        const failureRedirect = (type, message = null, code = null) => {
+            const exception = new Error(type);
+            if (parsedState.failure) {
+                const failureURL = new URL(parsedState.failure);
+                failureURL.searchParams.set('error', JSON.stringify({
+                    message: exception.message,
+                    type: exception.name,
+                    code: code ?? exception.code,
+                }));
+                response.redirect(failureURL.toString(), 301);
+            }
+            throw exception;
+        };
+
+        if (!providerEnabled) {
+            failureRedirect('PROJECT_PROVIDER_DISABLED', 'This provider is disabled. Please enable the provider from your console to continue.');
+        }
+
+        if (error) {
+            const message = `The ${providerName} OAuth2 provider returned an error: ${error}`;
+            if (error_description) {
+                message += `: ${error_description}`;
+            }
+            failureRedirect('USER_OAUTH2_PROVIDER_ERROR', message);
+        }
+
+        if (!code) {
+            failureRedirect('USER_OAUTH2_PROVIDER_ERROR', 'Missing OAuth2 code. Please contact the Appwrite team for additional support.');
+        }
+
+        if (appSecret && appSecret.version) {
+            const key = System.getEnv(`_APP_OPENSSL_KEY_V${appSecret.version}`);
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, key, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+        }
+
+        let accessToken, refreshToken, accessTokenExpiry;
+        try {
+            accessToken = await oauth2.getAccessToken(code);
+            refreshToken = await oauth2.getRefreshToken(code);
+            accessTokenExpiry = await oauth2.getAccessTokenExpiry(code);
+        } catch (ex) {
+            failureRedirect(ex.name, `Failed to obtain access token. The ${providerName} OAuth2 provider returned an error: ${ex.message}`, ex.code);
+        }
+
+        const oauth2ID = await oauth2.getUserID(accessToken);
+        if (!oauth2ID) {
+            failureRedirect('USER_MISSING_ID');
+        }
+
+        let name = await oauth2.getUserName(accessToken);
+        const email = await oauth2.getUserEmail(accessToken);
+
+        let sessionUpgrade = false;
+        if (!user.isEmpty()) {
+            const userId = user.getId();
+
+            const identityWithMatchingEmail = await dbForProject.findOne('identities', [
+                Query.equal('providerEmail', [email]),
+                Query.notEqual('userInternalId', user.getInternalId()),
+            ]);
+            if (identityWithMatchingEmail) {
+                throw new Error('USER_ALREADY_EXISTS');
+            }
+
+            const userWithMatchingEmail = await dbForProject.find('users', [
+                Query.equal('email', [email]),
+                Query.notEqual('$id', userId),
+            ]);
+            if (userWithMatchingEmail.length) {
+                throw new Error('USER_ALREADY_EXISTS');
+            }
+
+            sessionUpgrade = true;
+        }
+
+        const sessions = user.getAttribute('sessions', []);
+        const current = Auth.sessionVerify(sessions, Auth.secret) as string;
+
+        if (current) {
+            const currentDocument = await dbForProject.getDocument('sessions', current);
+            if (!currentDocument.isEmpty()) {
+                await dbForProject.deleteDocument('sessions', currentDocument.getId());
+                await dbForProject.purgeCachedDocument('users', user.getId());
+            }
+        }
+
+        if (user.isEmpty()) {
+            const session = await dbForProject.findOne('sessions', [
+                Query.equal('provider', [provider]),
+                Query.equal('providerUid', [oauth2ID]),
+            ]);
+            if (session && !session.isEmpty()) {
+                user.setAttributes(await dbForProject.getDocument('users', session.getAttribute('userId')).getArrayCopy());
+            }
+        }
+
+        if (user.isEmpty()) {
+            if (!email) {
+                throw new Exception('USER_UNAUTHORIZED', 'OAuth provider failed to return email.');
+            }
+
+            const isVerified = await oauth2.isEmailVerified(accessToken);
+
+            const userWithEmail = await dbForProject.findOne('users', [
+                Query.equal('email', [email]),
+            ]);
+            if (userWithEmail && !userWithEmail.isEmpty()) {
+                user.setAttributes(userWithEmail.getArrayCopy());
+            }
+
+            if (user.isEmpty()) {
+                const identity = await dbForProject.findOne('identities', [
+                    Query.equal('provider', [provider]),
+                    Query.equal('providerUid', [oauth2ID]),
+                ]);
+
+                if (identity && !identity.isEmpty()) {
+                    user.setAttributes(await dbForProject.getDocument('users', identity.getAttribute('userId')).getArrayCopy());
+                }
+            }
+
+            if (user.isEmpty()) {
+                const limit = project.getAttribute('auths', [])['limit'] ?? 0;
+
+                if (limit !== 0) {
+                    const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+
+                    if (total >= limit) {
+                        failureRedirect('USER_COUNT_EXCEEDED');
+                    }
+                }
+
+                const identityWithMatchingEmail = await dbForProject.findOne('identities', [
+                    Query.equal('providerEmail', [email]),
+                ]);
+                if (identityWithMatchingEmail) {
+                    throw new Error('GENERAL_BAD_REQUEST');
+                }
+
+                try {
+                    const userId = ID.unique();
+                    user.setAttributes({
+                        '$id': userId,
+                        '$permissions': [
+                            Permission.read(Role.any()),
+                            Permission.update(Role.user(userId)),
+                            Permission.delete(Role.user(userId)),
+                        ],
+                        'email': email,
+                        'emailVerification': true,
+                        'status': true,
+                        'password': null,
+                        'hash': Auth.DEFAULT_ALGO,
+                        'hashOptions': Auth.DEFAULT_ALGO_OPTIONS,
+                        'passwordUpdate': null,
+                        'registration': DateTime.now(),
+                        'reset': false,
+                        'name': name,
+                        'mfa': false,
+                        'prefs': {},
+                        'sessions': null,
+                        'tokens': null,
+                        'memberships': null,
+                        'authenticators': null,
+                        'search': `${userId} ${email} ${name}`,
+                        'accessedAt': DateTime.now(),
+                    });
+                    user.removeAttribute('$internalId');
+                    const userDoc = await Authorization.skip(() => dbForProject.createDocument('users', user));
+                    await dbForProject.createDocument('targets', new Document({
+                        '$permissions': [
+                            Permission.read(Role.user(user.getId())),
+                            Permission.update(Role.user(user.getId())),
+                            Permission.delete(Role.user(user.getId())),
+                        ],
+                        'userId': userDoc.getId(),
+                        'userInternalId': userDoc.getInternalId(),
+                        'providerType': MESSAGE_TYPE_EMAIL,
+                        'identifier': email,
+                    }));
+                } catch (error) {
+                    failureRedirect('USER_ALREADY_EXISTS');
+                }
+            }
+        }
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+        Authorization.setRole(Role.users().toString());
+
+        if (user.getAttribute('status') === false) {
+            failureRedirect('USER_BLOCKED');
+        }
+
+        let identity = await dbForProject.findOne('identities', [
+            Query.equal('userInternalId', [user.getInternalId()]),
+            Query.equal('provider', [provider]),
+            Query.equal('providerUid', [oauth2ID]),
+        ]);
+        if (!identity || identity.isEmpty()) {
+            const userId = user.getId();
+
+            const identitiesWithMatchingEmail = await dbForProject.find('identities', [
+                Query.equal('providerEmail', [email]),
+                Query.notEqual('userInternalId', user.getInternalId()),
+            ]);
+            if (identitiesWithMatchingEmail.length) {
+                throw new Error('GENERAL_BAD_REQUEST');
+            }
+
+            await dbForProject.createDocument('identities', new Document({
+                '$id': ID.unique(),
+                '$permissions': [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(userId)),
+                    Permission.delete(Role.user(userId)),
+                ],
+                'userInternalId': user.getInternalId(),
+                'userId': userId,
+                'provider': provider,
+                'providerUid': oauth2ID,
+                'providerEmail': email,
+                'providerAccessToken': accessToken,
+                'providerRefreshToken': refreshToken,
+                'providerAccessTokenExpiry': DateTime.addSeconds(new Date(), accessTokenExpiry),
+            }));
+        } else {
+            identity
+                .setAttribute('providerAccessToken', accessToken)
+                .setAttribute('providerRefreshToken', refreshToken)
+                .setAttribute('providerAccessTokenExpiry', DateTime.addSeconds(new Date(), accessTokenExpiry));
+            await dbForProject.updateDocument('identities', identity.getId(), identity);
+        }
+
+        if (!user.getAttribute('email')) {
+            user.setAttribute('email', await oauth2.getUserEmail(accessToken));
+        }
+
+        if (!user.getAttribute('name')) {
+            user.setAttribute('name', await oauth2.getUserName(accessToken));
+        }
+
+        user.setAttribute('status', true);
+
+        await dbForProject.updateDocument('users', user.getId(), user);
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        const successURL = new URL(parsedState.success);
+        const query = new URLSearchParams(successURL.search);
+
+        const duration = project.getAttribute('auths', [])['duration'] ?? Auth.TOKEN_EXPIRATION_LOGIN_LONG;
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), duration)) as string;
+
+        let session;
+
+        if (parsedState.token) {
+            const secret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_OAUTH2);
+            const token = new Document({
+                '$id': ID.unique(),
+                'userId': user.getId(),
+                'userInternalId': user.getInternalId(),
+                'type': Auth.TOKEN_TYPE_OAUTH2,
+                'secret': Auth.hash(secret),
+                'expire': expire,
+                'userAgent': request.getUserAgent('UNKNOWN'),
+                'ip': request.getIP(),
+            });
+
+            Authorization.setRole(Role.user(user.getId()).toString());
+
+            await dbForProject.createDocument('tokens', token.setAttribute('$permissions', [
+                Permission.read(Role.user(user.getId())),
+                Permission.update(Role.user(user.getId())),
+                Permission.delete(Role.user(user.getId())),
+            ]));
+
+            queueForEvents
+                .setEvent('users.[userId].tokens.[tokenId].create')
+                .setParam('userId', user.getId())
+                .setParam('tokenId', token.getId());
+
+            query.set('secret', secret);
+            query.set('userId', user.getId());
+        } else {
+            const detector = new Detector(request.getUserAgent('UNKNOWN'));
+            const record = geodb.get(request.getIP());
+            const secret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_SESSION);
+
+            session = new Document({
+                ...{
+                    '$id': ID.unique(),
+                    'userId': user.getId(),
+                    'userInternalId': user.getInternalId(),
+                    'provider': provider,
+                    'providerUid': oauth2ID,
+                    'providerAccessToken': accessToken,
+                    'providerRefreshToken': refreshToken,
+                    'providerAccessTokenExpiry': DateTime.addSeconds(new Date(), accessTokenExpiry),
+                    'secret': Auth.hash(secret),
+                    'userAgent': request.getUserAgent('UNKNOWN'),
+                    'ip': request.getIP(),
+                    'factors': [TYPE.EMAIL, 'oauth2'],
+                    'countryCode': record ? record['country']['iso_code'].toLowerCase() : '--',
+                    'expire': DateTime.addSeconds(new Date(), duration)
+                },
+                ...detector.getOS(),
+                ...detector.getClient(),
+                ...detector.getDevice()
+            });
+
+            await dbForProject.createDocument('sessions', session.setAttribute('$permissions', [
+                Permission.read(Role.user(user.getId())),
+                Permission.update(Role.user(user.getId())),
+                Permission.delete(Role.user(user.getId())),
+            ]));
+
+            session.setAttribute('expire', expire);
+
+            if (!Config.getParam('domainVerification')) {
+                response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), secret) }));
+            }
+
+            queueForEvents
+                .setParam('userId', user.getId())
+                .setParam('sessionId', session.getId())
+                .setPayload(response.output(session, Response.MODEL_SESSION));
+
+            if (parsedState.success === oauthDefaultSuccess) {
+                query.set('project', project.getId());
+                query.set('domain', Config.getParam('cookieDomain'));
+                query.set('key', Auth.cookieName);
+                query.set('secret', Auth.encodeSession(user.getId(), secret));
+            }
+
+            response
+                .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+                .addCookie(Auth.cookieName, Auth.encodeSession(user.getId(), secret), new Date(expire).getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'));
+        }
+
+        if (sessionUpgrade) {
+            for (const target of user.getAttribute('targets', [])) {
+                if (target.getAttribute('providerType') !== MESSAGE_TYPE_PUSH) {
+                    continue;
+                }
+
+                target
+                    .setAttribute('sessionId', session.getId())
+                    .setAttribute('sessionInternalId', session.getInternalId());
+
+                await dbForProject.updateDocument('targets', target.getId(), target);
+            }
+        }
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        successURL.search = query.toString();
+        response
+            .addHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            .addHeader('Pragma', 'no-cache')
+            .redirect(successURL.toString());
+    });
+
+App.get('/v1/account/tokens/oauth2/:provider')
+    .desc('Create OAuth2 token')
+    .groups(['api', 'account'])
+    .label('error', __DIR__ + '/../../views/general/error.phtml')
+    .label('scope', 'sessions.write')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createOAuth2Token')
+    .label('sdk.description', '/docs/references/account/create-token-oauth2.md')
+    .label('sdk.response.code', Response.STATUS_CODE_MOVED_PERMANENTLY)
+    .label('sdk.response.type', Response.CONTENT_TYPE_HTML)
+    .label('sdk.methodType', 'webAuth')
+    .label('abuse-limit', 50)
+    .label('abuse-key', 'ip:{ip}')
+    .param('provider', '', new WhiteList(Object.keys(Config.getParam('oAuthProviders')), true), 'OAuth2 Provider. Currently, supported providers are: ' + Object.keys(Config.getParam('oAuthProviders')).filter(node => !node.mock).join(', ') + '.')
+    .param('success', '', clients => new Host(clients), 'URL to redirect back to your app after a successful login attempt.  Only URLs from hostnames in your project\'s platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
+    .param('failure', '', clients => new Host(clients), 'URL to redirect back to your app after a failed login attempt.  Only URLs from hostnames in your project\'s platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
+    .param('scopes', [], new ArrayList(new Text(APP_LIMIT_ARRAY_ELEMENT_SIZE), APP_LIMIT_ARRAY_PARAMS_SIZE), 'A list of custom OAuth2 scopes. Check each provider internal docs for a list of supported scopes. Maximum of ' + APP_LIMIT_ARRAY_PARAMS_SIZE + ' scopes are allowed, each ' + APP_LIMIT_ARRAY_ELEMENT_SIZE + ' characters long.', true)
+    .inject('request')
+    .inject('response')
+    .inject('project')
+    .action(async (provider: string, success: string, failure: string, scopes: string[], request: Request, response: Response, project: Document) => {
+        const protocol = request.getProtocol();
+
+        const callback = `${protocol}://${request.getHostname()}/v1/account/sessions/oauth2/callback/${provider}/${project.getId()}`;
+        const providerEnabled = project.getAttribute('oAuthProviders', {})[`${provider}Enabled`] ?? false;
+
+        if (!providerEnabled) {
+            throw new Error('This provider is disabled. Please enable the provider from your console to continue.');
+        }
+
+        let appId = project.getAttribute('oAuthProviders', {})[`${provider}Appid`] ?? '';
+        let appSecret = project.getAttribute('oAuthProviders', {})[`${provider}Secret`] ?? '{}';
+
+        if (appSecret && appSecret.version) {
+            const key = System.getEnv(`_APP_OPENSSL_KEY_V${appSecret.version}`);
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, key, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+        }
+
+        if (!appId || !appSecret) {
+            throw new Error('This provider is disabled. Please configure the provider app ID and app secret key from your console to continue.');
+        }
+
+        const className = `Appwrite\\Auth\\OAuth2\\${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+
+        if (!(className in globalThis)) {
+            throw new Error('PROJECT_PROVIDER_UNSUPPORTED');
+        }
+
+        if (!success) {
+            success = `${protocol}://${request.getHostname()}${oauthDefaultSuccess}`;
+        }
+
+        if (!failure) {
+            failure = `${protocol}://${request.getHostname()}${oauthDefaultFailure}`;
+        }
+
+        const oauth2 = new globalThis[className](appId, appSecret, callback, {
+            success,
+            failure,
+            token: true,
+        }, scopes);
+
+        response
+            .addHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            .addHeader('Pragma', 'no-cache')
+            .redirect(oauth2.getLoginURL());
+    });
+
+App.post('/v1/account/tokens/magic-url')
+    .alias('/v1/account/sessions/magic-url')
+    .desc('Create magic URL token')
+    .groups(['api', 'account', 'auth'])
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'magic-url')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createMagicURLToken')
+    .label('sdk.description', '/docs/references/account/create-token-magic-url.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 60)
+    .label('abuse-key', ['url:{url},email:{param-email}', 'url:{url},ip:{ip}'])
+    .param('userId', '', new CustomId(), 'Unique Id. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('email', '', new Email(), 'User email.')
+    .param('url', '', clients => new Host(clients), 'URL to redirect the user back to your app from the magic URL login. Only URLs from hostnames in your project platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', true, ['clients'])
+    .param('phrase', false, new Boolean(), 'Toggle for security phrase. If enabled, email will be sent with a randomly generated phrase and the phrase will also be included in the response. Confirming phrases match increases the security of your authentication flow.', true)
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('project')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('queueForEvents')
+    .inject('queueForMails')
+    .action(async (userId: string, email: string, url: string, phrase: boolean, request: Request, response: Response, user: Document, project: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForMails: Mail) => {
+        if (!System.getEnv('_APP_SMTP_HOST')) {
+            throw new Error('SMTP disabled');
+        }
+        url = htmlentities(url);
+
+        if (phrase) {
+            phrase = Phrase.generate();
+        }
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        const result = await dbForProject.findOne('users', [Query.equal('email', [email])]);
+        if (result && !result.isEmpty()) {
+            user.setAttributes(result.getArrayCopy());
+        } else {
+            const limit = project.getAttribute('auths', [])['limit'] ?? 0;
+
+            if (limit !== 0) {
+                const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+
+                if (total >= limit) {
+                    throw new Error('USER_COUNT_EXCEEDED');
+                }
+            }
+
+            const identityWithMatchingEmail = await dbForProject.findOne('identities', [
+                Query.equal('providerEmail', [email]),
+            ]);
+            if (identityWithMatchingEmail && !identityWithMatchingEmail.isEmpty()) {
+                throw new Error('USER_EMAIL_ALREADY_EXISTS');
+            }
+
+            userId = userId === 'unique()' ? ID.unique() : userId;
+
+            user.setAttributes({
+                '$id': userId,
+                '$permissions': [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(userId)),
+                    Permission.delete(Role.user(userId)),
+                ],
+                'email': email,
+                'emailVerification': false,
+                'status': true,
+                'password': null,
+                'hash': Auth.DEFAULT_ALGO,
+                'hashOptions': Auth.DEFAULT_ALGO_OPTIONS,
+                'passwordUpdate': null,
+                'registration': DateTime.now(),
+                'reset': false,
+                'mfa': false,
+                'prefs': new Object(),
+                'sessions': null,
+                'tokens': null,
+                'memberships': null,
+                'authenticators': null,
+                'search': [userId, email].join(' '),
+                'accessedAt': DateTime.now(),
+            });
+
+            user.removeAttribute('$internalId');
+            await Authorization.skip(() => dbForProject.createDocument('users', user));
+        }
+
+        const tokenSecret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_MAGIC_URL);
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_CONFIRM));
+
+        const token = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': Auth.TOKEN_TYPE_MAGIC_URL,
+            'secret': Auth.hash(tokenSecret),
+            'expire': expire,
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        await dbForProject.createDocument('tokens', token.setAttribute('$permissions', [
+            Permission.read(Role.user(user.getId())),
+            Permission.update(Role.user(user.getId())),
+            Permission.delete(Role.user(user.getId())),
+        ]));
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        if (!url) {
+            url = `${request.getProtocol()}://${request.getHostname()}/auth/magic-url`;
+        }
+
+        const parsedURL = new URL(url);
+        parsedURL.searchParams.set('userId', user.getId());
+        parsedURL.searchParams.set('secret', tokenSecret);
+        parsedURL.searchParams.set('expire', expire);
+        parsedURL.searchParams.set('project', project.getId());
+        url = parsedURL.toString();
+
+        let subject = locale.getText("emails.magicSession.subject");
+        const customTemplate = project.getAttribute('templates', {})[`email.magicSession-${locale.default}`] ?? {};
+
+        const detector = new Detector(request.getUserAgent('UNKNOWN'));
+        const agentOs = detector.getOS();
+        const agentClient = detector.getClient();
+        const agentDevice = detector.getDevice();
+
+        const message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-magic-url.tpl');
+        message
+            .setParam('{{hello}}', locale.getText("emails.magicSession.hello"))
+            .setParam('{{optionButton}}', locale.getText("emails.magicSession.optionButton"))
+            .setParam('{{buttonText}}', locale.getText("emails.magicSession.buttonText"))
+            .setParam('{{optionUrl}}', locale.getText("emails.magicSession.optionUrl"))
+            .setParam('{{clientInfo}}', locale.getText("emails.magicSession.clientInfo"))
+            .setParam('{{thanks}}', locale.getText("emails.magicSession.thanks"))
+            .setParam('{{signature}}', locale.getText("emails.magicSession.signature"));
+
+        if (phrase) {
+            message.setParam('{{securityPhrase}}', locale.getText("emails.magicSession.securityPhrase"));
+        } else {
+            message.setParam('{{securityPhrase}}', '');
+        }
+
+        let body = message.render();
+
+        const smtp = project.getAttribute('smtp', {});
+        const smtpEnabled = smtp['enabled'] ?? false;
+
+        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
+        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+        let replyTo = "";
+
+        if (smtpEnabled) {
+            if (smtp['senderEmail']) {
+                senderEmail = smtp['senderEmail'];
+            }
+            if (smtp['senderName']) {
+                senderName = smtp['senderName'];
+            }
+            if (smtp['replyTo']) {
+                replyTo = smtp['replyTo'];
+            }
+
+            queueForMails
+                .setSmtpHost(smtp['host'] ?? '')
+                .setSmtpPort(smtp['port'] ?? '')
+                .setSmtpUsername(smtp['username'] ?? '')
+                .setSmtpPassword(smtp['password'] ?? '')
+                .setSmtpSecure(smtp['secure'] ?? '');
+
+            if (customTemplate) {
+                if (customTemplate['senderEmail']) {
+                    senderEmail = customTemplate['senderEmail'];
+                }
+                if (customTemplate['senderName']) {
+                    senderName = customTemplate['senderName'];
+                }
+                if (customTemplate['replyTo']) {
+                    replyTo = customTemplate['replyTo'];
+                }
+
+                body = customTemplate['message'] ?? '';
+                subject = customTemplate['subject'] ?? subject;
+            }
+
+            queueForMails
+                .setSmtpReplyTo(replyTo)
+                .setSmtpSenderEmail(senderEmail)
+                .setSmtpSenderName(senderName);
+        }
+
+        const emailVariables = {
+            'direction': locale.getText('settings.direction'),
+            'user': user.getAttribute('name'),
+            'project': project.getAttribute('name'),
+            'redirect': url,
+            'agentDevice': agentDevice['deviceBrand'] ?? 'UNKNOWN',
+            'agentClient': agentClient['clientName'] ?? 'UNKNOWN',
+            'agentOs': agentOs['osName'] ?? 'UNKNOWN',
+            'phrase': phrase || '',
+            'team': '',
+        };
+
+        queueForMails
+            .setSubject(subject)
+            .setBody(body)
+            .setVariables(emailVariables)
+            .setRecipient(email)
+            .trigger();
+
+        token.setAttribute('secret', tokenSecret);
+
+        queueForEvents
+            .setPayload(response.output(token, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+
+        if (!isPrivilegedUser && !isAppUser) {
+            token.setAttribute('secret', '');
+        }
+
+        if (phrase) {
+            token.setAttribute('phrase', phrase);
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(token, Response.MODEL_TOKEN);
+    });
+
+App.post('/v1/account/tokens/email')
+    .desc('Create email token (OTP)')
+    .groups(['api', 'account', 'auth'])
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'email-otp')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createEmailToken')
+    .label('sdk.description', '/docs/references/account/create-token-email.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'url:{url},email:{param-email}')
+    .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('email', '', new Email(), 'User email.')
+    .param('phrase', false, new Boolean(), 'Toggle for security phrase. If enabled, email will be sent with a randomly generated phrase and the phrase will also be included in the response. Confirming phrases match increases the security of your authentication flow.', true)
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('project')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('queueForEvents')
+    .inject('queueForMails')
+    .action(async (userId: string, email: string, phrase: boolean, request: Request, response: Response, user: Document, project: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForMails: Mail) => {
+        if (!System.getEnv('_APP_SMTP_HOST')) {
+            throw new Error('SMTP disabled');
+        }
+
+        if (phrase) {
+            phrase = Phrase.generate();
+        }
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        const result = await dbForProject.findOne('users', [Query.equal('email', [email])]);
+        if (result && !result.isEmpty()) {
+            user.setAttributes(result.getArrayCopy());
+        } else {
+            const limit = project.getAttribute('auths', [])['limit'] ?? 0;
+
+            if (limit !== 0) {
+                const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+
+                if (total >= limit) {
+                    throw new Error('USER_COUNT_EXCEEDED');
+                }
+            }
+
+            const identityWithMatchingEmail = await dbForProject.findOne('identities', [
+                Query.equal('providerEmail', [email]),
+            ]);
+            if (identityWithMatchingEmail && !identityWithMatchingEmail.isEmpty()) {
+                throw new Error('GENERAL_BAD_REQUEST'); // Return a generic bad request to prevent exposing existing accounts
+            }
+
+            userId = userId === 'unique()' ? ID.unique() : userId;
+
+            user.setAttributes({
+                '$id': userId,
+                '$permissions': [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(userId)),
+                    Permission.delete(Role.user(userId)),
+                ],
+                'email': email,
+                'emailVerification': false,
+                'status': true,
+                'password': null,
+                'hash': Auth.DEFAULT_ALGO,
+                'hashOptions': Auth.DEFAULT_ALGO_OPTIONS,
+                'passwordUpdate': null,
+                'registration': DateTime.now(),
+                'reset': false,
+                'prefs': new Object(),
+                'sessions': null,
+                'tokens': null,
+                'memberships': null,
+                'search': [userId, email].join(' '),
+                'accessedAt': DateTime.now(),
+            });
+
+            user.removeAttribute('$internalId');
+            await Authorization.skip(() => dbForProject.createDocument('users', user));
+        }
+
+        const tokenSecret = Auth.codeGenerator(6);
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_OTP));
+
+        const token = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': Auth.TOKEN_TYPE_EMAIL,
+            'secret': Auth.hash(tokenSecret), // One way hash encryption to protect DB leak
+            'expire': expire,
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        await dbForProject.createDocument('tokens', token.setAttribute('$permissions', [
+            Permission.read(Role.user(user.getId())),
+            Permission.update(Role.user(user.getId())),
+            Permission.delete(Role.user(user.getId())),
+        ]));
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        const subject = locale.getText("emails.otpSession.subject");
+        const customTemplate = project.getAttribute('templates', {})[`email.otpSession-${locale.default}`] ?? [];
+
+        const detector = new Detector(request.getUserAgent('UNKNOWN'));
+        const agentOs = detector.getOS();
+        const agentClient = detector.getClient();
+        const agentDevice = detector.getDevice();
+
+        const message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-otp.tpl');
+        message
+            .setParam('{{hello}}', locale.getText("emails.otpSession.hello"))
+            .setParam('{{description}}', locale.getText("emails.otpSession.description"))
+            .setParam('{{clientInfo}}', locale.getText("emails.otpSession.clientInfo"))
+            .setParam('{{thanks}}', locale.getText("emails.otpSession.thanks"))
+            .setParam('{{signature}}', locale.getText("emails.otpSession.signature"));
+
+        if (phrase) {
+            message.setParam('{{securityPhrase}}', locale.getText("emails.otpSession.securityPhrase"));
+        } else {
+            message.setParam('{{securityPhrase}}', '');
+        }
+
+        const body = message.render();
+
+        const smtp = project.getAttribute('smtp', {});
+        const smtpEnabled = smtp['enabled'] ?? false;
+
+        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
+        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+        let replyTo = "";
+
+        if (smtpEnabled) {
+            if (smtp['senderEmail']) {
+                senderEmail = smtp['senderEmail'];
+            }
+            if (smtp['senderName']) {
+                senderName = smtp['senderName'];
+            }
+            if (smtp['replyTo']) {
+                replyTo = smtp['replyTo'];
+            }
+
+            queueForMails
+                .setSmtpHost(smtp['host'] ?? '')
+                .setSmtpPort(smtp['port'] ?? '')
+                .setSmtpUsername(smtp['username'] ?? '')
+                .setSmtpPassword(smtp['password'] ?? '')
+                .setSmtpSecure(smtp['secure'] ?? '');
+
+            if (customTemplate) {
+                if (customTemplate['senderEmail']) {
+                    senderEmail = customTemplate['senderEmail'];
+                }
+                if (customTemplate['senderName']) {
+                    senderName = customTemplate['senderName'];
+                }
+                if (customTemplate['replyTo']) {
+                    replyTo = customTemplate['replyTo'];
+                }
+
+                body = customTemplate['message'] ?? '';
+                subject = customTemplate['subject'] ?? subject;
+            }
+
+            queueForMails
+                .setSmtpReplyTo(replyTo)
+                .setSmtpSenderEmail(senderEmail)
+                .setSmtpSenderName(senderName);
+        }
+
+        const emailVariables = {
+            'direction': locale.getText('settings.direction'),
+            'user': user.getAttribute('name'),
+            'project': project.getAttribute('name'),
+            'otp': tokenSecret,
+            'agentDevice': agentDevice['deviceBrand'] ?? 'UNKNOWN',
+            'agentClient': agentClient['clientName'] ?? 'UNKNOWN',
+            'agentOs': agentOs['osName'] ?? 'UNKNOWN',
+            'phrase': phrase || '',
+            'team': '',
+        };
+
+        queueForMails
+            .setSubject(subject)
+            .setBody(body)
+            .setVariables(emailVariables)
+            .setRecipient(email)
+            .trigger();
+
+        token.setAttribute('secret', tokenSecret);
+
+        queueForEvents
+            .setPayload(response.output(token, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+
+        if (!isPrivilegedUser && !isAppUser) {
+            token.setAttribute('secret', '');
+        }
+
+        if (phrase) {
+            token.setAttribute('phrase', phrase);
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(token, Response.MODEL_TOKEN);
+    });
+
+
+
+App.put('/v1/account/sessions/magic-url')
+    .desc('Update magic URL session')
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .groups(['api', 'account', 'session'])
+    .label('scope', 'sessions.write')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.deprecated', true)
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateMagicURLSession')
+    .label('sdk.description', '/docs/references/account/create-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'ip:{ip},userId:{param-userId}')
+    .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('secret', '', new Text(256), 'Valid verification token.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('locale')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action($createSession);
+
+App.put('/v1/account/sessions/phone')
+    .desc('Update phone session')
+    .label('event', 'users.[userId].sessions.[sessionId].create')
+    .groups(['api', 'account', 'session'])
+    .label('scope', 'sessions.write')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.deprecated', true)
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updatePhoneSession')
+    .label('sdk.description', '/docs/references/account/create-session.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SESSION)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'ip:{ip},userId:{param-userId}')
+    .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('secret', '', new Text(256), 'Valid verification token.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('locale')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action($createSession);
+
+App.post('/v1/account/tokens/phone')
+    .alias('/v1/account/sessions/phone')
+    .desc('Create phone token')
+    .groups(['api', 'account'])
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'phone')
+    .label('audits.event', 'session.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createPhoneToken')
+    .label('sdk.description', '/docs/references/account/create-token-phone.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', ['url:{url},phone:{param-phone}', 'url:{url},ip:{ip}'])
+    .param('userId', '', new CustomId(), 'Unique Id. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('phone', '', new Phone(), 'Phone number. Format this number with a leading \'+\' and a country code, e.g., +16175551212.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('project')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('queueForMessaging')
+    .inject('locale')
+    .action(async (userId: string, phone: string, request: Request, response: Response, user: Document, project: Document, dbForProject: Database, queueForEvents: Event, queueForMessaging: Messaging, locale: Locale) => {
+        if (!System.getEnv('_APP_SMS_PROVIDER')) {
+            throw new Error('Phone provider not configured');
+        }
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        const result = await dbForProject.findOne('users', [Query.equal('phone', [phone])]);
+        if (result && !result.isEmpty()) {
+            user.setAttributes(result.getArrayCopy());
+        } else {
+            const limit = project.getAttribute('auths', [])['limit'] ?? 0;
+
+            if (limit !== 0) {
+                const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+
+                if (total >= limit) {
+                    throw new Error('USER_COUNT_EXCEEDED');
+                }
+            }
+
+            userId = userId === 'unique()' ? ID.unique() : userId;
+            user.setAttributes({
+                '$id': userId,
+                '$permissions': [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(userId)),
+                    Permission.delete(Role.user(userId)),
+                ],
+                'email': null,
+                'phone': phone,
+                'emailVerification': false,
+                'phoneVerification': false,
+                'status': true,
+                'password': null,
+                'passwordUpdate': null,
+                'registration': DateTime.now(),
+                'reset': false,
+                'prefs': new Object(),
+                'sessions': null,
+                'tokens': null,
+                'memberships': null,
+                'search': [userId, phone].join(' '),
+                'accessedAt': DateTime.now(),
+            });
+
+            user.removeAttribute('$internalId');
+            Authorization.skip(() => dbForProject.createDocument('users', user));
+            try {
+                const target = Authorization.skip(() => dbForProject.createDocument('targets', new Document({
+                    '$permissions': [
+                        Permission.read(Role.user(user.getId())),
+                        Permission.update(Role.user(user.getId())),
+                        Permission.delete(Role.user(user.getId())),
+                    ],
+                    'userId': user.getId(),
+                    'userInternalId': user.getInternalId(),
+                    'providerType': MESSAGE_TYPE_SMS,
+                    'identifier': phone,
+                })));
+                user.setAttribute('targets', [...user.getAttribute('targets', []), target]);
+            } catch (Duplicate) {
+                const existingTarget = await dbForProject.findOne('targets', [
+                    Query.equal('identifier', [phone]),
+                ]);
+                user.setAttribute('targets', [...user.getAttribute('targets', []), existingTarget]);
+            }
+            await dbForProject.purgeCachedDocument('users', user.getId());
+        }
+
+        const secret = Auth.codeGenerator();
+        const expire = DateTime.formatTz(DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_OTP));
+
+        const token = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': Auth.TOKEN_TYPE_PHONE,
+            'secret': Auth.hash(secret),
+            'expire': expire,
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        const createdToken = await dbForProject.createDocument('tokens', token.setAttribute('$permissions', [
+            Permission.read(Role.user(user.getId())),
+            Permission.update(Role.user(user.getId())),
+            Permission.delete(Role.user(user.getId())),
+        ]));
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/sms-base.tpl');
+
+        const customTemplate = project.getAttribute('templates', [])[`sms.login-${locale.default}`] ?? [];
+        if (customTemplate) {
+            message = customTemplate['message'] ?? message;
+        }
+
+        const messageContent = Template.fromString(locale.getText("sms.verification.body"));
+        messageContent
+            .setParam('{{project}}', project.getAttribute('name'))
+            .setParam('{{secret}}', secret);
+        const messageText = messageContent.render();
+        message = message.setParam('{{token}}', messageText);
+
+        const messageDoc = new Document({
+            '$id': createdToken.getId(),
+            'data': {
+                'content': message.render(),
+            },
+        });
+
+        queueForMessaging
+            .setType(MESSAGE_SEND_TYPE_INTERNAL)
+            .setMessage(messageDoc)
+            .setRecipients([phone])
+            .setProviderType(MESSAGE_TYPE_SMS);
+
+        createdToken.setAttribute('secret', secret);
+
+        queueForEvents
+            .setPayload(response.output(createdToken, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+
+        createdToken.setAttribute('secret', (isPrivilegedUser || isAppUser) ? Auth.encodeSession(user.getId(), secret) : '');
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(createdToken, Response.MODEL_TOKEN);
+    });
+
+App.post('/v1/account/jwt')
+    .desc('Create JWT')
+    .groups(['api', 'account', 'auth'])
+    .label('scope', 'account')
+    .label('auth.type', 'jwt')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createJWT')
+    .label('sdk.description', '/docs/references/account/create-jwt.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_JWT)
+    .label('abuse-limit', 100)
+    .label('abuse-key', 'url:{url},userId:{userId}')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .action(async (response: Response, user: Document, dbForProject: Database) => {
+        const sessions = user.getAttribute('sessions', []);
+        let current = new Document();
+
+        for (const session of sessions) {
+            if (session.getAttribute('secret') === Auth.hash(Auth.secret)) {
+                current = session;
+                break;
+            }
+        }
+
+        if (current.isEmpty()) {
+            throw new Error('USER_SESSION_NOT_FOUND');
+        }
+
+        const jwt = new JWT(System.getEnv('_APP_OPENSSL_KEY_V1'), 'HS256', 900, 10);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(new Document({
+                jwt: jwt.encode({
+                    userId: user.getId(),
+                    sessionId: current.getId(),
+                }),
+            }), Response.MODEL_JWT);
+    });
+
+App.get('/v1/account/prefs')
+    .desc('Get account preferences')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'getPrefs')
+    .label('sdk.description', '/docs/references/account/get-prefs.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_PREFERENCES)
+    .label('sdk.offline.model', '/account/prefs')
+    .label('sdk.offline.key', 'current')
+    .inject('response')
+    .inject('user')
+    .action(async (response: Response, user: Document) => {
+        const prefs = user.getAttribute('prefs', []);
+        response.dynamic(new Document(prefs), Response.MODEL_PREFERENCES);
+    });
+
+App.get('/v1/account/logs')
+    .desc('List logs')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'listLogs')
+    .label('sdk.description', '/docs/references/account/list-logs.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_LOG_LIST)
+    .param('queries', [], new Queries([new Limit(), new Offset()]), 'Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Only supported methods are limit and offset', true)
+    .inject('response')
+    .inject('user')
+    .inject('locale')
+    .inject('geodb')
+    .inject('dbForProject')
+    .action(async (queries: string[], response: Response, user: Document, locale: Locale, geodb: Reader, dbForProject: Database) => {
+        try {
+            queries = Query.parseQueries(queries);
+        } catch (e) {
+            throw new Error('GENERAL_QUERY_INVALID', e.message);
+        }
+
+        const grouped = Query.groupByType(queries);
+        const limit = grouped.limit ?? APP_LIMIT_COUNT;
+        const offset = grouped.offset ?? 0;
+
+        const audit = new EventAudit(dbForProject);
+        const logs = await audit.getLogsByUser(user.getInternalId(), limit, offset);
+
+        const output = logs.map(log => {
+            log.userAgent = log.userAgent || 'UNKNOWN';
+            const detector = new Detector(log.userAgent);
+
+            const record = geodb.get(log.ip);
+            const countryCode = record ? locale.getText(`countries.${record.country.iso_code.toLowerCase()}`, false) ? record.country.iso_code.toLowerCase() : '--' : '--';
+            const countryName = record ? locale.getText(`countries.${record.country.iso_code.toLowerCase()}`, locale.getText('locale.country.unknown')) : locale.getText('locale.country.unknown');
+
+            return new Document({
+                ...log.getArrayCopy(),
+                ...log.data,
+                ...detector.getOS(),
+                ...detector.getClient(),
+                ...detector.getDevice(),
+                countryCode,
+                countryName,
+            });
+        });
+
+        response.dynamic(new Document({
+            total: await audit.countLogsByUser(user.getInternalId()),
+            logs: output,
+        }), Response.MODEL_LOG_LIST);
+    });
+
+App.patch('/v1/account/name')
+    .desc('Update name')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.name')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateName')
+    .label('sdk.description', '/docs/references/account/update-name.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .param('name', '', new Text(128), 'User name. Max length: 128 chars.')
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (name: string, requestTimestamp: Date | null, response: Response, user: Document, dbForProject: Database, queueForEvents: Event) => {
+        user.setAttribute('name', name);
+        user = await dbForProject.withRequestTimestamp(requestTimestamp, () => dbForProject.updateDocument('users', user.getId(), user));
+        queueForEvents.setParam('userId', user.getId());
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.patch('/v1/account/password')
+    .desc('Update password')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.password')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updatePassword')
+    .label('sdk.description', '/docs/references/account/update-password.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .label('abuse-limit', 10)
+    .param('password', '', (project, passwordsDictionary) => new PasswordDictionary(passwordsDictionary, project.getAttribute('auths', [])['passwordDictionary'] ?? false), 'New user password. Must be at least 8 chars.', false, ['project', 'passwordsDictionary'])
+    .param('oldPassword', '', new Password(), 'Current user password. Must be at least 8 chars.', true)
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('user')
+    .inject('project')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('hooks')
+    .action(async (password: string, oldPassword: string, requestTimestamp: Date | null, response: Response, user: Document, project: Document, dbForProject: Database, queueForEvents: Event, hooks: Hooks) => {
+        if (!empty(user.getAttribute('passwordUpdate')) && !Auth.passwordVerify(oldPassword, user.getAttribute('password'), user.getAttribute('hash'), user.getAttribute('hashOptions'))) {
+            throw new Error('USER_INVALID_CREDENTIALS');
+        }
+
+        const newPassword = Auth.passwordHash(password, Auth.DEFAULT_ALGO, Auth.DEFAULT_ALGO_OPTIONS);
+        const historyLimit = project.getAttribute('auths', [])['passwordHistory'] ?? 0;
+        let history = user.getAttribute('passwordHistory', []);
+        if (historyLimit > 0) {
+            const validator = new PasswordHistory(history, user.getAttribute('hash'), user.getAttribute('hashOptions'));
+            if (!validator.isValid(password)) {
+                throw new Error('USER_PASSWORD_RECENTLY_USED');
+            }
+
+            history.push(newPassword);
+            history = history.slice(-historyLimit);
+        }
+
+        if (project.getAttribute('auths', [])['personalDataCheck'] ?? false) {
+            const personalDataValidator = new PersonalData(user.getId(), user.getAttribute('email'), user.getAttribute('name'), user.getAttribute('phone'));
+            if (!personalDataValidator.isValid(password)) {
+                throw new Error('USER_PASSWORD_PERSONAL_DATA');
+            }
+        }
+
+        hooks.trigger('passwordValidator', [dbForProject, project, password, user, true]);
+
+        user
+            .setAttribute('password', newPassword)
+            .setAttribute('passwordHistory', history)
+            .setAttribute('passwordUpdate', DateTime.now())
+            .setAttribute('hash', Auth.DEFAULT_ALGO)
+            .setAttribute('hashOptions', Auth.DEFAULT_ALGO_OPTIONS);
+
+        user = await dbForProject.withRequestTimestamp(requestTimestamp, () => dbForProject.updateDocument('users', user.getId(), user));
+        queueForEvents.setParam('userId', user.getId());
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.patch('/v1/account/email')
+    .desc('Update email')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.email')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateEmail')
+    .label('sdk.description', '/docs/references/account/update-email.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .param('email', '', new Email(), 'User email.')
+    .param('password', '', new Password(), 'User password. Must be at least 8 chars.')
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('project')
+    .inject('hooks')
+    .action(async (email: string, password: string, requestTimestamp: Date | null, response: Response, user: Document, dbForProject: Database, queueForEvents: Event, project: Document, hooks: Hooks) => {
+        const passwordUpdate = user.getAttribute('passwordUpdate');
+
+        if (!empty(passwordUpdate) && !Auth.passwordVerify(password, user.getAttribute('password'), user.getAttribute('hash'), user.getAttribute('hashOptions'))) {
+            throw new Error('USER_INVALID_CREDENTIALS');
+        }
+
+        hooks.trigger('passwordValidator', [dbForProject, project, password, user, false]);
+
+        const oldEmail = user.getAttribute('email');
+        email = email.toLowerCase();
+
+        const identityWithMatchingEmail = await dbForProject.findOne('identities', [
+            Query.equal('providerEmail', [email]),
+            Query.notEqual('userInternalId', user.getInternalId()),
+        ]);
+        if (identityWithMatchingEmail && !identityWithMatchingEmail.isEmpty()) {
+            throw new Error('GENERAL_BAD_REQUEST');
+        }
+
+        user.setAttribute('email', email).setAttribute('emailVerification', false);
+
+        if (empty(passwordUpdate)) {
+            user
+                .setAttribute('password', Auth.passwordHash(password, Auth.DEFAULT_ALGO, Auth.DEFAULT_ALGO_OPTIONS))
+                .setAttribute('hash', Auth.DEFAULT_ALGO)
+                .setAttribute('hashOptions', Auth.DEFAULT_ALGO_OPTIONS)
+                .setAttribute('passwordUpdate', DateTime.now());
+        }
+
+        const target = await Authorization.skip(() => dbForProject.findOne('targets', [
+            Query.equal('identifier', [email]),
+        ]));
+
+        if (target && !target.isEmpty()) {
+            throw new Error('USER_TARGET_ALREADY_EXISTS');
+        }
+
+        try {
+            user = await dbForProject.withRequestTimestamp(requestTimestamp, () => dbForProject.updateDocument('users', user.getId(), user));
+            const oldTarget = user.find('identifier', oldEmail, 'targets');
+
+            if (oldTarget && !oldTarget.isEmpty()) {
+                await Authorization.skip(() => dbForProject.updateDocument('targets', oldTarget.getId(), oldTarget.setAttribute('identifier', email)));
+            }
+            await dbForProject.purgeCachedDocument('users', user.getId());
+        } catch (Duplicate) {
+            throw new Error('GENERAL_BAD_REQUEST');
+        }
+
+        queueForEvents.setParam('userId', user.getId());
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.patch('/v1/account/phone')
+    .desc('Update phone')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.phone')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updatePhone')
+    .label('sdk.description', '/docs/references/account/update-phone.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .param('phone', '', new Phone(), 'Phone number. Format this number with a leading \'+\' and a country code, e.g., +16175551212.')
+    .param('password', '', new Password(), 'User password. Must be at least 8 chars.')
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('project')
+    .inject('hooks')
+    .action(async (phone: string, password: string, requestTimestamp: Date | null, response: Response, user: Document, dbForProject: Database, queueForEvents: Event, project: Document, hooks: Hooks) => {
+        const passwordUpdate = user.getAttribute('passwordUpdate');
+
+        if (!empty(passwordUpdate) && !Auth.passwordVerify(password, user.getAttribute('password'), user.getAttribute('hash'), user.getAttribute('hashOptions'))) {
+            throw new Error('USER_INVALID_CREDENTIALS');
+        }
+
+        hooks.trigger('passwordValidator', [dbForProject, project, password, user, false]);
+
+        const target = await Authorization.skip(() => dbForProject.findOne('targets', [
+            Query.equal('identifier', [phone]),
+        ]));
+
+        if (target && !target.isEmpty()) {
+            throw new Error('USER_TARGET_ALREADY_EXISTS');
+        }
+
+        const oldPhone = user.getAttribute('phone');
+        user.setAttribute('phone', phone).setAttribute('phoneVerification', false);
+
+        if (empty(passwordUpdate)) {
+            user
+                .setAttribute('password', Auth.passwordHash(password, Auth.DEFAULT_ALGO, Auth.DEFAULT_ALGO_OPTIONS))
+                .setAttribute('hash', Auth.DEFAULT_ALGO)
+                .setAttribute('hashOptions', Auth.DEFAULT_ALGO_OPTIONS)
+                .setAttribute('passwordUpdate', DateTime.now());
+        }
+
+        try {
+            user = await dbForProject.withRequestTimestamp(requestTimestamp, () => dbForProject.updateDocument('users', user.getId(), user));
+            const oldTarget = user.find('identifier', oldPhone, 'targets');
+
+            if (oldTarget && !oldTarget.isEmpty()) {
+                await Authorization.skip(() => dbForProject.updateDocument('targets', oldTarget.getId(), oldTarget.setAttribute('identifier', phone)));
+            }
+            await dbForProject.purgeCachedDocument('users', user.getId());
+        } catch (Duplicate) {
+            throw new Error('USER_PHONE_ALREADY_EXISTS');
+        }
+
+        queueForEvents.setParam('userId', user.getId());
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.patch('/v1/account/prefs')
+    .desc('Update preferences')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.prefs')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updatePrefs')
+    .label('sdk.description', '/docs/references/account/update-prefs.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account/prefs')
+    .label('sdk.offline.key', 'current')
+    .param('prefs', [], new Assoc(), 'Prefs key-value JSON object.')
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (prefs: object, requestTimestamp: Date | null, response: Response, user: Document, dbForProject: Database, queueForEvents: Event) => {
+        user.setAttribute('prefs', prefs);
+        user = await dbForProject.withRequestTimestamp(requestTimestamp, () => dbForProject.updateDocument('users', user.getId(), user));
+        queueForEvents.setParam('userId', user.getId());
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.patch('/v1/account/status')
+    .desc('Update status')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.status')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateStatus')
+    .label('sdk.description', '/docs/references/account/update-status.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .inject('requestTimestamp')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async (requestTimestamp: Date | null, request: Request, response: Response, user: Document, dbForProject: Database, queueForEvents: Event) => {
+        user.setAttribute('status', false);
+        user = await dbForProject.withRequestTimestamp(requestTimestamp, () => dbForProject.updateDocument('users', user.getId(), user));
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setPayload(response.output(user, Response.MODEL_ACCOUNT));
+
+        if (!Config.getParam('domainVerification')) {
+            response.addHeader('X-Fallback-Cookies', JSON.stringify([]));
+        }
+
+        const protocol = request.getProtocol();
+        response
+            .addCookie(Auth.cookieName + '_legacy', '', Date.now() - 3600, '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+            .addCookie(Auth.cookieName, '', Date.now() - 3600, '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'));
+
+        response.dynamic(user, Response.MODEL_ACCOUNT);
+    });
+
+App.post('/v1/account/recovery')
+    .desc('Create password recovery')
+    .groups(['api', 'account'])
+    .label('scope', 'sessions.write')
+    .label('event', 'users.[userId].recovery.[tokenId].create')
+    .label('audits.event', 'recovery.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createRecovery')
+    .label('sdk.description', '/docs/references/account/create-recovery.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', ['url:{url},email:{param-email}', 'url:{url},ip:{ip}'])
+    .param('email', '', new Email(), 'User email.')
+    .param('url', '', (clients) => new Host(clients), 'URL to redirect the user back to your app from the recovery email. Only URLs from hostnames in your project platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', false, ['clients'])
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('locale')
+    .inject('queueForMails')
+    .inject('queueForEvents')
+    .action(async (email: string, url: string, request: Request, response: Response, user: Document, dbForProject: Database, project: Document, locale: Locale, queueForMails: Mail, queueForEvents: Event) => {
+        if (!System.getEnv('_APP_SMTP_HOST')) {
+            throw new Error('SMTP Disabled');
+        }
+        url = htmlentities(url);
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+
+        email = email.toLowerCase();
+
+        const profile = await dbForProject.findOne('users', [
+            Query.equal('email', [email]),
+        ]);
+
+        if (!profile) {
+            throw new Error('USER_NOT_FOUND');
+        }
+
+        user.setAttributes(profile.getArrayCopy());
+
+        if (!profile.getAttribute('status')) {
+            throw new Error('USER_BLOCKED');
+        }
+
+        const expire = DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_RECOVERY);
+        const secret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_RECOVERY);
+
+        const recovery = new Document({
+            '$id': ID.unique(),
+            'userId': profile.getId(),
+            'userInternalId': profile.getInternalId(),
+            'type': Auth.TOKEN_TYPE_RECOVERY,
+            'secret': Auth.hash(secret),
+            'expire': expire,
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+        });
+
+        Authorization.setRole(Role.user(profile.getId()).toString());
+
+        await dbForProject.createDocument('tokens', recovery.setAttribute('$permissions', [
+            Permission.read(Role.user(profile.getId())),
+            Permission.update(Role.user(profile.getId())),
+            Permission.delete(Role.user(profile.getId())),
+        ]));
+
+        await dbForProject.purgeCachedDocument('users', profile.getId());
+
+        url = Template.parseURL(url);
+        url.query = Template.mergeQuery(url.query || '', { userId: profile.getId(), secret, expire });
+        url = Template.unParseURL(url);
+
+        const projectName = project.isEmpty() ? 'Console' : project.getAttribute('name', '[APP-NAME]');
+        let body = locale.getText("emails.recovery.body");
+        let subject = locale.getText("emails.recovery.subject");
+        const customTemplate = project.getAttribute('templates', [])[`email.recovery-${locale.default}`] ?? [];
+
+        let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-inner-base.tpl');
+        message
+            .setParam('{{body}}', body, { escapeHtml: false })
+            .setParam('{{hello}}', locale.getText("emails.recovery.hello"))
+            .setParam('{{footer}}', locale.getText("emails.recovery.footer"))
+            .setParam('{{thanks}}', locale.getText("emails.recovery.thanks"))
+            .setParam('{{signature}}', locale.getText("emails.recovery.signature"));
+        body = message.render();
+
+        const smtp = project.getAttribute('smtp', []);
+        const smtpEnabled = smtp.enabled || false;
+
+        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
+        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+        let replyTo = "";
+
+        if (smtpEnabled) {
+            if (smtp.senderEmail) {
+                senderEmail = smtp.senderEmail;
+            }
+            if (smtp.senderName) {
+                senderName = smtp.senderName;
+            }
+            if (smtp.replyTo) {
+                replyTo = smtp.replyTo;
+            }
+
+            queueForMails
+                .setSmtpHost(smtp.host || '')
+                .setSmtpPort(smtp.port || '')
+                .setSmtpUsername(smtp.username || '')
+                .setSmtpPassword(smtp.password || '')
+                .setSmtpSecure(smtp.secure || '');
+
+            if (customTemplate) {
+                if (customTemplate.senderEmail) {
+                    senderEmail = customTemplate.senderEmail;
+                }
+                if (customTemplate.senderName) {
+                    senderName = customTemplate.senderName;
+                }
+                if (customTemplate.replyTo) {
+                    replyTo = customTemplate.replyTo;
+                }
+
+                body = customTemplate.message || '';
+                subject = customTemplate.subject || subject;
+            }
+
+            queueForMails
+                .setSmtpReplyTo(replyTo)
+                .setSmtpSenderEmail(senderEmail)
+                .setSmtpSenderName(senderName);
+        }
+
+        const emailVariables = {
+            direction: locale.getText('settings.direction'),
+            user: profile.getAttribute('name'),
+            redirect: url,
+            project: projectName,
+            team: ''
+        };
+
+        queueForMails
+            .setRecipient(profile.getAttribute('email', ''))
+            .setName(profile.getAttribute('name', ''))
+            .setBody(body)
+            .setVariables(emailVariables)
+            .setSubject(subject)
+            .trigger();
+
+        recovery.setAttribute('secret', secret);
+
+        queueForEvents
+            .setParam('userId', profile.getId())
+            .setParam('tokenId', recovery.getId())
+            .setUser(profile)
+            .setPayload(response.output(recovery, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+
+        if (!isPrivilegedUser && !isAppUser) {
+            recovery.setAttribute('secret', '');
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(recovery, Response.MODEL_TOKEN);
+    });
+
+
+
+
+    App.put('/v1/account/recovery')
+    .desc('Create password recovery (confirmation)')
+    .groups(['api', 'account'])
+    .label('scope', 'sessions.write')
+    .label('event', 'users.[userId].recovery.[tokenId].update')
+    .label('audits.event', 'recovery.update')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('audits.userId', '{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateRecovery')
+    .label('sdk.description', '/docs/references/account/update-recovery.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'url:{url},userId:{param-userId}')
+    .param('userId', '', new UID(), 'User ID.')
+    .param('secret', '', new Text(256), 'Valid reset token.')
+    .param('password', '', (project, passwordsDictionary) => new PasswordDictionary(passwordsDictionary, project.getAttribute('auths', [])['passwordDictionary'] ?? false), 'New user password. Must be between 8 and 256 chars.', false, ['project', 'passwordsDictionary'])
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('queueForEvents')
+    .inject('hooks')
+    .action(async function (userId: string, secret: string, password: string, response: Response, user: Document, dbForProject: Database, project: Document, queueForEvents: Event, hooks: Hooks) {
+        const profile = await dbForProject.getDocument('users', userId);
+
+        if (profile.isEmpty()) {
+            throw new Exception(Exception.USER_NOT_FOUND);
+        }
+
+        const tokens = profile.getAttribute('tokens', []);
+        const verifiedToken = Auth.tokenVerify(tokens, Auth.TOKEN_TYPE_RECOVERY, secret);
+
+        if (!verifiedToken) {
+            throw new Exception(Exception.USER_INVALID_TOKEN);
+        }
+
+        Authorization.setRole(Role.user(profile.getId()).toString());
+
+        const newPassword = Auth.passwordHash(password, Auth.DEFAULT_ALGO, Auth.DEFAULT_ALGO_OPTIONS);
+
+        const historyLimit = project.getAttribute('auths', [])['passwordHistory'] ?? 0;
+        let history = profile.getAttribute('passwordHistory', []);
+        if (historyLimit > 0) {
+            const validator = new PasswordHistory(history, profile.getAttribute('hash'), profile.getAttribute('hashOptions'));
+            if (!validator.isValid(password)) {
+                throw new Exception(Exception.USER_PASSWORD_RECENTLY_USED);
+            }
+
+            history.push(newPassword);
+            history = history.slice(-historyLimit);
+        }
+
+        hooks.trigger('passwordValidator', [dbForProject, project, password, user, true]);
+
+        await dbForProject.updateDocument('users', profile.getId(), profile
+            .setAttribute('password', newPassword)
+            .setAttribute('passwordHistory', history)
+            .setAttribute('passwordUpdate', DateTime.now())
+            .setAttribute('hash', Auth.DEFAULT_ALGO)
+            .setAttribute('hashOptions', Auth.DEFAULT_ALGO_OPTIONS)
+            .setAttribute('emailVerification', true));
+
+        user.setAttributes(profile.getArrayCopy());
+
+        const recoveryDocument = await dbForProject.getDocument('tokens', verifiedToken.getId());
+
+        await dbForProject.deleteDocument('tokens', verifiedToken.getId());
+        dbForProject.purgeCachedDocument('users', profile.getId());
+
+        queueForEvents
+            .setParam('userId', profile.getId())
+            .setParam('tokenId', recoveryDocument.getId());
+
+        response.dynamic(recoveryDocument, Response.MODEL_TOKEN);
+    });
+
+    App.post('/v1/account/verification')
+    .desc('Create email verification')
+    .groups(['api', 'account'])
+    .label('scope', 'account')
+    .label('event', 'users.[userId].verification.[tokenId].create')
+    .label('audits.event', 'verification.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createVerification')
+    .label('sdk.description', '/docs/references/account/create-email-verification.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'url:{url},userId:{userId}')
+    .param('url', '', (clients) => new Host(clients), 'URL to redirect the user back to your app from the verification email. Only URLs from hostnames in your project platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.', false, ['clients']) // TODO add built-in confirm page
+    .inject('request')
+    .inject('response')
+    .inject('project')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('queueForEvents')
+    .inject('queueForMails')
+    .action(async function (url: string, request: Request, response: Response, project: Document, user: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForMails: Mail) {
+
+        if (empty(System.getEnv('_APP_SMTP_HOST'))) {
+            throw new Exception(Exception.GENERAL_SMTP_DISABLED, 'SMTP Disabled');
+        }
+
+        url = htmlentities(url);
+        if (user.getAttribute('emailVerification')) {
+            throw new Exception(Exception.USER_EMAIL_ALREADY_VERIFIED);
+        }
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+        const verificationSecret = Auth.tokenGenerator(Auth.TOKEN_LENGTH_VERIFICATION);
+        const expire = DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_CONFIRM);
+
+        const verification = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': Auth.TOKEN_TYPE_VERIFICATION,
+            'secret': Auth.hash(verificationSecret), // One way hash encryption to protect DB leak
+            'expire': expire,
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        await dbForProject.createDocument('tokens', verification
+            .setAttribute('$permissions', [
+                Permission.read(Role.user(user.getId())),
+                Permission.update(Role.user(user.getId())),
+                Permission.delete(Role.user(user.getId())),
+            ]));
+
+        dbForProject.purgeCachedDocument('users', user.getId());
+
+        url = Template.parseURL(url);
+        url['query'] = Template.mergeQuery(((isset(url['query'])) ? url['query'] : ''), ['userId' => user.getId(), 'secret' => verificationSecret, 'expire' => expire]);
+        url = Template.unParseURL(url);
+
+        const projectName = project.isEmpty() ? 'Console' : project.getAttribute('name', '[APP-NAME]');
+        let body = locale.getText("emails.verification.body");
+        let subject = locale.getText("emails.verification.subject");
+        const customTemplate = project.getAttribute('templates', [])['email.verification-' + locale.default] ?? [];
+
+        const message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-inner-base.tpl');
+        message
+            .setParam('{{body}}', body, escapeHtml: false)
+            .setParam('{{hello}}', locale.getText("emails.verification.hello"))
+            .setParam('{{footer}}', locale.getText("emails.verification.footer"))
+            .setParam('{{thanks}}', locale.getText("emails.verification.thanks"))
+            .setParam('{{signature}}', locale.getText("emails.verification.signature"));
+
+        body = message.render();
+
+        const smtp = project.getAttribute('smtp', []);
+        const smtpEnabled = smtp['enabled'] ?? false;
+
+        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
+        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', APP_NAME + ' Server');
+        let replyTo = "";
+
+        if (smtpEnabled) {
+            if (!empty(smtp['senderEmail'])) {
+                senderEmail = smtp['senderEmail'];
+            }
+            if (!empty(smtp['senderName'])) {
+                senderName = smtp['senderName'];
+            }
+            if (!empty(smtp['replyTo'])) {
+                replyTo = smtp['replyTo'];
+            }
+
+            queueForMails
+                .setSmtpHost(smtp['host'] ?? '')
+                .setSmtpPort(smtp['port'] ?? '')
+                .setSmtpUsername(smtp['username'] ?? '')
+                .setSmtpPassword(smtp['password'] ?? '')
+                .setSmtpSecure(smtp['secure'] ?? '');
+
+            if (!empty(customTemplate)) {
+                if (!empty(customTemplate['senderEmail'])) {
+                    senderEmail = customTemplate['senderEmail'];
+                }
+                if (!empty(customTemplate['senderName'])) {
+                    senderName = customTemplate['senderName'];
+                }
+                if (!empty(customTemplate['replyTo'])) {
+                    replyTo = customTemplate['replyTo'];
+                }
+
+                body = customTemplate['message'] ?? '';
+                subject = customTemplate['subject'] ?? subject;
+            }
+
+            queueForMails
+                .setSmtpReplyTo(replyTo)
+                .setSmtpSenderEmail(senderEmail)
+                .setSmtpSenderName(senderName);
+        }
+
+        const emailVariables = {
+            'direction': locale.getText('settings.direction'),
+            // {{user}}, {{redirect}} and {{project}} are required in default and custom templates
+            'user': user.getAttribute('name'),
+            'redirect': url,
+            'project': projectName,
+            // TODO: remove unnecessary team variable from this email
+            'team': '',
+        };
+
+        queueForMails
+            .setSubject(subject)
+            .setBody(body)
+            .setVariables(emailVariables)
+            .setRecipient(user.getAttribute('email'))
+            .setName(user.getAttribute('name') ?? '')
+            .trigger();
+
+        // Set to unhashed secret for events and server responses
+        verification.setAttribute('secret', verificationSecret);
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('tokenId', verification.getId())
+            .setPayload(response.output(verification, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+
+        // Hide secret for clients
+        if (!isPrivilegedUser && !isAppUser) {
+            verification.setAttribute('secret', '');
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(verification, Response.MODEL_TOKEN);
+    });
+
+    App.put('/v1/account/verification')
+    .desc('Create email verification (confirmation)')
+    .groups(['api', 'account'])
+    .label('scope', 'public')
+    .label('event', 'users.[userId].verification.[tokenId].update')
+    .label('audits.event', 'verification.update')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateVerification')
+    .label('sdk.description', '/docs/references/account/update-email-verification.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'url:{url},userId:{param-userId}')
+    .param('userId', '', new UID(), 'User ID.')
+    .param('secret', '', new Text(256), 'Valid verification token.')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async function (userId: string, secret: string, response: Response, user: Document, dbForProject: Database, queueForEvents: Event) {
+
+        const profile = await Authorization.skip(() => dbForProject.getDocument('users', userId));
+
+        if (profile.isEmpty()) {
+            throw new Exception(Exception.USER_NOT_FOUND);
+        }
+
+        const tokens = profile.getAttribute('tokens', []);
+        const verifiedToken = Auth.tokenVerify(tokens, Auth.TOKEN_TYPE_VERIFICATION, secret);
+
+        if (!verifiedToken) {
+            throw new Exception(Exception.USER_INVALID_TOKEN);
+        }
+
+        Authorization.setRole(Role.user(profile.getId()).toString());
+
+        const updatedProfile = await dbForProject.updateDocument('users', profile.getId(), profile.setAttribute('emailVerification', true));
+
+        user.setAttributes(updatedProfile.getArrayCopy());
+
+        const verification = await dbForProject.getDocument('tokens', verifiedToken.getId());
+
+        // We act like we're updating and validating the verification token but actually we don't need it anymore.
+        await dbForProject.deleteDocument('tokens', verifiedToken.getId());
+        dbForProject.purgeCachedDocument('users', profile.getId());
+
+        queueForEvents
+            .setParam('userId', userId)
+            .setParam('tokenId', verification.getId());
+
+        response.dynamic(verification, Response.MODEL_TOKEN);
+    });
+
+App.post('/v1/account/verification/phone')
+    .desc('Create phone verification')
+    .groups(['api', 'account', 'auth'])
+    .label('scope', 'account')
+    .label('auth.type', 'phone')
+    .label('event', 'users.[userId].verification.[tokenId].create')
+    .label('audits.event', 'verification.create')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'createPhoneVerification')
+    .label('sdk.description', '/docs/references/account/create-phone-verification.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', ['url:{url},userId:{userId}', 'url:{url},ip:{ip}'])
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('queueForMessaging')
+    .inject('project')
+    .inject('locale')
+    .action(async function (request: Request, response: Response, user: Document, dbForProject: Database, queueForEvents: Event, queueForMessaging: Messaging, project: Document, locale: Locale) {
+        if (empty(System.getEnv('_APP_SMS_PROVIDER'))) {
+            throw new Exception(Exception.GENERAL_PHONE_DISABLED, 'Phone provider not configured');
+        }
+
+        if (empty(user.getAttribute('phone'))) {
+            throw new Exception(Exception.USER_PHONE_NOT_FOUND);
+        }
+
+        if (user.getAttribute('phoneVerification')) {
+            throw new Exception(Exception.USER_PHONE_ALREADY_VERIFIED);
+        }
+
+        const roles = Authorization.getRoles();
+        const isPrivilegedUser = Auth.isPrivilegedUser(roles);
+        const isAppUser = Auth.isAppUser(roles);
+        const secret = Auth.codeGenerator();
+        const expire = DateTime.addSeconds(new Date(), Auth.TOKEN_EXPIRATION_CONFIRM);
+
+        const verification = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'type': Auth.TOKEN_TYPE_PHONE,
+            'secret': Auth.hash(secret),
+            'expire': expire,
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+        });
+
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        await dbForProject.createDocument('tokens', verification
+            .setAttribute('$permissions', [
+                Permission.read(Role.user(user.getId())),
+                Permission.update(Role.user(user.getId())),
+                Permission.delete(Role.user(user.getId())),
+            ]));
+
+        dbForProject.purgeCachedDocument('users', user.getId());
+
+        let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/sms-base.tpl');
+
+        const customTemplate = project.getAttribute('templates', [])['sms.verification-' + locale.default] ?? [];
+        if (!empty(customTemplate)) {
+            message = customTemplate['message'] ?? message;
+        }
+
+        let messageContent = Template.fromString(locale.getText("sms.verification.body"));
+        messageContent
+            .setParam('{{project}}', project.getAttribute('name'))
+            .setParam('{{secret}}', secret);
+        messageContent = strip_tags(messageContent.render());
+        message = message.setParam('{{token}}', messageContent);
+
+        message = message.render();
+
+        const messageDoc = new Document({
+            '$id': verification.getId(),
+            'data': {
+                'content': message,
+            },
+        });
+
+        queueForMessaging
+            .setType(MESSAGE_SEND_TYPE_INTERNAL)
+            .setMessage(messageDoc)
+            .setRecipients([user.getAttribute('phone')])
+            .setProviderType(MESSAGE_TYPE_SMS);
+
+        // Set to unhashed secret for events and server responses
+        verification.setAttribute('secret', secret);
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('tokenId', verification.getId())
+            .setPayload(response.output(verification, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+
+        // Hide secret for clients
+        if (!isPrivilegedUser && !isAppUser) {
+            verification.setAttribute('secret', '');
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(verification, Response.MODEL_TOKEN);
+    });
+
+    App.put('/v1/account/verification/phone')
+    .desc('Update phone verification (confirmation)')
+    .groups(['api', 'account'])
+    .label('scope', 'public')
+    .label('event', 'users.[userId].verification.[tokenId].update')
+    .label('audits.event', 'verification.update')
+    .label('audits.resource', 'user/{response.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updatePhoneVerification')
+    .label('sdk.description', '/docs/references/account/update-phone-verification.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_TOKEN)
+    .label('abuse-limit', 10)
+    .label('abuse-key', 'userId:{param-userId}')
+    .param('userId', '', new UID(), 'User ID.')
+    .param('secret', '', new Text(256), 'Valid verification token.')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async function (userId: string, secret: string, response: Response, user: Document, dbForProject: Database, queueForEvents: Event) {
+
+        const profile = await Authorization.skip(async () => await dbForProject.getDocument('users', userId));
+
+        if (profile.isEmpty()) {
+            throw new Exception(Exception.USER_NOT_FOUND);
+        }
+
+        const verifiedToken = Auth.tokenVerify(user.getAttribute('tokens', []), Auth.TOKEN_TYPE_PHONE, secret);
+
+        if (!verifiedToken) {
+            throw new Exception(Exception.USER_INVALID_TOKEN);
+        }
+
+        Authorization.setRole(Role.user(profile.getId()).toString());
+
+        const updatedProfile = await dbForProject.updateDocument('users', profile.getId(), profile.setAttribute('phoneVerification', true));
+
+        user.setAttributes(updatedProfile.getArrayCopy());
+
+        const verificationDocument = await dbForProject.getDocument('tokens', verifiedToken.getId());
+
+        /**
+         * We act like we're updating and validating
+         * the verification token but actually we don't need it anymore.
+         */
+        await dbForProject.deleteDocument('tokens', verifiedToken.getId());
+        dbForProject.purgeCachedDocument('users', profile.getId());
+
+        queueForEvents
+            .setParam('userId', userId)
+            .setParam('tokenId', verificationDocument.getId());
+
+        response.dynamic(verificationDocument, Response.MODEL_TOKEN);
+    });
+
+App.patch('/v1/account/mfa')
+    .desc('Update MFA')
+    .groups(['api', 'account'])
+    .label('event', 'users.[userId].update.mfa')
+    .label('scope', 'account')
+    .label('audits.event', 'user.update')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'updateMFA')
+    .label('sdk.description', '/docs/references/account/update-mfa.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USER)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .param('mfa', null, new Boolean(), 'Enable or disable MFA.')
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('user')
+    .inject('session')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async function (mfa: boolean, requestTimestamp: Date | null, response: Response, user: Document, session: Document, dbForProject: Database, queueForEvents: Event) {
+
+        user.setAttribute('mfa', mfa);
+
+        const updatedUser = await dbForProject.withRequestTimestamp(requestTimestamp, async () => {
+            return await dbForProject.updateDocument('users', user.getId(), user);
+        });
+
+        if (mfa) {
+            let factors: string[] = session.getAttribute('factors', []);
+            const totp = TOTP.getAuthenticatorFromUser(user);
+            if (totp !== null && totp.getAttribute('verified', false)) {
+                factors.push(Type.TOTP);
+            }
+            if (user.getAttribute('email', false) && user.getAttribute('emailVerification', false)) {
+                factors.push(Type.EMAIL);
+            }
+            if (user.getAttribute('phone', false) && user.getAttribute('phoneVerification', false)) {
+                factors.push(Type.PHONE);
+            }
+            factors = Array.from(new Set(factors));
+
+            session.setAttribute('factors', factors);
+            await dbForProject.updateDocument('sessions', session.getId(), session);
+        }
+
+        queueForEvents.setParam('userId', user.getId());
+
+        response.dynamic(updatedUser, Response.MODEL_ACCOUNT);
+    });
+
+App.get('/v1/account/mfa/factors')
+    .desc('List Factors')
+    .groups(['api', 'account', 'mfa'])
+    .label('scope', 'account')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'listMfaFactors')
+    .label('sdk.description', '/docs/references/account/list-mfa-factors.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MFA_FACTORS)
+    .label('sdk.offline.model', '/account')
+    .label('sdk.offline.key', 'current')
+    .inject('response')
+    .inject('user')
+    .action(async function (response: Response, user: Document) {
+
+        const mfaRecoveryCodes = user.getAttribute('mfaRecoveryCodes', []);
+        const recoveryCodeEnabled = Array.isArray(mfaRecoveryCodes) && mfaRecoveryCodes.length > 0;
+
+        const totp = TOTP.getAuthenticatorFromUser(user);
+
+        const factors = new Document({
+            [Type.TOTP]: totp !== null && totp.getAttribute('verified', false),
+            [Type.EMAIL]: user.getAttribute('email', false) && user.getAttribute('emailVerification', false),
+            [Type.PHONE]: user.getAttribute('phone', false) && user.getAttribute('phoneVerification', false),
+            [Type.RECOVERY_CODE]: recoveryCodeEnabled
+        });
+
+        response.dynamic(factors, Response.MODEL_MFA_FACTORS);
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+App
+    .get('/v1/accounts')
+    .desc('Get all users')
+    .inject('request')
+    .inject('response')
+    .action(async (req: Request, res: Response) => {
+        const localInstance = new Local(path.resolve(__dirname, '../../resources/disk-a'));
+        await localInstance.createDirectory(path.resolve(__dirname, '../../resources/disk-a/test_memer'));
+        await localInstance.write(localInstance.getPath('test_memer.txt'), 'tsdfsdest_memer');
+        const text = await localInstance.read(localInstance.getPath('test_memer.txt'));
+        console.log(text);
+        res.send('Hello World from accounts');
+    });
+
+App
+    .post('/v1/account')
+    .desc('Get all users')
+    .groups(['api', 'account', 'auth'])
+    .label('event', 'users.[userId].create')
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'emailPassword')
+    .label('audits.event', 'user.create')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'create')
+    .label('sdk.description', '/docs/references/account/create.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    // .label('sdk.response.model', Response.MODEL_USER)
+    .label('abuse-limit', 10)
+    .inject('request')
+    .inject('response')
+    .action(async (req: Request, res: Response) => {
+
+        res.send('Hello World from accounts');
+    });
+
+
+/* App
+    .get('/v1/service/mert')
+    .desc('Create account')
+    .groups(['api', 'account', 'auth'])
+    .label('event', 'users.[userId].create')
+    .label('scope', 'sessions.write')
+    .label('auth.type', 'emailPassword')
+    .label('audits.event', 'user.create')
+    .label('audits.resource', 'user/{response.$id}')
+    .label('audits.userId', '{response.$id}')
+    .label('sdk.auth', [])
+    .label('sdk.namespace', 'account')
+    .label('sdk.method', 'create')
+    .label('sdk.description', '/docs/references/account/create.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+   // .label('sdk.response.model', Response.MODEL_USER)
+    .label('abuse-limit', 10)
+    .inject('request')
+    .inject('response')
+    .action( (req: Request, res: Response) => {
+        res.send('Hello World from accounts');
+    }); */
