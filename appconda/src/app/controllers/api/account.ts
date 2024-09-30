@@ -1,17 +1,24 @@
 
-import { Database, Query, Duplicate, UID } from '@tuval/database'
-import { ArrayList, Authorization, DateTime, Document, Exception,URLValidator,
-     Host, ID, Permission, Role, Text, WhiteList, 
-     Boolean} from '@tuval/core'
+import { Database, Query, Duplicate, UID, Queries, Limit, Offset } from '@tuval/database'
+import {
+    ArrayList, Authorization, DateTime, Document, Exception, URLValidator,
+    Host, ID, Permission, Role, Text, WhiteList,
+    Boolean,
+    Assoc
+} from '@tuval/core'
 import { Locale } from '@tuval/locale'
-import { Auth, Password, PasswordDictionary, PersonalData, Phrase } from '@tuval/auth'
+import { Audit } from '@tuval/audit'
+import { encode } from 'html-entities';
+import strip_tags from 'striptags';
+import { Auth, Password, PasswordDictionary, PasswordHistory, PersonalData, Phone, Phrase, TOTP } from '@tuval/auth'
 import { Config } from '@tuval/config'
 import { App, Request } from '@tuval/http'
-import { Type } from '@tuval/auth'
+import { Type, TOTPChallenge } from '@tuval/auth'
+import jwt from 'jsonwebtoken';
 import { Detector } from '../../../Appconda/Detector/Detector'
 import _default, * as maxmind from 'maxmind'
 import { Event } from '../../../Appconda/Event/Event'
-import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_EMAIL_TEAM, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_USERS, APP_NAME, DELETE_TYPE_DOCUMENT, DELETE_TYPE_SESSION_TARGETS, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_SESSION, APP_EMAIL_TEAM, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, APP_LIMIT_USERS, APP_NAME, DELETE_TYPE_DOCUMENT, DELETE_TYPE_SESSION_TARGETS, MESSAGE_SEND_TYPE_INTERNAL, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_PUSH, MESSAGE_TYPE_SMS } from '../../init'
 import { Response } from '../../../Appconda/Tuval/Response'
 import { CustomId } from '../../../Appconda/Tuval/Database/Validators/CustomId'
 import { Email } from '../../../Appconda/Network/Validators/Email'
@@ -20,6 +27,46 @@ import { Hooks } from '../../../Appconda/Hooks/Hooks'
 import { APP_PLATFORM_SERVER } from '../../config/platforms'
 import { OpenSSL } from '../../../Appconda/OpenSSL/OpenSSL'
 import { Template } from '../../../Appconda/Template/Template'
+import { Messaging } from '../../../Appconda/Event/Messaging'
+
+
+function empty(value: any): boolean {
+    // Check for null or undefined
+    if (value === null || value === undefined) {
+        return true;
+    }
+
+    // Check for boolean false
+    if (typeof value === 'boolean' && value === false) {
+        return true;
+    }
+
+    // Check for an empty string
+    if (typeof value === 'string' && value.trim() === '') {
+        return true;
+    }
+
+    // Check for number 0 (including numeric strings like '0')
+    if (typeof value === 'number' && value === 0) {
+        return true;
+    }
+    if (typeof value === 'string' && value === '0') {
+        return true;
+    }
+
+    // Check for an empty array
+    if (Array.isArray(value) && value.length === 0) {
+        return true;
+    }
+
+    // Check for an empty object
+    if (typeof value === 'object' && Object.keys(value).length === 0 && value.constructor === Object) {
+        return true;
+    }
+
+    return false;
+}
+
 
 var path = require('path');
 
@@ -1231,7 +1278,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         };
 
         if (!providerEnabled) {
-            failureRedirect('PROJECT_PROVIDER_DISABLED', 
+            failureRedirect('PROJECT_PROVIDER_DISABLED',
                 'This provider is disabled. Please enable the provider from your console to continue.');
         }
 
@@ -1343,7 +1390,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
                 const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
                 if (limit !== 0) {
-                    const total = await dbForProject.count('users',[],  APP_LIMIT_USERS );
+                    const total = await dbForProject.count('users', [], APP_LIMIT_USERS);
 
                     if (total >= limit) {
                         failureRedirect('USER_COUNT_EXCEEDED');
@@ -1686,11 +1733,11 @@ App.post('/v1/account/tokens/magic-url')
         }
 
         export function htmlentities(str: string): string {
-            return str.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+            return str.replace(/[\u00A0-\u9999<>\&]/gim, function (i) {
                 return `&#${i.charCodeAt(0)};`;
             });
         }
-        
+
         url = htmlentities(url);
 
         if (phrase) {
@@ -1883,7 +1930,7 @@ App.post('/v1/account/tokens/magic-url')
         token.setAttribute('secret', tokenSecret);
 
         queueForEvents
-            .setPayload(response.output(token, Response.MODEL_TOKEN),  ['secret'] );
+            .setPayload(response.output(token, Response.MODEL_TOKEN), ['secret']);
 
         if (!isPrivilegedUser && !isAppUser) {
             token.setAttribute('secret', '');
@@ -1946,7 +1993,7 @@ App.post('/v1/account/tokens/email')
             const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
             if (limit !== 0) {
-                const total = await dbForProject.count('users', [],  APP_LIMIT_USERS );
+                const total = await dbForProject.count('users', [], APP_LIMIT_USERS);
 
                 if (total >= limit) {
                     throw new Error('USER_COUNT_EXCEEDED');
@@ -2106,7 +2153,7 @@ App.post('/v1/account/tokens/email')
         token.setAttribute('secret', tokenSecret);
 
         queueForEvents
-            .setPayload(response.output(token, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+            .setPayload(response.output(token, Response.MODEL_TOKEN), ['secret']);
 
         if (!isPrivilegedUser && !isAppUser) {
             token.setAttribute('secret', '');
@@ -2151,7 +2198,7 @@ App.put('/v1/account/sessions/magic-url')
     .inject('locale')
     .inject('geodb')
     .inject('queueForEvents')
-    .action($createSession);
+    .action(createSession);
 
 App.put('/v1/account/sessions/phone')
     .desc('Update phone session')
@@ -2181,7 +2228,7 @@ App.put('/v1/account/sessions/phone')
     .inject('locale')
     .inject('geodb')
     .inject('queueForEvents')
-    .action($createSession);
+    .action(createSession);
 
 App.post('/v1/account/tokens/phone')
     .alias('/v1/account/sessions/phone')
@@ -2212,7 +2259,7 @@ App.post('/v1/account/tokens/phone')
     .inject('queueForMessaging')
     .inject('locale')
     .action(async (userId: string, phone: string, request: Request, response: Response, user: Document, project: Document, dbForProject: Database, queueForEvents: Event, queueForMessaging: Messaging, locale: Locale) => {
-        if (!System.getEnv('_APP_SMS_PROVIDER')) {
+        if (!process.env._APP_SMS_PROVIDER) {
             throw new Error('Phone provider not configured');
         }
 
@@ -2227,7 +2274,7 @@ App.post('/v1/account/tokens/phone')
             const limit = project.getAttribute('auths', [])['limit'] ?? 0;
 
             if (limit !== 0) {
-                const total = await dbForProject.count('users', { max: APP_LIMIT_USERS });
+                const total = await dbForProject.count('users', [], APP_LIMIT_USERS);
 
                 if (total >= limit) {
                     throw new Error('USER_COUNT_EXCEEDED');
@@ -2307,7 +2354,7 @@ App.post('/v1/account/tokens/phone')
 
         await dbForProject.purgeCachedDocument('users', user.getId());
 
-        let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/sms-base.tpl');
+        let message = Template.fromFile(__dirname + '../../config/locale/templates/sms-base.tpl');
 
         const customTemplate = project.getAttribute('templates', [])[`sms.login-${locale.default}`] ?? [];
         if (customTemplate) {
@@ -2337,7 +2384,7 @@ App.post('/v1/account/tokens/phone')
         createdToken.setAttribute('secret', secret);
 
         queueForEvents
-            .setPayload(response.output(createdToken, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+            .setPayload(response.output(createdToken, Response.MODEL_TOKEN), ['secret']);
 
         createdToken.setAttribute('secret', (isPrivilegedUser || isAppUser) ? Auth.encodeSession(user.getId(), secret) : '');
 
@@ -2378,15 +2425,31 @@ App.post('/v1/account/jwt')
             throw new Error('USER_SESSION_NOT_FOUND');
         }
 
-        const jwt = new JWT(System.getEnv('_APP_OPENSSL_KEY_V1'), 'HS256', 900, 10);
+        const secretKey = process.env._APP_OPENSSL_KEY_V1 || 'your-secret-key';
+
+       
+        const payload = process.env._APP_OPENSSL_KEY_V1; // You can put whatever you want in the payload
+        const options = {
+            algorithm: 'HS256',
+            expiresIn: 900, // Token expiration in seconds (900 seconds = 15 minutes)
+            notBefore: 10   // Token will not be valid before 10 seconds from now
+        };
+
+        const token = jwt.sign(
+            { userId: user.getId(), sessionId: current.getId() }, // Payload
+            secretKey,             // Secret key
+            options
+        );
+
+
+        //const token = jwt.sign(payload, secretKey, options);
+
+        //const jwt = new JWT(process.env._APP_OPENSSL_KEY_V1, 'HS256', 900, 10);
 
         response
             .setStatusCode(Response.STATUS_CODE_CREATED)
             .dynamic(new Document({
-                jwt: jwt.encode({
-                    userId: user.getId(),
-                    sessionId: current.getId(),
-                }),
+                jwt: token,
             }), Response.MODEL_JWT);
     });
 
@@ -2427,21 +2490,23 @@ App.get('/v1/account/logs')
     .inject('locale')
     .inject('geodb')
     .inject('dbForProject')
-    .action(async (queries: string[], response: Response, user: Document, locale: Locale, geodb: Reader, dbForProject: Database) => {
+    .action(async (queries: string[], response: Response, user: Document, locale: Locale,
+         geodb: Reader, 
+        dbForProject: Database) => {
         try {
-            queries = Query.parseQueries(queries);
-        } catch (e) {
-            throw new Error('GENERAL_QUERY_INVALID', e.message);
+            queries = Query.parseQueries(queries) as any;
+        } catch (e: Exception) {
+            throw new Exception('GENERAL_QUERY_INVALID', e.message);
         }
 
-        const grouped = Query.groupByType(queries);
+        const grouped = Query.groupByType(queries as any);
         const limit = grouped.limit ?? APP_LIMIT_COUNT;
         const offset = grouped.offset ?? 0;
 
-        const audit = new EventAudit(dbForProject);
+        const audit = new Audit(dbForProject as any);
         const logs = await audit.getLogsByUser(user.getInternalId(), limit, offset);
 
-        const output = logs.map(log => {
+        const output = logs.map((log: any) => {
             log.userAgent = log.userAgent || 'UNKNOWN';
             const detector = new Detector(log.userAgent);
 
@@ -2805,10 +2870,11 @@ App.post('/v1/account/recovery')
     .inject('queueForMails')
     .inject('queueForEvents')
     .action(async (email: string, url: string, request: Request, response: Response, user: Document, dbForProject: Database, project: Document, locale: Locale, queueForMails: Mail, queueForEvents: Event) => {
-        if (!System.getEnv('_APP_SMTP_HOST')) {
+        if (!process.env._APP_SMTP_HOST) {
             throw new Error('SMTP Disabled');
         }
-        url = htmlentities(url);
+
+        url = encodeURIComponent(url);
 
         const roles = Authorization.getRoles();
         const isPrivilegedUser = Auth.isPrivilegedUser(roles);
@@ -2854,18 +2920,18 @@ App.post('/v1/account/recovery')
 
         await dbForProject.purgeCachedDocument('users', profile.getId());
 
-        url = Template.parseURL(url);
-        url.query = Template.mergeQuery(url.query || '', { userId: profile.getId(), secret, expire });
-        url = Template.unParseURL(url);
+        url = Template.parseURL(url) as any;
+        (url as any).query = Template.mergeQuery((url as any).query || '', { userId: profile.getId(), secret, expire });
+        url = Template.unParseURL(url as any);
 
         const projectName = project.isEmpty() ? 'Console' : project.getAttribute('name', '[APP-NAME]');
         let body = locale.getText("emails.recovery.body");
         let subject = locale.getText("emails.recovery.subject");
         const customTemplate = project.getAttribute('templates', [])[`email.recovery-${locale.default}`] ?? [];
 
-        let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-inner-base.tpl');
+        let message = Template.fromFile(__dirname + '/../../config/locale/templates/email-inner-base.tpl');
         message
-            .setParam('{{body}}', body, { escapeHtml: false })
+            .setParam('{{body}}', body,  false )
             .setParam('{{hello}}', locale.getText("emails.recovery.hello"))
             .setParam('{{footer}}', locale.getText("emails.recovery.footer"))
             .setParam('{{thanks}}', locale.getText("emails.recovery.thanks"))
@@ -2875,8 +2941,8 @@ App.post('/v1/account/recovery')
         const smtp = project.getAttribute('smtp', []);
         const smtpEnabled = smtp.enabled || false;
 
-        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
-        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', `${APP_NAME} Server`);
+        let senderEmail = process.env._APP_SYSTEM_EMAIL_ADDRESS || APP_EMAIL_TEAM;
+        let senderName = process.env._APP_SYSTEM_EMAIL_NAME || `${APP_NAME} Server`;
         let replyTo = "";
 
         if (smtpEnabled) {
@@ -2940,7 +3006,7 @@ App.post('/v1/account/recovery')
             .setParam('userId', profile.getId())
             .setParam('tokenId', recovery.getId())
             .setUser(profile)
-            .setPayload(response.output(recovery, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+            .setPayload(response.output(recovery, Response.MODEL_TOKEN),  ['secret'] );
 
         if (!isPrivilegedUser && !isAppUser) {
             recovery.setAttribute('secret', '');
@@ -3061,11 +3127,11 @@ App.post('/v1/account/verification')
     .inject('queueForMails')
     .action(async function (url: string, request: Request, response: Response, project: Document, user: Document, dbForProject: Database, locale: Locale, queueForEvents: Event, queueForMails: Mail) {
 
-        if (empty(System.getEnv('_APP_SMTP_HOST'))) {
-            throw new Exception(Exception.GENERAL_SMTP_DISABLED, 'SMTP Disabled');
+        if (!process.env._APP_SMTP_HOST) {
+            throw new Error('SMTP Disabled');
         }
 
-        url = htmlentities(url);
+        url = encode(url);
         if (user.getAttribute('emailVerification')) {
             throw new Exception(Exception.USER_EMAIL_ALREADY_VERIFIED);
         }
@@ -3098,18 +3164,19 @@ App.post('/v1/account/verification')
 
         dbForProject.purgeCachedDocument('users', user.getId());
 
-        url = Template.parseURL(url);
-        url['query'] = Template.mergeQuery(((isset(url['query'])) ? url['query'] : ''), ['userId' => user.getId(), 'secret' => verificationSecret, 'expire' => expire]);
-        url = Template.unParseURL(url);
+        url = Template.parseURL(url) as any;
+        url['query'] = Template.mergeQuery((url['query'] ? url['query'] : ''),
+         {'userId' : user.getId(), 'secret' : verificationSecret, 'expire' : expire});
+        url = Template.unParseURL(url as any) ;
 
         const projectName = project.isEmpty() ? 'Console' : project.getAttribute('name', '[APP-NAME]');
         let body = locale.getText("emails.verification.body");
         let subject = locale.getText("emails.verification.subject");
         const customTemplate = project.getAttribute('templates', [])['email.verification-' + locale.default] ?? [];
 
-        const message = Template.fromFile(__DIR__ + '/../../config/locale/templates/email-inner-base.tpl');
+        const message = Template.fromFile(__dirname + '../../config/locale/templates/email-inner-base.tpl');
         message
-            .setParam('{{body}}', body, escapeHtml: false)
+            .setParam('{{body}}', body,  false)
             .setParam('{{hello}}', locale.getText("emails.verification.hello"))
             .setParam('{{footer}}', locale.getText("emails.verification.footer"))
             .setParam('{{thanks}}', locale.getText("emails.verification.thanks"))
@@ -3120,8 +3187,8 @@ App.post('/v1/account/verification')
         const smtp = project.getAttribute('smtp', []);
         const smtpEnabled = smtp['enabled'] ?? false;
 
-        let senderEmail = System.getEnv('_APP_SYSTEM_EMAIL_ADDRESS', APP_EMAIL_TEAM);
-        let senderName = System.getEnv('_APP_SYSTEM_EMAIL_NAME', APP_NAME + ' Server');
+        let senderEmail = process.env._APP_SYSTEM_EMAIL_ADDRESS || APP_EMAIL_TEAM;
+        let senderName = process.env._APP_SYSTEM_EMAIL_NAME || (APP_NAME + ' Server');
         let replyTo = "";
 
         if (smtpEnabled) {
@@ -3187,7 +3254,7 @@ App.post('/v1/account/verification')
         queueForEvents
             .setParam('userId', user.getId())
             .setParam('tokenId', verification.getId())
-            .setPayload(response.output(verification, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+            .setPayload(response.output(verification, Response.MODEL_TOKEN),  ['secret']);
 
         // Hide secret for clients
         if (!isPrivilegedUser && !isAppUser) {
@@ -3281,8 +3348,8 @@ App.post('/v1/account/verification/phone')
     .inject('project')
     .inject('locale')
     .action(async function (request: Request, response: Response, user: Document, dbForProject: Database, queueForEvents: Event, queueForMessaging: Messaging, project: Document, locale: Locale) {
-        if (empty(System.getEnv('_APP_SMS_PROVIDER'))) {
-            throw new Exception(Exception.GENERAL_PHONE_DISABLED, 'Phone provider not configured');
+        if (!process.env._APP_SMS_PROVIDER) {
+            throw new Error('Phone provider not configured');
         }
 
         if (empty(user.getAttribute('phone'))) {
@@ -3321,7 +3388,7 @@ App.post('/v1/account/verification/phone')
 
         dbForProject.purgeCachedDocument('users', user.getId());
 
-        let message = Template.fromFile(__DIR__ + '/../../config/locale/templates/sms-base.tpl');
+        let message = Template.fromFile(__dirname + '/../../config/locale/templates/sms-base.tpl');
 
         const customTemplate = project.getAttribute('templates', [])['sms.verification-' + locale.default] ?? [];
         if (!empty(customTemplate)) {
@@ -3332,10 +3399,10 @@ App.post('/v1/account/verification/phone')
         messageContent
             .setParam('{{project}}', project.getAttribute('name'))
             .setParam('{{secret}}', secret);
-        messageContent = strip_tags(messageContent.render());
-        message = message.setParam('{{token}}', messageContent);
+            messageContent = strip_tags(await messageContent.render()) as any;
+            message = message.setParam('{{token}}', messageContent);
 
-        message = message.render();
+        message = message.render() as any;
 
         const messageDoc = new Document({
             '$id': verification.getId(),
@@ -3356,7 +3423,7 @@ App.post('/v1/account/verification/phone')
         queueForEvents
             .setParam('userId', user.getId())
             .setParam('tokenId', verification.getId())
-            .setPayload(response.output(verification, Response.MODEL_TOKEN), { sensitive: ['secret'] });
+            .setPayload(response.output(verification, Response.MODEL_TOKEN), ['secret'] );
 
         // Hide secret for clients
         if (!isPrivilegedUser && !isAppUser) {
@@ -3635,7 +3702,7 @@ App.put('/v1/account/mfa/authenticators/:type')
         const success = (() => {
             switch (type) {
                 case Type.TOTP:
-                    return Challenge.TOTP.verify(user, otp);
+                    return TOTPChallenge.verify(user, otp);
                 default:
                     return false;
             }
@@ -3810,7 +3877,7 @@ App.delete('/v1/account/mfa/authenticators/:type')
         let success = (() => {
             switch (type) {
                 case Type.TOTP:
-                    return Challenge.TOTP.verify(user, otp);
+                    return TOTPChallenge.verify(user, otp);
                 default:
                     return false;
             }
@@ -3888,7 +3955,7 @@ App.post('/v1/account/mfa/challenge')
 
         switch (factor) {
             case Type.PHONE:
-                if (!System.getEnv('_APP_SMS_PROVIDER')) {
+                if (!process.env._APP_SMS_PROVIDER) {
                     throw new Error('Phone provider not configured');
                 }
                 if (!user.getAttribute('phone')) {
