@@ -8,7 +8,7 @@ import { OpenSSL } from "../Appconda/OpenSSL/OpenSSL";
 import { Email } from "../Appconda/Network/Validators/Email";
 import { AppcondaURL } from "../Appconda/Url/URL";
 import { Group, Pool } from '@tuval/pools'
-import { Redis as RedisCache } from '@tuval/cache'
+import { Cache, Redis as RedisCache, Sharding } from '@tuval/cache'
 import { DSN } from "@tuval/dsn";
 import { createClient, RedisClientType } from 'redis';
 import { Connection, RedisConnection } from "@tuval/queue";
@@ -31,6 +31,12 @@ import { Usage } from "../Appconda/Event/Usage";
 import { Certificate } from "../Appconda/Event/Certificate";
 import { Migration } from "../Appconda/Event/Migration";
 import { Origin } from "../Appconda/Network/Validators/Origin";
+import { Auth } from "@tuval/auth";
+import { Request } from "../Appconda/Tuval/Request";
+import { Response } from "../Appconda/Tuval/Response";
+import jwt from 'jsonwebtoken';
+import { Device, Local, Storage } from "@tuval/storage";
+import { APP_PLATFORM_SERVER } from "./config/platforms";
 
 let geoReader: maxmind.Reader<maxmind.CityResponse> | null = null;
 
@@ -1094,3 +1100,551 @@ App.setResource('clients', (request: any, console: Document, project: Document) 
     return Array.from(new Set(clients));
 }, ['request', 'console', 'project']);
 
+
+App.setResource('user', async (mode: string, project: Document, console: Document, request: Request, response: Response, dbForProject: Database, dbForConsole: Database) => {
+    Authorization.setDefaultStatus(true);
+
+    Auth.setCookieName('a_session_' + project.getAttribute('id', ''));
+
+    if (APP_MODE_ADMIN === mode) {
+        Auth.setCookieName('a_session_' + console.getAttribute('id', ''));
+    }
+
+    let session = Auth.decodeSession(
+        request.getCookie(Auth.cookieName) || request.getCookie(Auth.cookieName + '_legacy') || ''
+    );
+
+    if (!session['id'] && !session['secret']) {
+        const sessionHeader = request.getHeader('x-appconda-session') as string || '';
+        if (sessionHeader) {
+            session = Auth.decodeSession(sessionHeader);
+        }
+    }
+
+    if (response) {
+        response.setHeader('X-Debug-Fallback', 'false');
+    }
+
+    if (!session['id'] && !session['secret']) {
+        if (response) {
+            response.setHeader('X-Debug-Fallback', 'true');
+        }
+        const fallback = JSON.parse(request.getHeader('x-fallback-cookies') as string || '{}');
+        session = Auth.decodeSession(fallback[Auth.cookieName] || '');
+    }
+
+    Auth.unique = session['id'] || '';
+    Auth.secret = session['secret'] || '';
+
+    let user: Document;
+    if (APP_MODE_ADMIN !== mode) {
+        if (project.isEmpty()) {
+            user = new Document({});
+        } else {
+            if (project.getAttribute('id', '') === 'console') {
+                user = await dbForConsole.getDocument('users', Auth.unique);
+            } else {
+                user = await dbForProject.getDocument('users', Auth.unique);
+            }
+        }
+    } else {
+        user = await dbForConsole.getDocument('users', Auth.unique);
+    }
+
+    if (user.isEmpty() || !Auth.sessionVerify(user.getAttribute('sessions', []), Auth.secret)) {
+        user = new Document({});
+    }
+
+    if (APP_MODE_ADMIN === mode) {
+        if (user.find('teamInternalId', project.getAttribute('teamInternalId', ''), 'memberships')) {
+            Authorization.setDefaultStatus(false);
+        } else {
+            user = new Document({});
+        }
+    }
+
+    const authJWT = request.getHeader('x-appconda-jwt') as string || '';
+
+    if (authJWT && !project.isEmpty()) {
+        const jwtSecret = process.env._APP_OPENSSL_KEY_V1 || '';
+        try {
+
+            const payload = jwt.verify(authJWT, jwtSecret) as any;
+            const jwtUserId = payload.userId || '';
+            const jwtSessionId = payload.sessionId || '';
+
+            if (jwtUserId && jwtSessionId) {
+                user = await dbForProject.getDocument('users', jwtUserId);
+            }
+
+            if (!user.find('$id', jwtSessionId, 'sessions')) {
+                user = new Document({});
+            }
+        } catch (error: any) {
+            throw new Error('Failed to verify JWT. ' + error.message);
+        }
+    }
+
+    dbForProject.setMetadata('user', user.getAttribute('id', ''));
+    dbForConsole.setMetadata('user', user.getAttribute('id', ''));
+
+    return user;
+}, ['mode', 'project', 'console', 'request', 'response', 'dbForProject', 'dbForConsole']);
+
+
+App.setResource('project', async (dbForConsole: Database, request: Request, console: Document) => {
+    const projectId = request.getParam('project', request.getHeader('x-appwrite-project', ''));
+
+    if (!projectId || projectId === 'console') {
+        return console;
+    }
+
+    const project = await Authorization.skip(() => dbForConsole.getDocument('projects', projectId));
+    return project;
+}, ['dbForConsole', 'request', 'console']);
+
+App.setResource('session', (user: Document) => {
+    if (user.isEmpty()) {
+        return;
+    }
+
+    const sessions = user.getAttribute('sessions', []);
+    const sessionId = Auth.sessionVerify(user.getAttribute('sessions'), Auth.secret);
+
+    if (!sessionId) {
+        return;
+    }
+
+    for (const session of sessions) {
+        if (sessionId === session.getId()) {
+            return session;
+        }
+    }
+
+    return;
+}, ['user']);
+
+App.setResource('console', () => {
+    return new Document({
+        '$id': ID.custom('console'),
+        '$internalId': ID.custom('console'),
+        'name': 'Appwrite',
+        '$collection': ID.custom('projects'),
+        'description': 'Appwrite core engine',
+        'logo': '',
+        'teamId': -1,
+        'webhooks': [],
+        'keys': [],
+        'platforms': [
+            {
+                '$collection': ID.custom('platforms'),
+                'name': 'Localhost',
+                'type': Origin.CLIENT_TYPE_WEB,
+                'hostname': 'localhost',
+            },
+        ],
+        'legalName': '',
+        'legalCountry': '',
+        'legalState': '',
+        'legalCity': '',
+        'legalAddress': '',
+        'legalTaxId': '',
+        'auths': {
+            'invites': process.env._APP_CONSOLE_INVITES === 'enabled',
+            'limit': (process.env._APP_CONSOLE_WHITELIST_ROOT === 'enabled') ? 1 : 0,
+            'duration': Auth.TOKEN_EXPIRATION_LOGIN_LONG,
+        },
+        'authWhitelistEmails': (process.env._APP_CONSOLE_WHITELIST_EMAILS || '').split(',').filter(Boolean),
+        'authWhitelistIPs': (process.env._APP_CONSOLE_WHITELIST_IPS || '').split(',').filter(Boolean),
+        'oAuthProviders': {
+            'githubEnabled': true,
+            'githubSecret': process.env._APP_CONSOLE_GITHUB_SECRET || '',
+            'githubAppid': process.env._APP_CONSOLE_GITHUB_APP_ID || ''
+        },
+    });
+}, []);
+
+
+App.setResource('dbForProject', (pools: Group, dbForConsole: Database, cache: Cache, project: Document) => {
+    if (project.isEmpty() || project.getId() === 'console') {
+        return dbForConsole;
+    }
+
+    let dsn: DSN;
+    try {
+        dsn = new DSN(project.getAttribute('database'));
+    } catch (error) {
+        dsn = new DSN('mysql://' + project.getAttribute('database'));
+    }
+
+    const dbAdapter = pools
+        .get(dsn.getHost())
+        .pop()
+        .getResource();
+
+    const database = new Database(dbAdapter, cache);
+
+    database
+        .setMetadata('host', System.getEnv('HOSTNAME', ''))
+        .setMetadata('project', project.getId())
+        .setTimeout(APP_DATABASE_TIMEOUT_MILLISECONDS);
+
+    if (dsn.getHost() === System.getEnv('_APP_DATABASE_SHARED_TABLES', '')) {
+        database
+            .setSharedTables(true)
+            .setTenant(project.getInternalId())
+            .setNamespace(dsn.getParam('namespace'));
+    } else {
+        database
+            .setSharedTables(false)
+            .setTenant(null)
+            .setNamespace('_' + project.getInternalId());
+    }
+
+    return database;
+}, ['pools', 'dbForConsole', 'cache', 'project']);
+
+App.setResource('dbForConsole', async (pools: Group, cache: Cache) => {
+    const pool = await pools
+        .get('console')
+        .pop();
+
+    const dbAdapter = pool.getResource();
+
+    const database = new Database(dbAdapter, cache as any);
+
+    database
+        .setNamespace('_console')
+        .setMetadata('host', process.env.HOSTNAME || '')
+        .setMetadata('project', 'console')
+        .setTimeout(APP_DATABASE_TIMEOUT_MILLISECONDS);
+
+    return database;
+}, ['pools', 'cache']);
+
+App.setResource('getProjectDB', async (pools: Group, dbForConsole: Database, cache: Cache) => {
+    const databases: Record<string, Database> = {};
+
+    return async (project: Document) => {
+        if (project.isEmpty() || project.getId() === 'console') {
+            return dbForConsole;
+        }
+
+        let dsn: DSN;
+        try {
+            dsn = new DSN(project.getAttribute('database'));
+        } catch (error) {
+            dsn = new DSN('mysql://' + project.getAttribute('database'));
+        }
+
+        const configure = async (database: Database) => {
+            database
+                .setMetadata('host', process.env.HOSTNAME || '')
+                .setMetadata('project', project.getId())
+                .setTimeout(APP_DATABASE_TIMEOUT_MILLISECONDS);
+
+            if (dsn.getHost() === process.env._APP_DATABASE_SHARED_TABLES || '') {
+                database
+                    .setSharedTables(true)
+                    .setTenant(Number.parseInt(project.getInternalId()))
+                    .setNamespace(dsn.getParam('namespace'));
+            } else {
+                database
+                    .setSharedTables(false)
+                    .setTenant(null)
+                    .setNamespace('_' + project.getInternalId());
+            }
+        };
+
+        if (databases[dsn.getHost()]) {
+            const database = databases[dsn.getHost()];
+            configure(database);
+            return database;
+        }
+
+        const pool = await pools.get(dsn.getHost()).pop();
+
+        const dbAdapter = pool
+            .getResource();
+
+        const database = new Database(dbAdapter, cache as any);
+        databases[dsn.getHost()] = database;
+        configure(database);
+
+        return database;
+    };
+}, ['pools', 'dbForConsole', 'cache']);
+
+
+App.setResource('cache', (pools: Group) => {
+    const list = Config.getParam('pools-cache', []);
+    const adapters = list.map(async (value: string) => {
+        const pool = await pools
+            .get(value)
+            .pop();
+        return pool
+            .getResource();
+    });
+
+    return new Cache(new Sharding(adapters));
+}, ['pools']);
+
+App.setResource('deviceForLocal', () => {
+    return new Local();
+});
+
+App.setResource('deviceForFiles', (project: Document) => {
+    return getDevice(`${APP_STORAGE_UPLOADS}/app-${project.getId()}`);
+}, ['project']);
+
+App.setResource('deviceForFunctions', (project: Document) => {
+    return getDevice(`${APP_STORAGE_FUNCTIONS}/app-${project.getId()}`);
+}, ['project']);
+
+App.setResource('deviceForBuilds', (project: Document) => {
+    return getDevice(`${APP_STORAGE_BUILDS}/app-${project.getId()}`);
+}, ['project']);
+
+function getDevice(root: string): Device {
+    const connection = process.env._APP_CONNECTIONS_STORAGE || '';
+
+    if (connection) {
+        let dsn: DSN;
+        let device = Storage.DEVICE_LOCAL;
+        let accessKey = '';
+        let accessSecret = '';
+        let bucket = '';
+        let region = '';
+        const acl = 'private';
+
+        try {
+            dsn = new DSN(connection);
+            device = dsn.getScheme();
+            accessKey = dsn.getUser() || '';
+            accessSecret = dsn.getPassword() || '';
+            bucket = dsn.getPath() || '';
+            region = dsn.getParam('region') || '';
+        } catch (e: any) {
+            console.warn(`${e.message} Invalid DSN. Defaulting to Local device.`);
+        }
+
+        switch (device) {
+           /*  case Storage.DEVICE_S3:
+                return new S3(root, accessKey, accessSecret, bucket, region, acl);
+            case Storage.DEVICE_DO_SPACES:
+                const doSpaces = new DOSpaces(root, accessKey, accessSecret, bucket, region, acl);
+                doSpaces.setHttpVersion(S3.HTTP_VERSION_1_1);
+                return doSpaces;
+            case Storage.DEVICE_BACKBLAZE:
+                return new Backblaze(root, accessKey, accessSecret, bucket, region, acl);
+            case Storage.DEVICE_LINODE:
+                return new Linode(root, accessKey, accessSecret, bucket, region, acl);
+            case Storage.DEVICE_WASABI:
+                return new Wasabi(root, accessKey, accessSecret, bucket, region, acl);
+            case Storage.DEVICE_LOCAL: */
+            default:
+                return new Local(root);
+        }
+    } else {
+        switch (process.env._APP_STORAGE_DEVICE?.toLowerCase() || Storage.DEVICE_LOCAL) {
+            /* case Storage.DEVICE_S3:
+                return new S3(
+                    root,
+                    process.env._APP_STORAGE_S3_ACCESS_KEY || '',
+                    process.env._APP_STORAGE_S3_SECRET || '',
+                    process.env._APP_STORAGE_S3_BUCKET || '',
+                    process.env._APP_STORAGE_S3_REGION || '',
+                    'private'
+                );
+            case Storage.DEVICE_DO_SPACES:
+                const doSpaces = new DOSpaces(
+                    root,
+                    process.env._APP_STORAGE_DO_SPACES_ACCESS_KEY || '',
+                    process.env._APP_STORAGE_DO_SPACES_SECRET || '',
+                    process.env._APP_STORAGE_DO_SPACES_BUCKET || '',
+                    process.env._APP_STORAGE_DO_SPACES_REGION || '',
+                    'private'
+                );
+                doSpaces.setHttpVersion(S3.HTTP_VERSION_1_1);
+                return doSpaces;
+            case Storage.DEVICE_BACKBLAZE:
+                return new Backblaze(
+                    root,
+                    process.env._APP_STORAGE_BACKBLAZE_ACCESS_KEY || '',
+                    process.env._APP_STORAGE_BACKBLAZE_SECRET || '',
+                    process.env._APP_STORAGE_BACKBLAZE_BUCKET || '',
+                    process.env._APP_STORAGE_BACKBLAZE_REGION || '',
+                    'private'
+                );
+            case Storage.DEVICE_LINODE:
+                return new Linode(
+                    root,
+                    process.env._APP_STORAGE_LINODE_ACCESS_KEY || '',
+                    process.env._APP_STORAGE_LINODE_SECRET || '',
+                    process.env._APP_STORAGE_LINODE_BUCKET || '',
+                    process.env._APP_STORAGE_LINODE_REGION || '',
+                    'private'
+                );
+            case Storage.DEVICE_WASABI:
+                return new Wasabi(
+                    root,
+                    process.env._APP_STORAGE_WASABI_ACCESS_KEY || '',
+                    process.env._APP_STORAGE_WASABI_SECRET || '',
+                    process.env._APP_STORAGE_WASABI_BUCKET || '',
+                    process.env._APP_STORAGE_WASABI_REGION || '',
+                    'private'
+                ); */
+            case Storage.DEVICE_LOCAL:
+            default:
+                return new Local(root);
+        }
+    }
+}
+
+App.setResource('mode', (request: Request) => {
+    return request.getParam('mode', request.getHeader('x-appwrite-mode', APP_MODE_DEFAULT));
+}, ['request']);
+
+App.setResource('geodb', (register: Registry) => {
+    return register.get('geodb');
+}, ['register']);
+
+App.setResource('passwordsDictionary', (register: Registry) => {
+    return register.get('passwordsDictionary');
+}, ['register']);
+
+App.setResource('servers', () => {
+    const platforms = Config.getParam('platforms');
+    const server = platforms[APP_PLATFORM_SERVER];
+
+    const languages = server['sdks'].map((language: { name: string }) => {
+        return language.name.toLowerCase();
+    });
+
+    return languages;
+});
+
+App.setResource('promiseAdapter', (register: Registry) => {
+    return register.get('promiseAdapter');
+}, ['register']);
+
+App.setResource('schema', (utopia: any, dbForProject: Database) => {
+    const complexity = (complexity: number, args: any) => {
+        const queries = Query.parseQueries(args.queries || []);
+        const query = Query.getByType(queries, [Query.TYPE_LIMIT])[0] || null;
+        const limit = query ? query.getValue() : APP_LIMIT_LIST_DEFAULT;
+
+        return complexity * limit;
+    };
+
+    const attributes = async (limit: number, offset: number) => {
+        const attrs = await Authorization.skip(() => dbForProject.find('attributes', [
+            Query.limit(limit),
+            Query.offset(offset),
+        ]));
+
+        return attrs.map((attr: Document) => attr.getArrayCopy());
+    };
+
+    const urls = {
+        list: (databaseId: string, collectionId: string, args: any) => {
+            return `/v1/databases/${databaseId}/collections/${collectionId}/documents`;
+        },
+        create: (databaseId: string, collectionId: string, args: any) => {
+            return `/v1/databases/${databaseId}/collections/${collectionId}/documents`;
+        },
+        read: (databaseId: string, collectionId: string, args: any) => {
+            return `/v1/databases/${databaseId}/collections/${collectionId}/documents/${args.documentId}`;
+        },
+        update: (databaseId: string, collectionId: string, args: any) => {
+            return `/v1/databases/${databaseId}/collections/${collectionId}/documents/${args.documentId}`;
+        },
+        delete: (databaseId: string, collectionId: string, args: any) => {
+            return `/v1/databases/${databaseId}/collections/${collectionId}/documents/${args.documentId}`;
+        },
+    };
+
+    const params = {
+        list: (databaseId: string, collectionId: string, args: any) => {
+            return { queries: args.queries };
+        },
+        create: (databaseId: string, collectionId: string, args: any) => {
+            const id = args.id || 'unique()';
+            const permissions = args.permissions || null;
+
+            delete args.id;
+            delete args.permissions;
+
+            return {
+                databaseId,
+                documentId: id,
+                collectionId,
+                data: args,
+                permissions,
+            };
+        },
+        update: (databaseId: string, collectionId: string, args: any) => {
+            const documentId = args.id;
+            const permissions = args.permissions || null;
+
+            delete args.id;
+            delete args.permissions;
+
+            return {
+                databaseId,
+                collectionId,
+                documentId,
+                data: args,
+                permissions,
+            };
+        },
+    };
+
+    return {};
+    /* Schema.build(
+        utopia,
+        complexity,
+        attributes,
+        urls,
+        params,
+    ); */
+}, ['utopia', 'dbForProject']);
+
+App.setResource('contributors', () => {
+    const path = 'app/config/contributors.json';
+    const list = (existsSync(path)) ? JSON.parse(readFileSync(path, 'utf-8')) : [];
+    return list;
+});
+
+App.setResource('employees', () => {
+    const path = 'app/config/employees.json';
+    const list = (existsSync(path)) ? JSON.parse(readFileSync(path, 'utf-8')) : [];
+    return list;
+});
+
+App.setResource('heroes', () => {
+    const path = 'app/config/heroes.json';
+    const list = (existsSync(path)) ? JSON.parse(readFileSync(path, 'utf-8')) : [];
+    return list;
+});
+
+/* App.setResource('gitHub', (cache: Cache) => {
+    return new VcsGitHub(cache);
+}, ['cache']); */
+
+App.setResource('requestTimestamp', (request: Request) => {
+    const timestampHeader = request.getHeader('x-appwrite-timestamp');
+    let requestTimestamp;
+    if (timestampHeader) {
+        try {
+            requestTimestamp = new Date(timestampHeader);
+        } catch (e) {
+            throw new Error('Invalid X-Appwrite-Timestamp header value');
+        }
+    }
+    return requestTimestamp;
+}, ['request']);
+
+App.setResource('plan', (plan: any[] = []) => {
+    return [];
+});
