@@ -707,6 +707,20 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
+"@tuval/cache@1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@tuval/cache/-/cache-1.0.7.tgz#487963836c030510e9581d28471cb3d79d7ec16e"
+  integrity sha512-ZNff29KglmCGnG68TFvVhgBUWwnlyAFoLCn77dTO+UYkpVOnI5kIX3SWfRI/SEfaGAEQiTpW9BiJXJN+ChrXIg==
+  dependencies:
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    pako "^2.1.0"
+    validator "^13.12.0"
+
 "@tuval/cache@^1.0.2":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@tuval/cache/-/cache-1.0.3.tgz#a32da5a3c8fc9a676daccfecacaa571d39fb3894"
@@ -803,10 +817,10 @@
     pako "^2.1.0"
     validator "^13.12.0"
 
-"@tuval/database@1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@tuval/database/-/database-1.0.9.tgz#8fbaf77247d8ce1f1275add67ea0d9b98d0a4cfd"
-  integrity sha512-0/xNy/OHSrkk5mR10mPkTyQHqcCIESPTRaJ9xKscGPNk/JmNs/GYs137eLu+dRQZS7ouQ+cQpmhoaURH00X1Dg==
+"@tuval/database@1.0.20":
+  version "1.0.20"
+  resolved "https://registry.yarnpkg.com/@tuval/database/-/database-1.0.20.tgz#7655b50b46452e0828a6cd116c8b643457af9e35"
+  integrity sha512-4fOSMeeSj97u8WGG9iVov0YpvIOEDr/Ru+BuT0Der+EFCZdxWBEa20xPkkKjb8OvXRXKerukyKqpm/h1jG5PHw==
   dependencies:
     "@tuval/cache" "^1.0.2"
     "@tuval/http" "1.0.7"
@@ -817,6 +831,50 @@
     moment "^2.30.1"
     mysql2 "^3.11.3"
     pako "^2.1.0"
+    validator "^13.12.0"
+
+"@tuval/domains@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@tuval/domains/-/domains-1.0.9.tgz#ef4dfa5f83e21d46f60f5ef28291f5cfb314449d"
+  integrity sha512-JAOXRLtF/TVIOXmBZA3IUdmOMhxi9q+PyDPKosJJbnKsz/N+MPSTFlzARVTCHd8wAyEQQepXdz94dr2bL21VQg==
+  dependencies:
+    "@tuval/core" "2.0.6"
+    "@tuval/database" "1.0.12"
+    argon2 "^0.41.1"
+    bcrypt "^5.1.1"
+    crypto-js "^4.2.0"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    otplib "^12.0.1"
+    pako "^2.1.0"
+    scrypt-js "^3.0.1"
+    uuid "^10.0.0"
+    validator "^13.12.0"
+
+"@tuval/dsn@^1.0.12":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@tuval/dsn/-/dsn-1.0.12.tgz#5b1bcb6cef9a92065b9ec860fbfa9cb7f477c354"
+  integrity sha512-qZx9uSfyXYVcCJnIfrl+bYXfazCRddzItk5sT3ddNieDf6XT9AmJlPSgNoMdHGAKPIwXz4avJeFirTMLbcnNwQ==
+  dependencies:
+    "@tuval/core" "2.0.6"
+    "@tuval/database" "1.0.12"
+    argon2 "^0.41.1"
+    bcrypt "^5.1.1"
+    crypto-js "^4.2.0"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    otplib "^12.0.1"
+    pako "^2.1.0"
+    scrypt-js "^3.0.1"
+    uuid "^10.0.0"
     validator "^13.12.0"
 
 "@tuval/http@1.0.12":
@@ -871,12 +929,56 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
+"@tuval/pools@^1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@tuval/pools/-/pools-1.0.10.tgz#0ee50f8d474e22a1f9a8de127636bc8a608f47ca"
+  integrity sha512-1crNZoUXH9Bx36OHIPoTYEKwOGB2z34ukN3tDnZtBgG5TINfDFTrPctI1AuVwtnYQ9bmlTFOMB5wAHI2k6EZGA==
+  dependencies:
+    "@tuval/core" "2.0.6"
+    "@tuval/database" "1.0.12"
+    argon2 "^0.41.1"
+    bcrypt "^5.1.1"
+    crypto-js "^4.2.0"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    otplib "^12.0.1"
+    pako "^2.1.0"
+    scrypt-js "^3.0.1"
+    uuid "^10.0.0"
+    validator "^13.12.0"
+
 "@tuval/queue@^1.0.6":
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/@tuval/queue/-/queue-1.0.6.tgz#0085afbfabb5fe87bfd6a084ccc999f403a9f050"
   integrity sha512-YlFYKR717FnuSXrVPupl6Gje/DKlvcla8QSjbYL39FpenCYqCo2dyJnLJvt+oQDq/giqiJiAzh7zYFfVq6dQ+Q==
   dependencies:
     "@tuval/core" "2.0.6"
+    argon2 "^0.41.1"
+    bcrypt "^5.1.1"
+    crypto-js "^4.2.0"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    otplib "^12.0.1"
+    pako "^2.1.0"
+    scrypt-js "^3.0.1"
+    uuid "^10.0.0"
+    validator "^13.12.0"
+
+"@tuval/registry@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@tuval/registry/-/registry-1.0.9.tgz#22a661d7823854fabb082c847f860688f3348408"
+  integrity sha512-/IFJHik/V0O3FiLHurw3i1qi9UfRL1Rh8Xwa0bNsom8b88MouByKcn2qOdbf3562mgSz2rDkRGLIKi7fieSKEA==
+  dependencies:
+    "@tuval/core" "2.0.6"
+    "@tuval/database" "1.0.12"
     argon2 "^0.41.1"
     bcrypt "^5.1.1"
     crypto-js "^4.2.0"
@@ -4032,10 +4134,10 @@ node-gyp@^10.0.0, node-gyp@^10.1.0:
     tar "^6.1.2"
     which "^4.0.0"
 
-nodemailer@^6.9.13:
-  version "6.9.13"
-  resolved "https://registry.npmjs.org/nodemailer/-/nodemailer-6.9.13.tgz"
-  integrity sha512-7o38Yogx6krdoBf3jCAqnIN4oSQFx+fMa0I7dK1D+me9kBxx12D+/33wSb+fhOCtIxvYJ+4x4IMEhmhCKfAiOA==
+nodemailer@^6.9.15:
+  version "6.9.15"
+  resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-6.9.15.tgz#57b79dc522be27e0e47ac16cc860aa0673e62e04"
+  integrity sha512-AHf04ySLC6CIfuRtRiEYtGEXgRfa6INgWGluDhnxTZhHSKvrBu7lc1VVchQ0d8nPc4cFaZoPq8vkyNoZr0TpGQ==
 
 nodemon@^3.1.0:
   version "3.1.0"

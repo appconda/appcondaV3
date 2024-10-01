@@ -88,7 +88,7 @@ export class OpenSSL {
      * @param length - The number of bytes to generate.
      * @returns The random bytes as a hex string.
      */
-    public static randomPseudoBytes(length: number): string {
-        return randomBytes(length).toString('hex');
+    public static randomPseudoBytes(length: number): Buffer {
+        return randomBytes(length);
     }
 }
