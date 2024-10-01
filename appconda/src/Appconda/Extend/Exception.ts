@@ -268,7 +268,7 @@ export class AppcondaException extends BaseException {
     protected publish: boolean = false;
 
     constructor(
-        type: string = Exception.GENERAL_UNKNOWN,
+        type: string = AppcondaException.GENERAL_UNKNOWN,
         message: string  ,
         code?: number | string ,
         previous?: Error 

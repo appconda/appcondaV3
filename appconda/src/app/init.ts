@@ -1285,11 +1285,11 @@ App.setResource('dbForProject', (pools: Group, dbForConsole: Database, cache: Ca
     const database = new Database(dbAdapter, cache);
 
     database
-        .setMetadata('host', System.getEnv('HOSTNAME', ''))
+        .setMetadata('host', process.env.HOSTNAME || '')
         .setMetadata('project', project.getId())
         .setTimeout(APP_DATABASE_TIMEOUT_MILLISECONDS);
 
-    if (dsn.getHost() === System.getEnv('_APP_DATABASE_SHARED_TABLES', '')) {
+    if (dsn.getHost() === process.env._APP_DATABASE_SHARED_TABLES || '') {
         database
             .setSharedTables(true)
             .setTenant(project.getInternalId())

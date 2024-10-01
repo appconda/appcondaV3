@@ -21,6 +21,7 @@
     "@tuval/audit": "^1.0.8",
     "@tuval/auth": "1.0.13",
     "@tuval/cache": "1.0.7",
+    "@tuval/cli": "^1.0.13",
     "@tuval/config": "^1.0.7",
     "@tuval/core": "2.0.10",
     "@tuval/database": "1.0.20",
