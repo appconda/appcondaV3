@@ -126,7 +126,7 @@
                     <td>
                         <img
                             height="32px"
-                            src="https://cloud.appwrite.io/images/mails/logo.png"
+                            src="https://cloud.appconda.io/images/mails/logo.png"
                         />
                     </td>
                 </tr>
@@ -164,42 +164,42 @@
                 <tr>
                     <td style="padding-left: 4px; padding-right: 4px">
                         <a
-                            href="https://twitter.com/appwrite"
+                            href="https://twitter.com/appconda"
                             class="social-icon"
                             title="Twitter"
                         >
-                            <img src="https://cloud.appwrite.io/images/mails/x.png" height="24" width="24" />
+                            <img src="https://cloud.appconda.io/images/mails/x.png" height="24" width="24" />
                         </a>
                     </td>
                     <td style="padding-left: 4px; padding-right: 4px">
                         <a
-                            href="https://appwrite.io/discord"
+                            href="https://appconda.io/discord"
                             class="social-icon"
                         >
-                            <img src="https://cloud.appwrite.io/images/mails/discord.png" height="24" width="24" />
+                            <img src="https://cloud.appconda.io/images/mails/discord.png" height="24" width="24" />
                         </a>
                     </td>
                     <td style="padding-left: 4px; padding-right: 4px">
                         <a
-                            href="https://github.com/appwrite/appwrite"
+                            href="https://github.com/appconda/appconda"
                             class="social-icon"
                         >
-                            <img src="https://cloud.appwrite.io/images/mails/github.png" height="24" width="24" />
+                            <img src="https://cloud.appconda.io/images/mails/github.png" height="24" width="24" />
                         </a>
                     </td>
                 </tr>
             </table>
             <table style="width: auto; margin: 0 auto; margin-top: 60px">
                 <tr>
-                    <td><a href="https://appwrite.io/terms">Terms</a></td>
+                    <td><a href="https://appconda.io/terms">Terms</a></td>
                     <td style="color: #e8e9f0">
                         <div style="margin: 0 8px">|</div>
                     </td>
-                    <td><a href="https://appwrite.io/privacy">Privacy</a></td>
+                    <td><a href="https://appconda.io/privacy">Privacy</a></td>
                 </tr>
             </table>
             <p style="text-align: center" align="center">
-                &copy; {{year}} Appwrite | 251 Little Falls Drive, Wilmington 19808,
+                &copy; {{year}} Appconda | 251 Little Falls Drive, Wilmington 19808,
                 Delaware, United States
             </p>
         </div>

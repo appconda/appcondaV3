@@ -1,6 +1,4 @@
-<?php
-
-return [
+export default [
     'AF',
     'AN',
     'AS',

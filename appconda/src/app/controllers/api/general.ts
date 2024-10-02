@@ -5,7 +5,6 @@ import { V17 as ResponseV17 } from '../../../Appconda/Tuval/Response/Filters/V17
 import { APP_STORAGE_CERTIFICATES, APP_VERSION_STABLE, FUNCTION_ALLOWLIST_HEADERS_REQUEST, FUNCTION_ALLOWLIST_HEADERS_RESPONSE, METRIC_EXECUTIONS, METRIC_EXECUTIONS_COMPUTE, METRIC_EXECUTIONS_MB_SECONDS, METRIC_FUNCTION_ID_EXECUTIONS, METRIC_FUNCTION_ID_EXECUTIONS_COMPUTE, METRIC_FUNCTION_ID_EXECUTIONS_MB_SECONDS, 
     register as reg
  } from '../../init';
-import { Config } from '@tuval/config';
 import { Response } from '../../../Appconda/Tuval/Response';
 import { Database, Query } from '@tuval/database';
 import { Usage } from '../../../Appconda/Event/Usage';
@@ -78,12 +77,12 @@ async function router(
         }
 
         if (host.endsWith(process.env._APP_DOMAIN_FUNCTIONS ?? '')) {
-            throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, 'This domain is not connected to any Appwrite resource yet. Please configure custom domain or function domain to allow this request.');
+            throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, 'This domain is not connected to any Appconda resource yet. Please configure custom domain or function domain to allow this request.');
         }
 
         if (process.env._APP_OPTIONS_ROUTER_PROTECTION === 'enabled') {
             if (host !== 'localhost' && host !== process.env.APP_HOSTNAME_INTERNAL) {
-                throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, 'Router protection does not allow accessing Appwrite over this domain. Please add it as custom domain to your project or disable _APP_OPTIONS_ROUTER_PROTECTION environment variable.');
+                throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, 'Router protection does not allow accessing Appconda over this domain. Please add it as custom domain to your project or disable _APP_OPTIONS_ROUTER_PROTECTION environment variable.');
             }
         }
 
@@ -236,10 +235,10 @@ async function router(
 
         if (version === 'v2') {
             vars = {
-                'APPWRITE_FUNCTION_TRIGGER': headers['x-appwrite-trigger'] ?? '',
+                'APPWRITE_FUNCTION_TRIGGER': headers['x-appconda-trigger'] ?? '',
                 'APPWRITE_FUNCTION_DATA': body ?? '',
-                'APPWRITE_FUNCTION_USER_ID': headers['x-appwrite-user-id'] ?? '',
-                'APPWRITE_FUNCTION_JWT': headers['x-appwrite-user-jwt'] ?? ''
+                'APPWRITE_FUNCTION_USER_ID': headers['x-appconda-user-id'] ?? '',
+                'APPWRITE_FUNCTION_JWT': headers['x-appconda-user-jwt'] ?? ''
             };
         }
 
@@ -373,9 +372,9 @@ App.init()
     .inject('request')
     .action((project: Document, request: Request) => {
         if (project.getId() === 'console') {
-            const message = !request.getHeader('x-appwrite-project') ?
-                'No Appwrite project was specified. Please specify your project ID when initializing your Appwrite SDK.' :
-                'This endpoint is not available for the console project. The Appwrite Console is a reserved project ID and cannot be used with the Appwrite SDKs and APIs. Please check if your project ID is correct.';
+            const message = !request.getHeader('x-appconda-project') ?
+                'No Appconda project was specified. Please specify your project ID when initializing your Appconda SDK.' :
+                'This endpoint is not available for the console project. The Appconda Console is a reserved project ID and cannot be used with the Appconda SDKs and APIs. Please check if your project ID is correct.';
             throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, message);
         }
     });
@@ -432,7 +431,7 @@ App.init()
                 .send('Not Found');
         }
 
-        const requestFormat = request.getHeader('x-appwrite-response-format', process.env._APP_SYSTEM_RESPONSE_FORMAT || '');
+        const requestFormat = request.getHeader('x-appconda-response-format', process.env._APP_SYSTEM_RESPONSE_FORMAT || '');
         if (requestFormat) {
             if (versionCompare(requestFormat, '1.4.0', '<')) {
                 request.addFilter(new RequestV16());
@@ -495,7 +494,7 @@ App.init()
             Config.setParam('domains', domains);
         }
 
-        const localeParam = request.getParam('locale', request.getHeader('x-appwrite-locale', ''));
+        const localeParam = request.getParam('locale', request.getHeader('x-appconda-locale', ''));
         if (localeCodes.includes(localeParam)) {
             locale.setDefault(localeParam);
         }
@@ -540,7 +539,7 @@ App.init()
                     : `.${request.getHostname()}`
         );
 
-        const responseFormat = request.getHeader('x-appwrite-response-format', process.env._APP_SYSTEM_RESPONSE_FORMAT || '');
+        const responseFormat = request.getHeader('x-appconda-response-format', process.env._APP_SYSTEM_RESPONSE_FORMAT || '');
         if (responseFormat) {
             if (versionCompare(responseFormat, '1.4.0', '<')) {
                 response.addFilter(new ResponseV16());
@@ -549,7 +548,7 @@ App.init()
                 response.addFilter(new ResponseV17());
             }
             if (versionCompare(responseFormat, APP_VERSION_STABLE, '>')) {
-                response.addHeader('X-Appwrite-Warning', `The current SDK is built for Appwrite ${responseFormat}. However, the current Appwrite server version is ${APP_VERSION_STABLE}. Please downgrade your SDK to match the Appwrite version: https://appwrite.io/docs/sdks`);
+                response.addHeader('X-Appconda-Warning', `The current SDK is built for Appconda ${responseFormat}. However, the current Appconda server version is ${APP_VERSION_STABLE}. Please downgrade your SDK to match the Appconda version: https://appconda.io/docs/sdks`);
             }
         }
 
@@ -571,8 +570,8 @@ App.init()
             .addHeader('Server', 'Appcondae')
             .addHeader('X-Content-Type-Options', 'nosniff')
             .addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE')
-            .addHeader('Access-Control-Allow-Headers', 'Origin, Cookie, Set-Cookie, X-Requested-With, Content-Type, Access-Control-Allow-Origin, Access-Control-Request-Headers, Accept, X-Appwrite-Project, X-Appwrite-Key, X-Appwrite-Locale, X-Appwrite-Mode, X-Appwrite-JWT, X-Appwrite-Response-Format, X-Appwrite-Timeout, X-SDK-Version, X-SDK-Name, X-SDK-Language, X-SDK-Platform, X-SDK-GraphQL, X-Appwrite-ID, X-Appwrite-Timestamp, Content-Range, Range, Cache-Control, Expires, Pragma, X-Forwarded-For, X-Forwarded-User-Agent')
-            .addHeader('Access-Control-Expose-Headers', 'X-Appwrite-Session, X-Fallback-Cookies')
+            .addHeader('Access-Control-Allow-Headers', 'Origin, Cookie, Set-Cookie, X-Requested-With, Content-Type, Access-Control-Allow-Origin, Access-Control-Request-Headers, Accept, X-Appconda-Project, X-Appconda-Key, X-Appconda-Locale, X-Appconda-Mode, X-Appconda-JWT, X-Appconda-Response-Format, X-Appconda-Timeout, X-SDK-Version, X-SDK-Name, X-SDK-Language, X-SDK-Platform, X-SDK-GraphQL, X-Appconda-ID, X-Appconda-Timestamp, Content-Range, Range, Cache-Control, Expires, Pragma, X-Forwarded-For, X-Forwarded-User-Agent')
+            .addHeader('Access-Control-Expose-Headers', 'X-Appconda-Session, X-Fallback-Cookies')
             .addHeader('Access-Control-Allow-Origin', refDomain)
             .addHeader('Access-Control-Allow-Credentials', 'true');
 
@@ -582,7 +581,7 @@ App.init()
             !originValidator.isValid(origin)
             && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.getMethod())
             && route.getLabel('origin', false) !== '*'
-            && !request.getHeader('x-appwrite-key', '')
+            && !request.getHeader('x-appconda-key', '')
         ) {
             throw new AppcondaException(AppcondaException.GENERAL_UNKNOWN_ORIGIN, originValidator.getDescription());
         }
@@ -622,10 +621,10 @@ App.options()
         const origin = request.getOrigin();
 
         response
-            .addHeader('Server', 'Appwrite')
+            .addHeader('Server', 'Appconda')
             .addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE')
-            .addHeader('Access-Control-Allow-Headers', 'Origin, Cookie, Set-Cookie, X-Requested-With, Content-Type, Access-Control-Allow-Origin, Access-Control-Request-Headers, Accept, X-Appwrite-Project, X-Appwrite-Key, X-Appwrite-Locale, X-Appwrite-Mode, X-Appwrite-JWT, X-Appwrite-Response-Format, X-Appwrite-Timeout, X-SDK-Version, X-SDK-Name, X-SDK-Language, X-SDK-Platform, X-SDK-GraphQL, X-Appwrite-ID, X-Appwrite-Timestamp, Content-Range, Range, Cache-Control, Expires, Pragma, X-Appwrite-Session, X-Fallback-Cookies, X-Forwarded-For, X-Forwarded-User-Agent')
-            .addHeader('Access-Control-Expose-Headers', 'X-Appwrite-Session, X-Fallback-Cookies')
+            .addHeader('Access-Control-Allow-Headers', 'Origin, Cookie, Set-Cookie, X-Requested-With, Content-Type, Access-Control-Allow-Origin, Access-Control-Request-Headers, Accept, X-Appconda-Project, X-Appconda-Key, X-Appconda-Locale, X-Appconda-Mode, X-Appconda-JWT, X-Appconda-Response-Format, X-Appconda-Timeout, X-SDK-Version, X-SDK-Name, X-SDK-Language, X-SDK-Platform, X-SDK-GraphQL, X-Appconda-ID, X-Appconda-Timestamp, Content-Range, Range, Cache-Control, Expires, Pragma, X-Appconda-Session, X-Fallback-Cookies, X-Forwarded-For, X-Forwarded-User-Agent')
+            .addHeader('Access-Control-Expose-Headers', 'X-Appconda-Session, X-Fallback-Cookies')
             .addHeader('Access-Control-Allow-Origin', origin)
             .addHeader('Access-Control-Allow-Credentials', 'true')
             .noContent();
@@ -751,7 +750,7 @@ App.error()
             log.addTag('code', code);
             log.addTag('projectId', project.getId());
             log.addTag('hostname', request.getHostname());
-            log.addTag('locale', request.getParam('locale', request.getHeader('x-appwrite-locale', '')));
+            log.addTag('locale', request.getParam('locale', request.getHeader('x-appconda-locale', '')));
 
             log.addExtra('file', file);
             log.addExtra('line', line);
@@ -981,6 +980,7 @@ App.get('/.well-known/acme-challenge/*')
 import './shared/api';
 import './shared/api/auth';
 import { Auth } from '@tuval/auth';
+import { Config } from '../../../Tuval/Config';
 
 App.wildcard()
     .groups(['api'])

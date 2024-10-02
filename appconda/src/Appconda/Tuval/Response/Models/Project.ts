@@ -1,8 +1,8 @@
 import { Auth } from '@tuval/auth';
 import { Response } from '../../Response';
 import { Model } from '../Model';
-import { Config } from '@tuval/config';
 import { Document } from '@tuval/core';
+import { Config } from '../../../../Tuval/Config';
 
 
 export class Project extends Model {

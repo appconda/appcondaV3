@@ -1,17 +1,15 @@
-<?php
-
-return [
-    'email' => [
+export default{
+    email: [
         'verification',
         'magicSession',
         'recovery',
         'invitation',
         'mfaChallenge'
     ],
-    'sms' => [
+    sms: [
         'verification',
         'login',
         'invitation',
         'mfaChallenge'
     ]
-];
+};

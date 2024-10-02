@@ -1,5 +1,6 @@
-import { Config } from '@tuval/config';
+
 import { Validator } from '@tuval/core';
+import { Config } from '../../../Tuval/Config';
 
 export class Event extends Validator {
     protected message: string = 'Event is not valid.';

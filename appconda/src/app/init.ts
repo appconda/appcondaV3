@@ -996,7 +996,7 @@ Locale.exceptions = false;
 // Get locale codes from config
 const locales = Config.getParam('locale-codes', []);
 
-locales.forEach((locale: { code: string }) => {
+locales.forEach(async (locale: { code: string }) => {
     const code = locale.code;
     let filePath = path.join(__dirname, 'config', 'locale', 'translations', `${code}.json`);
 
@@ -1007,7 +1007,7 @@ locales.forEach((locale: { code: string }) => {
         }
     }
 
-    Locale.setLanguageFromJSON(code, filePath);
+    await Locale.setLanguageFromJSON(code, filePath);
 });
 
 // Set global user agent and HTTP settings
@@ -1197,7 +1197,7 @@ App.setResource('user', async (mode: string, project: Document, console: Documen
 
 
 App.setResource('project', async (dbForConsole: Database, request: Request, console: Document) => {
-    const projectId = request.getParam('project', request.getHeader('x-appwrite-project', ''));
+    const projectId = request.getParam('project', request.getHeader('x-appconda-project', ''));
 
     if (!projectId || projectId === 'console') {
         return console;
@@ -1232,9 +1232,9 @@ App.setResource('console', () => {
     return new Document({
         '$id': ID.custom('console'),
         '$internalId': ID.custom('console'),
-        'name': 'Appwrite',
+        'name': 'Appconda',
         '$collection': ID.custom('projects'),
-        'description': 'Appwrite core engine',
+        'description': 'Appconda core engine',
         'logo': '',
         'teamId': -1,
         'webhooks': [],
@@ -1504,7 +1504,7 @@ function getDevice(root: string): Device {
 }
 
 App.setResource('mode', (request: Request) => {
-    return request.getParam('mode', request.getHeader('x-appwrite-mode', APP_MODE_DEFAULT));
+    return request.getParam('mode', request.getHeader('x-appconda-mode', APP_MODE_DEFAULT));
 }, ['request']);
 
 App.setResource('geodb', (register: Registry) => {
@@ -1635,13 +1635,13 @@ App.setResource('heroes', () => {
 }, ['cache']); */
 
 App.setResource('requestTimestamp', (request: Request) => {
-    const timestampHeader = request.getHeader('x-appwrite-timestamp');
+    const timestampHeader = request.getHeader('x-appconda-timestamp');
     let requestTimestamp;
     if (timestampHeader) {
         try {
             requestTimestamp = new Date(timestampHeader);
         } catch (e) {
-            throw new Error('Invalid X-Appwrite-Timestamp header value');
+            throw new Error('Invalid X-Appconda-Timestamp header value');
         }
     }
     return requestTimestamp;

@@ -17,7 +17,7 @@ export default [
             },
             {
                 name: '_APP_LOCALE',
-                description: 'Set your Appwrite\'s locale. By default, the locale is set to \'en\'.',
+                description: 'Set your Appconda\'s locale. By default, the locale is set to \'en\'.',
                 introduction: '',
                 default: 'en',
                 required: false,
@@ -62,7 +62,7 @@ export default [
             },
             {
                 name: '_APP_OPENSSL_KEY_V1',
-                description: 'This is your server private secret key that is used to encrypt all sensitive data on your server. Appwrite server encrypts all secret data on your server like webhooks, HTTP passwords, user sessions, and storage files. The var is not set by default, if you wish to take advantage of Appwrite encryption capabilities you should change it and make sure to **keep it a secret and have a backup for it**.',
+                description: 'This is your server private secret key that is used to encrypt all sensitive data on your server. Appconda server encrypts all secret data on your server like webhooks, HTTP passwords, user sessions, and storage files. The var is not set by default, if you wish to take advantage of Appconda encryption capabilities you should change it and make sure to **keep it a secret and have a backup for it**.',
                 introduction: '',
                 default: 'your-secret-key',
                 required: true,
@@ -71,11 +71,11 @@ export default [
             },
             {
                 name: '_APP_DOMAIN',
-                description: 'Your Appwrite domain address. When setting a public suffix domain, Appwrite will attempt to issue a valid SSL certificate automatically. When used with a dev domain, Appwrite will assign a self-signed SSL certificate. The default value is \'localhost\'.',
+                description: 'Your Appconda domain address. When setting a public suffix domain, Appconda will attempt to issue a valid SSL certificate automatically. When used with a dev domain, Appconda will assign a self-signed SSL certificate. The default value is \'localhost\'.',
                 introduction: '',
                 default: 'localhost',
                 required: true,
-                question: 'Enter your Appwrite hostname',
+                question: 'Enter your Appconda hostname',
                 filter: ''
             },
             {
@@ -89,16 +89,16 @@ export default [
             },
             {
                 name: '_APP_DOMAIN_TARGET',
-                description: 'A DNS A record hostname to serve as a CNAME target for your Appwrite custom domains. You can use the same value as used for the Appwrite \'_APP_DOMAIN\' variable. The default value is \'localhost\'.',
+                description: 'A DNS A record hostname to serve as a CNAME target for your Appconda custom domains. You can use the same value as used for the Appconda \'_APP_DOMAIN\' variable. The default value is \'localhost\'.',
                 introduction: '',
                 default: 'localhost',
                 required: true,
-                question: 'Enter a DNS A record hostname to serve as a CNAME for your custom domains.\nYou can use the same value as used for the Appwrite hostname.',
+                question: 'Enter a DNS A record hostname to serve as a CNAME for your custom domains.\nYou can use the same value as used for the Appconda hostname.',
                 filter: 'domainTarget'
             },
             {
                 name: '_APP_CONSOLE_WHITELIST_ROOT',
-                description: 'This option allows you to disable the creation of new users on the Appwrite console. When enabled only 1 user will be able to use the registration form. New users can be added by inviting them to your project. By default this option is enabled.',
+                description: 'This option allows you to disable the creation of new users on the Appconda console. When enabled only 1 user will be able to use the registration form. New users can be added by inviting them to your project. By default this option is enabled.',
                 introduction: '0.8.0',
                 default: 'enabled',
                 required: false,
@@ -107,7 +107,7 @@ export default [
             },
             {
                 name: '_APP_CONSOLE_WHITELIST_EMAILS',
-                description: 'This option allows you to limit creation of new users on the Appwrite console. This option is very useful for small teams or sole developers. To enable it, pass a list of allowed email addresses separated by a comma.',
+                description: 'This option allows you to limit creation of new users on the Appconda console. This option is very useful for small teams or sole developers. To enable it, pass a list of allowed email addresses separated by a comma.',
                 introduction: '',
                 default: '',
                 required: false,
@@ -116,7 +116,7 @@ export default [
             },
             {
                 name: '_APP_CONSOLE_WHITELIST_IPS',
-                description: 'This last option allows you to limit creation of users in Appwrite console for users sharing the same set of IP addresses. This option is very useful for team working with a VPN service or a company IP.\n\nTo enable/activate this option, pass a list of allowed IP addresses separated by a comma.',
+                description: 'This last option allows you to limit creation of users in Appconda console for users sharing the same set of IP addresses. This option is very useful for team working with a VPN service or a company IP.\n\nTo enable/activate this option, pass a list of allowed IP addresses separated by a comma.',
                 introduction: '',
                 default: '',
                 required: false,
@@ -125,7 +125,7 @@ export default [
             },
             {
                 name: '_APP_CONSOLE_HOSTNAMES',
-                description: 'This option allows you to add additional hostnames to your Appwrite console. This option is very useful for allowing access to the console project from additional domains. To enable it, pass a list of allowed hostnames separated by a comma.',
+                description: 'This option allows you to add additional hostnames to your Appconda console. This option is very useful for allowing access to the console project from additional domains. To enable it, pass a list of allowed hostnames separated by a comma.',
                 introduction: '1.5.0',
                 default: '',
                 required: false,
@@ -134,25 +134,25 @@ export default [
             },
             {
                 name: '_APP_SYSTEM_EMAIL_NAME',
-                description: 'This is the sender name value that will appear on email messages sent to developers from the Appwrite console. The default value is: \'Appwrite\'. You can use url encoded strings for spaces and special chars.',
+                description: 'This is the sender name value that will appear on email messages sent to developers from the Appconda console. The default value is: \'Appconda\'. You can use url encoded strings for spaces and special chars.',
                 introduction: '0.7.0',
-                default: 'Appwrite',
+                default: 'Appconda',
                 required: false,
                 question: '',
                 filter: ''
             },
             {
                 name: '_APP_SYSTEM_EMAIL_ADDRESS',
-                description: 'This is the sender email address that will appear on email messages sent to developers from the Appwrite console. The default value is \'team@appwrite.io\'. You should choose an email address that is allowed to be used from your SMTP server to avoid the server email ending in the users\' SPAM folders.',
+                description: 'This is the sender email address that will appear on email messages sent to developers from the Appconda console. The default value is \'team@appconda.io\'. You should choose an email address that is allowed to be used from your SMTP server to avoid the server email ending in the users\' SPAM folders.',
                 introduction: '0.7.0',
-                default: 'team@appwrite.io',
+                default: 'team@appconda.io',
                 required: false,
                 question: '',
                 filter: ''
             },
             {
                 name: '_APP_SYSTEM_RESPONSE_FORMAT',
-                description: 'Use this environment variable to set the default Appwrite HTTP response format to support an older version of Appwrite. This option is useful to overcome breaking changes between versions. You can also use the `X-Appwrite-Response-Format` HTTP request header to overwrite the response for a specific request. This variable accepts any valid Appwrite version. To use the current version format, leave the value of the variable empty.',
+                description: 'Use this environment variable to set the default Appconda HTTP response format to support an older version of Appconda. This option is useful to overcome breaking changes between versions. You can also use the `X-Appconda-Response-Format` HTTP request header to overwrite the response for a specific request. This variable accepts any valid Appconda version. To use the current version format, leave the value of the variable empty.',
                 introduction: '0.7.0',
                 default: '',
                 required: false,
@@ -163,7 +163,7 @@ export default [
                 name: '_APP_SYSTEM_SECURITY_EMAIL_ADDRESS',
                 description: 'Deprecated since 1.5.1 use _APP_EMAIL_SECURITY and _APP_EMAIL_CERTIFICATES instead',
                 introduction: '0.7.0',
-                default: 'certs@appwrite.io',
+                default: 'certs@appconda.io',
                 required: false,
                 question: '',
                 filter: ''
@@ -215,7 +215,7 @@ export default [
             },
             {
                 name: '_APP_USAGE_AGGREGATION_INTERVAL',
-                description: 'Interval value containing the number of seconds that the Appwrite usage process should wait before aggregating stats and syncing it to Database from TimeSeries data. The default value is 30 seconds. Reintroduced in 1.1.0.',
+                description: 'Interval value containing the number of seconds that the Appconda usage process should wait before aggregating stats and syncing it to Database from TimeSeries data. The default value is 30 seconds. Reintroduced in 1.1.0.',
                 introduction: '1.1.0',
                 default: '30',
                 required: false,
@@ -253,7 +253,7 @@ export default [
     },
     {
         category: 'Redis',
-        description: 'Appwrite uses a Redis server for managing cache, queues and scheduled tasks. The Redis env vars are used to allow Appwrite server to connect to the Redis container.',
+        description: 'Appconda uses a Redis server for managing cache, queues and scheduled tasks. The Redis env vars are used to allow Appconda server to connect to the Redis container.',
         variables: [
             {
                 name: '_APP_REDIS_HOST',
@@ -295,7 +295,7 @@ export default [
     },
     {
         category: 'MariaDB',
-        description: 'Appwrite is using a MariaDB server for managing persistent database data. The MariaDB env vars are used to allow Appwrite server to connect to the MariaDB container.',
+        description: 'Appconda is using a MariaDB server for managing persistent database data. The MariaDB env vars are used to allow Appconda server to connect to the MariaDB container.',
         variables: [
             {
                 name: '_APP_DB_HOST',
@@ -317,9 +317,9 @@ export default [
             },
             {
                 name: '_APP_DB_SCHEMA',
-                description: 'MariaDB server database schema. Default value is: \'appwrite\'.',
+                description: 'MariaDB server database schema. Default value is: \'appconda\'.',
                 introduction: '',
-                default: 'appwrite',
+                default: 'appconda',
                 required: false,
                 question: '',
                 filter: ''
@@ -403,7 +403,7 @@ export default [
     },
     {
         category: 'SMTP',
-        description: 'Appwrite is using an SMTP server for emailing your projects users and server admins. The SMTP env vars are used to allow Appwrite server to connect to the SMTP container.\n\nIf running in production, it might be easier to use a 3rd party SMTP server as it might be a little more difficult to set up a production SMTP server that will not send all your emails into your user\'s SPAM folder.',
+        description: 'Appconda is using an SMTP server for emailing your projects users and server admins. The SMTP env vars are used to allow Appconda server to connect to the SMTP container.\n\nIf running in production, it might be easier to use a 3rd party SMTP server as it might be a little more difficult to set up a production SMTP server that will not send all your emails into your user\'s SPAM folder.',
         variables: [
             {
                 name: '_APP_SMTP_HOST',
@@ -500,7 +500,7 @@ export default [
             },
             {
                 name: '_APP_STORAGE_ANTIVIRUS',
-                description: 'This variable allows you to disable the internal anti-virus scans. This value is set to \'disabled\' by default, to enable the scans set the value to \'enabled\'. Before enabling, you must add the ClamAV service and depend on it on main Appwrite service.',
+                description: 'This variable allows you to disable the internal anti-virus scans. This value is set to \'disabled\' by default, to enable the scans set the value to \'enabled\'. Before enabling, you must add the ClamAV service and depend on it on main Appconda service.',
                 introduction: '',
                 default: 'disabled',
                 required: false,
@@ -710,7 +710,7 @@ export default [
             },
             {
                 name: '_APP_FUNCTIONS_TIMEOUT',
-                description: 'The maximum number of seconds allowed as a timeout value when creating a new function. The default value is 900 seconds. This is the global limit, timeout for individual functions are configured in the function\'s settings or in appwrite.json.',
+                description: 'The maximum number of seconds allowed as a timeout value when creating a new function. The default value is 900 seconds. This is the global limit, timeout for individual functions are configured in the function\'s settings or in appconda.json.',
                 introduction: '0.7.0',
                 default: '900',
                 required: false,
@@ -773,7 +773,7 @@ export default [
             },
             {
                 name: '_APP_EXECUTOR_SECRET',
-                description: 'The secret key used by Appwrite to communicate with the function executor. Make sure to change this.',
+                description: 'The secret key used by Appconda to communicate with the function executor. Make sure to change this.',
                 introduction: '0.13.0',
                 default: 'your-secret-key',
                 required: false,
@@ -782,7 +782,7 @@ export default [
             },
             {
                 name: '_APP_EXECUTOR_HOST',
-                description: 'The host used by Appwrite to communicate with the function executor.',
+                description: 'The host used by Appconda to communicate with the function executor.',
                 introduction: '0.13.0',
                 default: 'http://exc1/v1',
                 required: false,
@@ -810,7 +810,7 @@ export default [
             },
             {
                 name: '_APP_FUNCTIONS_INACTIVE_THRESHOLD',
-                description: 'The minimum time a function must be inactive before it can be shut down and cleaned up. This feature is intended to clean up unused containers. Containers may remain active for longer than the interval before being shut down, as Appwrite only cleans up unused containers every hour. If no value is provided, the default is 60 seconds.',
+                description: 'The minimum time a function must be inactive before it can be shut down and cleaned up. This feature is intended to clean up unused containers. Containers may remain active for longer than the interval before being shut down, as Appconda only cleans up unused containers every hour. If no value is provided, the default is 60 seconds.',
                 introduction: '0.13.0',
                 default: '60',
                 required: false,
@@ -958,7 +958,7 @@ export default [
         variables: [
             {
                 name: '_APP_MAINTENANCE_INTERVAL',
-                description: 'Interval value containing the number of seconds that the Appwrite maintenance process should wait before executing system cleanups and optimizations. The default value is 86400 seconds (1 day).',
+                description: 'Interval value containing the number of seconds that the Appconda maintenance process should wait before executing system cleanups and optimizations. The default value is 86400 seconds (1 day).',
                 introduction: '0.7.0',
                 default: '86400',
                 required: false,
@@ -967,7 +967,7 @@ export default [
             },
             {
                 name: '_APP_MAINTENANCE_DELAY',
-                description: 'Delay value containing the number of seconds that the Appwrite maintenance process should wait before executing system cleanups and optimizations. The default value is 0 seconds.',
+                description: 'Delay value containing the number of seconds that the Appconda maintenance process should wait before executing system cleanups and optimizations. The default value is 0 seconds.',
                 introduction: '1.5.0',
                 default: '0',
                 required: false,

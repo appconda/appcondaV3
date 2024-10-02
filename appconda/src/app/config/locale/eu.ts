@@ -1,6 +1,4 @@
-<?php
-
-$list = [
+export default [
     'AT', // Austria
     'BE', // Belgium
     'HR', // Croatia
@@ -29,5 +27,3 @@ $list = [
     'ES', // Spain
     'SE', // Sweden
 ];
-
-return $list;

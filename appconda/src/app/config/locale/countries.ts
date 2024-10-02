@@ -1,5 +1,3 @@
-<?php
-
 /**
  * ISO 3166 standard country codes
  * https://www.iso.org/iso-3166-country-codes.html
@@ -8,7 +6,7 @@
  * https://www.iso.org/obp/ui/#search/code/
  */
 
-return [
+export default[
     'AF',
     'AO',
     'AL',

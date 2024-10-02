@@ -19,17 +19,17 @@ export const errors = {
     },
     [Exception.GENERAL_UNKNOWN_ORIGIN]: {
         name: Exception.GENERAL_UNKNOWN_ORIGIN,
-        description: 'The request originated from an unknown origin. If you trust this domain, please list it as a trusted platform in the Appwrite console.',
+        description: 'The request originated from an unknown origin. If you trust this domain, please list it as a trusted platform in the Appconda console.',
         code: 403,
     },
     [Exception.GENERAL_API_DISABLED]: {
         name: Exception.GENERAL_API_DISABLED,
-        description: 'The requested API is disabled. You can enable the API from the Appwrite console.',
+        description: 'The requested API is disabled. You can enable the API from the Appconda console.',
         code: 403,
     },
     [Exception.GENERAL_SERVICE_DISABLED]: {
         name: Exception.GENERAL_SERVICE_DISABLED,
-        description: 'The requested service is disabled. You can enable the service from the Appwrite console.',
+        description: 'The requested service is disabled. You can enable the service from the Appconda console.',
         code: 403,
     },
     [Exception.GENERAL_UNAUTHORIZED_SCOPE]: {
@@ -44,12 +44,12 @@ export const errors = {
     },
     [Exception.GENERAL_SMTP_DISABLED]: {
         name: Exception.GENERAL_SMTP_DISABLED,
-        description: 'SMTP is disabled on your Appwrite instance. You can <a href="/docs/email-delivery">learn more about setting up SMTP</a> in our docs.',
+        description: 'SMTP is disabled on your Appconda instance. You can <a href="/docs/email-delivery">learn more about setting up SMTP</a> in our docs.',
         code: 503,
     },
     [Exception.GENERAL_PHONE_DISABLED]: {
         name: Exception.GENERAL_PHONE_DISABLED,
-        description: 'Phone provider is not configured. Please check the _APP_SMS_PROVIDER environment variable of your Appwrite server.',
+        description: 'Phone provider is not configured. Please check the _APP_SMS_PROVIDER environment variable of your Appconda server.',
         code: 503,
     },
     [Exception.GENERAL_ARGUMENT_INVALID]: {
@@ -94,12 +94,12 @@ export const errors = {
     },
     [Exception.GENERAL_USAGE_DISABLED]: {
         name: Exception.GENERAL_USAGE_DISABLED,
-        description: 'Usage stats is not configured. Please check the value of the _APP_USAGE_STATS environment variable of your Appwrite server.',
+        description: 'Usage stats is not configured. Please check the value of the _APP_USAGE_STATS environment variable of your Appconda server.',
         code: 501,
     },
     [Exception.GENERAL_NOT_IMPLEMENTED]: {
         name: Exception.GENERAL_NOT_IMPLEMENTED,
-        description: 'This method was not fully implemented yet. If you believe this is a mistake, please upgrade your Appwrite server version.',
+        description: 'This method was not fully implemented yet. If you believe this is a mistake, please upgrade your Appconda server version.',
         code: 405,
     },
     [Exception.GENERAL_INVALID_EMAIL]: {
@@ -126,7 +126,7 @@ export const errors = {
     /** User Errors */
     [Exception.USER_COUNT_EXCEEDED]: {
         name: Exception.USER_COUNT_EXCEEDED,
-        description: 'The current project has exceeded the maximum number of users. Please check your user limit in the Appwrite console.',
+        description: 'The current project has exceeded the maximum number of users. Please check your user limit in the Appconda console.',
         code: 400,
     },
     [Exception.USER_CONSOLE_COUNT_EXCEEDED]: {
@@ -136,7 +136,7 @@ export const errors = {
     },
     [Exception.USER_JWT_INVALID]: {
         name: Exception.USER_JWT_INVALID,
-        description: 'The JWT token is invalid. Please check the value of the X-Appwrite-JWT header to ensure the correct token is being used.',
+        description: 'The JWT token is invalid. Please check the value of the X-Appconda-JWT header to ensure the correct token is being used.',
         code: 401,
     },
     [Exception.USER_ALREADY_EXISTS]: {
@@ -146,7 +146,7 @@ export const errors = {
     },
     [Exception.USER_BLOCKED]: {
         name: Exception.USER_BLOCKED,
-        description: 'The current user has been blocked. You can unblock the user by making a request to the User API\'s "Update User Status" endpoint or in the Appwrite Console\'s Auth section.',
+        description: 'The current user has been blocked. You can unblock the user by making a request to the User API\'s "Update User Status" endpoint or in the Appconda Console\'s Auth section.',
         code: 401,
     },
     [Exception.USER_INVALID_TOKEN]: {
@@ -231,7 +231,7 @@ export const errors = {
     },
     [Exception.USER_AUTH_METHOD_UNSUPPORTED]: {
         name: Exception.USER_AUTH_METHOD_UNSUPPORTED,
-        description: 'The requested authentication method is either disabled or unsupported. Please check the supported authentication methods in the Appwrite console.',
+        description: 'The requested authentication method is either disabled or unsupported. Please check the supported authentication methods in the Appconda console.',
         code: 501,
         publish: false,
     },
@@ -322,7 +322,7 @@ export const errors = {
     },
     [Exception.USER_API_KEY_AND_SESSION_SET]: {
         name: Exception.USER_API_KEY_AND_SESSION_SET,
-        description: 'API key and session used in the same request. Use either `setSession` or `setKey`. Learn about which authentication method to use in the SSR docs: https://appwrite.io/docs/products/auth/server-side-rendering',
+        description: 'API key and session used in the same request. Use either `setSession` or `setKey`. Learn about which authentication method to use in the SSR docs: https://appconda.io/docs/products/auth/server-side-rendering',
         code: 403,
     },
 
@@ -460,7 +460,7 @@ export const errors = {
     },
     [Exception.STORAGE_INVALID_APPWRITE_ID]: {
         name: Exception.STORAGE_INVALID_APPWRITE_ID,
-        description: 'The value for x-appwrite-id header is invalid. Please check the value of the x-appwrite-id header is a valid id and not unique().',
+        description: 'The value for x-appconda-id header is invalid. Please check the value of the x-appconda-id header is a valid id and not unique().',
         code: 400,
     },
     [Exception.STORAGE_FILE_NOT_PUBLIC]: {
@@ -509,7 +509,7 @@ export const errors = {
     },
     [Exception.FUNCTION_ENTRYPOINT_MISSING]: {
         name: Exception.FUNCTION_ENTRYPOINT_MISSING,
-        description: 'Entrypoint for your Appwrite Function is missing. Please specify it when making deployment or update the entrypoint under your function\'s "Settings" > "Configuration" > "Entrypoint".',
+        description: 'Entrypoint for your Appconda Function is missing. Please specify it when making deployment or update the entrypoint under your function\'s "Settings" > "Configuration" > "Entrypoint".',
         code: 404,
     },
     [Exception.FUNCTION_SYNCHRONOUS_TIMEOUT]: {
@@ -697,7 +697,7 @@ export const errors = {
     /** Project Errors */
     [Exception.PROJECT_NOT_FOUND]: {
         name: Exception.PROJECT_NOT_FOUND,
-        description: 'Project with the requested ID could not be found. Please check the value of the X-Appwrite-Project header to ensure the correct project ID is being used.',
+        description: 'Project with the requested ID could not be found. Please check the value of the X-Appconda-Project header to ensure the correct project ID is being used.',
         code: 404,
     },
     [Exception.PROJECT_ALREADY_EXISTS]: {
@@ -707,7 +707,7 @@ export const errors = {
     },
     [Exception.PROJECT_PROVIDER_DISABLED]: {
         name: Exception.PROJECT_PROVIDER_DISABLED,
-        description: 'The chosen OAuth provider is disabled. You can enable the OAuth provider using the Appwrite console.',
+        description: 'The chosen OAuth provider is disabled. You can enable the OAuth provider using the Appconda console.',
         code: 412,
     },
     [Exception.PROJECT_PROVIDER_UNSUPPORTED]: {
@@ -732,7 +732,7 @@ export const errors = {
     },
     [Exception.PROJECT_KEY_EXPIRED]: {
         name: Exception.PROJECT_KEY_EXPIRED,
-        description: 'The project key has expired. Please generate a new key using the Appwrite console.',
+        description: 'The project key has expired. Please generate a new key using the Appconda console.',
         code: 401,
     },
     [Exception.ROUTER_HOST_NOT_FOUND]: {
@@ -742,7 +742,7 @@ export const errors = {
     },
     [Exception.ROUTER_DOMAIN_NOT_CONFIGURED]: {
         name: Exception.ROUTER_DOMAIN_NOT_CONFIGURED,
-        description: '_APP_DOMAIN, _APP_DOMAIN_TARGET, and _APP_DOMAIN_FUNCTIONS environment variables have not been configured. Please configure the domain environment variables before accessing the Appwrite Console via any IP address or hostname other than localhost. This value could be an IP like 203.0.113.0 or a hostname like example.com.',
+        description: '_APP_DOMAIN, _APP_DOMAIN_TARGET, and _APP_DOMAIN_FUNCTIONS environment variables have not been configured. Please configure the domain environment variables before accessing the Appconda Console via any IP address or hostname other than localhost. This value could be an IP like 203.0.113.0 or a hostname like example.com.',
         code: 500,
     },
     [Exception.RULE_RESOURCE_NOT_FOUND]: {
@@ -830,7 +830,7 @@ export const errors = {
     },
     [Exception.MIGRATION_IN_PROGRESS]: {
         name: Exception.MIGRATION_IN_PROGRESS,
-        description: 'Migration is already in progress. You can check the status of the migration in your Appwrite Console\'s "Settings" > "Migrations".',
+        description: 'Migration is already in progress. You can check the status of the migration in your Appconda Console\'s "Settings" > "Migrations".',
         code: 409,
     },
 
