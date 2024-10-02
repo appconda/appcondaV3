@@ -1,7 +1,7 @@
 import { Response } from '../../Response';
 import { Model } from '../Model';
 
-export class Error extends Model {
+export class ErrorModel extends Model {
     constructor() {
         super();
 

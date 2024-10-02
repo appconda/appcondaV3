@@ -2,7 +2,9 @@
 import { Authorization, Document, Hostname, ID, Text } from '@tuval/core';
 import { V16 as RequestV16 } from '../../../Appconda/Tuval/Request/Filters/V16';
 import { V17 as ResponseV17 } from '../../../Appconda/Tuval/Response/Filters/V17';
-import { APP_STORAGE_CERTIFICATES, APP_VERSION_STABLE, FUNCTION_ALLOWLIST_HEADERS_REQUEST, FUNCTION_ALLOWLIST_HEADERS_RESPONSE, METRIC_EXECUTIONS, METRIC_EXECUTIONS_COMPUTE, METRIC_EXECUTIONS_MB_SECONDS, METRIC_FUNCTION_ID_EXECUTIONS, METRIC_FUNCTION_ID_EXECUTIONS_COMPUTE, METRIC_FUNCTION_ID_EXECUTIONS_MB_SECONDS } from '../../init';
+import { APP_STORAGE_CERTIFICATES, APP_VERSION_STABLE, FUNCTION_ALLOWLIST_HEADERS_REQUEST, FUNCTION_ALLOWLIST_HEADERS_RESPONSE, METRIC_EXECUTIONS, METRIC_EXECUTIONS_COMPUTE, METRIC_EXECUTIONS_MB_SECONDS, METRIC_FUNCTION_ID_EXECUTIONS, METRIC_FUNCTION_ID_EXECUTIONS_COMPUTE, METRIC_FUNCTION_ID_EXECUTIONS_MB_SECONDS, 
+    register as reg
+ } from '../../init';
 import { Config } from '@tuval/config';
 import { Response } from '../../../Appconda/Tuval/Response';
 import { Database, Query } from '@tuval/database';
@@ -21,6 +23,7 @@ import { DSN } from '@tuval/dsn';
 import { View } from '../../../Appconda/Tuval/View';
 import { promises as fs } from 'fs';
 
+export const register =reg;
 
 function versionCompare(version1: string, version2: string, operator: string): boolean {
     const parseVersion = (version: string) => version.split('.').map(Number);

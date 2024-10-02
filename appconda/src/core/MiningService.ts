@@ -5,7 +5,6 @@ import { XesImporter } from "../modules/mining/objects/log/importer/xes/importer
 import { EventLog, Trace } from "../modules/mining/objects/log/log";
 import { GeneralLogStatistics } from "../modules/mining/statistics/log/general";
 import { nanoid } from "../modules/nanoid/nanoid";
-import { Convert, int, is } from '@tuval/core/node'
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
 

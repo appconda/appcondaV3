@@ -100,7 +100,6 @@ const userServices = fs.readdirSync(moveFrom);
 userServices.forEach(function (file: string, index: number) {
 
   if (!file.startsWith('_') && indexIgnoreList.indexOf(file) === -1) {
-    // Make one pass and make the file complete
     var fromPath = path.join(moveFrom, file);
 
     const stat = fs.statSync(fromPath);

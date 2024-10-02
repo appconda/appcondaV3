@@ -1,7 +1,7 @@
 import { App } from "@tuval/http";
 import { PublicDomain } from "@tuval/domains";
 import { Registry } from "@tuval/registry";
-import { Config } from "@tuval/config";
+import { Config } from "../Tuval/Config";
 import { Database, Query, Structure, Datetime as DatetimeValidator, MariaDB } from "@tuval/database";
 import { Authorization, Document, IP, WhiteList, URLValidator, Range, Hostname, ID } from "@tuval/core";
 import { OpenSSL } from "../Appconda/OpenSSL/OpenSSL";
@@ -19,8 +19,10 @@ import { existsSync, readFileSync } from "fs";
 import { Hooks } from "../Appconda/Hooks/Hooks";
 import http from 'http';
 import { Locale } from "@tuval/locale";
+import { Logger, Log } from '@tuval/logger';
 import url from 'url';
 import { Messaging } from "../Appconda/Event/Messaging";
+import { Database as EventDatabase } from "../Appconda/Event/Database";
 import { Mail } from "../Appconda/Event/Mail";
 import { Build } from "../Appconda/Event/Build";
 import { Delete } from "../Appconda/Event/Delete";
@@ -249,7 +251,7 @@ export const METRIC_NETWORK_INBOUND = 'network.inbound';
 export const METRIC_NETWORK_OUTBOUND = 'network.outbound';
 
 
-const register = new Registry();
+export const register = new Registry();
 
 App.setMode(process.env._APP_ENV || App.MODE_TYPE_PRODUCTION);
 
@@ -270,8 +272,8 @@ Config.load('errors', __dirname + '/config/errors');
 Config.load('oAuthProviders', __dirname + '/config/oAuthProviders');
 Config.load('platforms', __dirname + '/config/platforms');
 Config.load('collections', __dirname + '/config/collections');
-Config.load('runtimes', __dirname + '/config/runtimes');
-Config.load('runtimes-v2', __dirname + '/config/runtimes-v2');
+//Config.load('runtimes', __dirname + '/config/runtimes');
+//Config.load('runtimes-v2', __dirname + '/config/runtimes-v2');
 Config.load('usage', __dirname + '/config/usage');
 Config.load('roles', __dirname + '/config/roles');  // User roles and scopes
 Config.load('scopes', __dirname + '/config/scopes');  // User roles and scopes
@@ -519,15 +521,16 @@ Database.addFilter(
     (value: any) => {
         const key: string = process.env._APP_OPENSSL_KEY_V1 as any;
         const iv = OpenSSL.randomPseudoBytes(OpenSSL.cipherIVLength(OpenSSL.CIPHER_AES_128_GCM));
-        let tag: string;
+
 
         const buffer = Buffer.from(key, 'utf-8');
 
+
         return JSON.stringify({
-            data: OpenSSL.encrypt(value, OpenSSL.CIPHER_AES_128_GCM, buffer, 0, iv, tag),
+            data: OpenSSL.encrypt(value, OpenSSL.CIPHER_AES_128_GCM, buffer, 0, iv, null),
             method: OpenSSL.CIPHER_AES_128_GCM,
             iv: iv.toString('hex'),
-            tag: tag ? tag.toString('hex') : '',
+            tag: '',
             version: '1',
         });
     },
@@ -536,9 +539,9 @@ Database.addFilter(
             return;
         }
         value = JSON.parse(value);
-        const key = process.env['_APP_OPENSSL_KEY_V' + value.version];
-
-        return OpenSSL.decrypt(value.data, value.method, key, 0, Buffer.from(value.iv, 'hex'), Buffer.from(value.tag, 'hex'));
+        const key = process.env['_APP_OPENSSL_KEY_V' + value.version] as string;
+        const buffer = Buffer.from(key, 'utf-8');
+        return OpenSSL.decrypt(value.data, value.method, buffer, 0, Buffer.from(value.iv, 'hex'), Buffer.from(value.tag, 'hex'));
     }
 );
 
@@ -710,7 +713,7 @@ Structure.addFormat(APP_DATABASE_ATTRIBUTE_FLOAT_RANGE, (attribute: any) => {
 register.set('logger', () => {
     // Register error logger
     const providerName = process.env._APP_LOGGING_PROVIDER || '';
-    const providerConfig = process.env._APP_LOGGING_CONFIG || '';
+    let providerConfig = process.env._APP_LOGGING_CONFIG || '';
 
     if (!providerName || !providerConfig) {
         return;
@@ -1044,8 +1047,9 @@ App.setResource('localeCodes', () => {
     return Config.getParam('locale-codes', []).map((locale: { code: string }) => locale.code);
 });
 
-App.setResource('queue', (pools: Group) => {
-    return pools.get('queue').pop().getResource();
+App.setResource('queue', async (pools: Group) => {
+    const pool = await pools.get('queue').pop();
+    return pool.getResource();
 }, ['pools']);
 
 App.setResource('queueForMessaging', (queue: Connection) => new Messaging(queue), ['queue']);
@@ -1265,7 +1269,7 @@ App.setResource('console', () => {
 }, []);
 
 
-App.setResource('dbForProject', (pools: Group, dbForConsole: Database, cache: Cache, project: Document) => {
+App.setResource('dbForProject', async (pools: Group, dbForConsole: Database, cache: Cache, project: Document) => {
     if (project.isEmpty() || project.getId() === 'console') {
         return dbForConsole;
     }
@@ -1277,10 +1281,8 @@ App.setResource('dbForProject', (pools: Group, dbForConsole: Database, cache: Ca
         dsn = new DSN('mysql://' + project.getAttribute('database'));
     }
 
-    const dbAdapter = pools
-        .get(dsn.getHost())
-        .pop()
-        .getResource();
+    const pool = await pools.get(dsn.getHost()).pop();
+    const dbAdapter = pool.getResource();
 
     const database = new Database(dbAdapter, cache);
 
@@ -1292,7 +1294,7 @@ App.setResource('dbForProject', (pools: Group, dbForConsole: Database, cache: Ca
     if (dsn.getHost() === process.env._APP_DATABASE_SHARED_TABLES || '') {
         database
             .setSharedTables(true)
-            .setTenant(project.getInternalId())
+            .setTenant(project.getInternalId() as any)
             .setNamespace(dsn.getParam('namespace'));
     } else {
         database
@@ -1429,19 +1431,19 @@ function getDevice(root: string): Device {
         }
 
         switch (device) {
-           /*  case Storage.DEVICE_S3:
-                return new S3(root, accessKey, accessSecret, bucket, region, acl);
-            case Storage.DEVICE_DO_SPACES:
-                const doSpaces = new DOSpaces(root, accessKey, accessSecret, bucket, region, acl);
-                doSpaces.setHttpVersion(S3.HTTP_VERSION_1_1);
-                return doSpaces;
-            case Storage.DEVICE_BACKBLAZE:
-                return new Backblaze(root, accessKey, accessSecret, bucket, region, acl);
-            case Storage.DEVICE_LINODE:
-                return new Linode(root, accessKey, accessSecret, bucket, region, acl);
-            case Storage.DEVICE_WASABI:
-                return new Wasabi(root, accessKey, accessSecret, bucket, region, acl);
-            case Storage.DEVICE_LOCAL: */
+            /*  case Storage.DEVICE_S3:
+                 return new S3(root, accessKey, accessSecret, bucket, region, acl);
+             case Storage.DEVICE_DO_SPACES:
+                 const doSpaces = new DOSpaces(root, accessKey, accessSecret, bucket, region, acl);
+                 doSpaces.setHttpVersion(S3.HTTP_VERSION_1_1);
+                 return doSpaces;
+             case Storage.DEVICE_BACKBLAZE:
+                 return new Backblaze(root, accessKey, accessSecret, bucket, region, acl);
+             case Storage.DEVICE_LINODE:
+                 return new Linode(root, accessKey, accessSecret, bucket, region, acl);
+             case Storage.DEVICE_WASABI:
+                 return new Wasabi(root, accessKey, accessSecret, bucket, region, acl);
+             case Storage.DEVICE_LOCAL: */
             default:
                 return new Local(root);
         }

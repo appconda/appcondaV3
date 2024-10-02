@@ -757,27 +757,6 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
-"@tuval/config@^1.0.7":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@tuval/config/-/config-1.0.7.tgz#161382b7f1e1cdd9d56953142c4b83101fe86566"
-  integrity sha512-jYTHrBmoQxSSN2o+LKg9MWyoeD5G090XmDKUX5pNwtKcpTP35nBtpJl803AKVa5w2U5f7ufcjI0A7M1LadRSDg==
-  dependencies:
-    "@tuval/core" "2.0.6"
-    argon2 "^0.41.1"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
-    validator "^13.12.0"
-
 "@tuval/core@2.0.10", "@tuval/core@^2.0.10":
   version "2.0.10"
   resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.10.tgz#2c1d8d3323340802232f5aa22892f6ccf941910c"
@@ -937,6 +916,29 @@
   dependencies:
     "@tuval/core" "^2.0.5"
     argon2 "^0.41.1"
+    bcrypt "^5.1.1"
+    crypto-js "^4.2.0"
+    diskusage "^1.2.0"
+    googleapis "^144.0.0"
+    ioredis "^5.4.1"
+    md5 "^2.3.0"
+    moment "^2.30.1"
+    mysql2 "^3.11.3"
+    otplib "^12.0.1"
+    pako "^2.1.0"
+    scrypt-js "^3.0.1"
+    uuid "^10.0.0"
+    validator "^13.12.0"
+
+"@tuval/logger@^1.0.14":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@tuval/logger/-/logger-1.0.14.tgz#1b56608d41e6c2f167f919542bbdb62ed9a64329"
+  integrity sha512-FOx5tqDVmKMY54Wcldm7AgPjjuKogUcVUgbJv1fEUXSwLFDHIQWwgISzqSb1z6xDA/vur3u2WDW7THGhRsjO6Q==
+  dependencies:
+    "@tuval/core" "2.0.6"
+    "@tuval/database" "1.0.12"
+    argon2 "^0.41.1"
+    axios "^1.7.7"
     bcrypt "^5.1.1"
     crypto-js "^4.2.0"
     diskusage "^1.2.0"
@@ -1435,6 +1437,15 @@ axios@^1.6.1, axios@^1.6.8:
   version "1.6.8"
   resolved "https://registry.npmjs.org/axios/-/axios-1.6.8.tgz"
   integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
+  dependencies:
+    follow-redirects "^1.15.6"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
+axios@^1.7.7:
+  version "1.7.7"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.7.tgz#2f554296f9892a72ac8d8e4c5b79c14a91d0a47f"
+  integrity sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.0"

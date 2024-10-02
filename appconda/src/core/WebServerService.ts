@@ -1,7 +1,8 @@
 import e from "express";
 import { BaseService } from "../BaseService";
-import { ExpressApp } from "tuval";
-
+import { App, Request, Response } from "@tuval/http";
+import path from "path";
+import { register } from "../app/controllers/api/general";
 const express = require('express');
 var cors = require('cors')
 
@@ -60,31 +61,45 @@ export default class WebServerService extends BaseService {
     this.router = express.Router();
     app.use('/v1/service', this.router)
 
+    const _path = path.resolve('./src/app/controllers/api/general');
+    console.log(register)
 
-    ExpressApp.start(80, '0.0.0.0');
 
-    var fs = require("fs");
-    var path = require("path");
+    app.use((req, res, next) => {
+      const tuvalReq = new Request(req);
+      const tuvalRes = new Response(res);
+      App.setResource('request', () => tuvalReq); // Wrap Request in a function
+      App.setResource('response', () => tuvalRes);
+      const app = new App('UTC');
 
-    var coreServices =path.resolve(__dirname, "../app/controllers") ;
-    console.log(coreServices);
+      app.run(tuvalReq, tuvalRes);
+      next()
+    })
 
-    const filenames = fs.readdirSync(coreServices);
-    filenames.forEach(function (file, index) {
-      // Make one pass and make the file complete
-      var fromPath = path.join(coreServices, file);
+    app.listen(80, '0.0.0.0');
+    //ExpressApp.start(80, '0.0.0.0');
 
-      const stat = fs.statSync(fromPath);
-
-      if (stat.isFile()) {
-        console.log(path.resolve(fromPath));
-        try {
-          const service = require(path.resolve(fromPath));
-        } catch (e) {
-          console.log(e);
-        }
-      } else if (stat.isDirectory()) console.log(fromPath);
-    });
+    /*     var fs = require("fs");
+        var path = require("path");
+    
+        var coreServices =path.resolve(__dirname, "../app/controllers") ;
+        console.log(coreServices);
+    
+        const filenames = fs.readdirSync(coreServices);
+        filenames.forEach(function (file, index) {
+          var fromPath = path.join(coreServices, file);
+    
+          const stat = fs.statSync(fromPath);
+    
+          if (stat.isFile()) {
+            console.log(path.resolve(fromPath));
+            try {
+              const service = require(path.resolve(fromPath));
+            } catch (e) {
+              console.log(e);
+            }
+          } else if (stat.isDirectory()) console.log(fromPath);
+        }); */
 
 
 

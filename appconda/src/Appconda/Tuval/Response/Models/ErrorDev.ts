@@ -1,7 +1,7 @@
 import { Response } from '../../Response';
-import { Error } from './Error';
+import { ErrorModel } from './Error';
 
-export class ErrorDev extends Error {
+export class ErrorDev extends ErrorModel {
     protected public: boolean = false;
 
     constructor() {
@@ -9,19 +9,19 @@ export class ErrorDev extends Error {
 
         this
             .addRule('file', {
-                type: Error.TYPE_STRING,
+                type: ErrorModel.TYPE_STRING,
                 description: 'File path.',
                 default: '',
                 example: '/usr/code/vendor/utopia-php/framework/src/App.php',
             })
             .addRule('line', {
-                type: Error.TYPE_INTEGER,
+                type: ErrorModel.TYPE_INTEGER,
                 description: 'Line number.',
                 default: 0,
                 example: 209,
             })
             .addRule('trace', {
-                type: Error.TYPE_STRING,
+                type: ErrorModel.TYPE_STRING,
                 description: 'Error trace.',
                 default: [],
                 example: '',

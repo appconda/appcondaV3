@@ -1,5 +1,5 @@
 import { Exception as BaseException} from '@tuval/core';
-import { Config } from '@tuval/config';
+import { Config } from '../../Tuval/Config';
 
 export class AppcondaException extends BaseException {
     /** General */

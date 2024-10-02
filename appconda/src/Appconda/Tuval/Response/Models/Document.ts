@@ -2,7 +2,7 @@ import { Response } from '../../Response';
 import { Any } from './Any';
 import {Document as DatabaseDocument } from '@tuval/core';
 
-export class Document extends Any {
+export class ModelDocument extends Any {
     constructor() {
         super();
 
