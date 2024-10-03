@@ -1,6 +1,6 @@
 import e from "express";
 import { BaseService } from "../BaseService";
-import { App, Request, Response } from "@tuval/http";
+import { App, Request, Response } from "../Tuval/Http";
 import path from "path";
 import { register } from "../app/controllers/general";
 const express = require('express');

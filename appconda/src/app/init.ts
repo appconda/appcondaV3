@@ -1,4 +1,4 @@
-import { App } from "@tuval/http";
+
 import { PublicDomain } from "@tuval/domains";
 import { Registry } from "@tuval/registry";
 import { Config } from "../Tuval/Config";
@@ -39,6 +39,7 @@ import { Response } from "../Appconda/Tuval/Response";
 import jwt from 'jsonwebtoken';
 import { Device, Local, Storage } from "@tuval/storage";
 import { APP_PLATFORM_SERVER } from "./config/platforms";
+import { App } from "../Tuval/Http";
 
 let geoReader: maxmind.Reader<maxmind.CityResponse> | null = null;
 
@@ -1530,7 +1531,7 @@ App.setResource('promiseAdapter', (register: Registry) => {
     return register.get('promiseAdapter');
 }, ['register']);
 
-App.setResource('schema', (utopia: any, dbForProject: Database) => {
+App.setResource('schema', (appconda: any, dbForProject: Database) => {
     const complexity = (complexity: number, args: any) => {
         const queries = Query.parseQueries(args.queries || []);
         const query = Query.getByType(queries, [Query.TYPE_LIMIT])[0] || null;
@@ -1610,7 +1611,7 @@ App.setResource('schema', (utopia: any, dbForProject: Database) => {
         urls,
         params,
     ); */
-}, ['utopia', 'dbForProject']);
+}, ['appconda', 'dbForProject']);
 
 App.setResource('contributors', () => {
     const path = 'app/config/contributors.json';

@@ -9,7 +9,6 @@ import {
 import { Response } from '../../Appconda/Tuval/Response';
 import { Database, Query } from '@tuval/database';
 import { Usage } from '../../Appconda/Event/Usage';
-import { App } from '@tuval/http';
 import { Request } from '../../Appconda/Tuval/Request';
 import { AppcondaException } from '../../Appconda/Extend/Exception';
 import { Event } from '../../Appconda/Event/Event';
@@ -25,6 +24,7 @@ import { promises as fs } from 'fs';
 import { Config } from "../../Tuval/Config";
 import { Auth } from '@tuval/auth';
 import path from 'path';
+import { App } from '../../Tuval/Http';
 
 export const register = reg;
 
@@ -57,7 +57,7 @@ Config.setParam('cookieSamesite', Response.COOKIE_SAMESITE_NONE);
 
 
 async function router(
-    utopia: App,
+    appconda: App,
     dbForConsole: Database,
     getProjectDB: (project: Document) => Database,
     swooleRequest: any,
@@ -67,7 +67,7 @@ async function router(
     queueForUsage: Usage,
     geodb: any
 ) {
-    utopia.getRoute()?.label('error', __dirname + '/../views/general/error.phtml');
+    appconda.getRoute()?.label('error', __dirname + '/../views/general/error.phtml');
 
     const host = request.getHostname() ?? '';
 
@@ -93,7 +93,7 @@ async function router(
             }
         }
 
-        utopia.getRoute()?.label('error', '');
+        appconda.getRoute()?.label('error', '');
         return false;
     }
 
@@ -362,7 +362,7 @@ async function router(
 
         return true;
     } else if (type === 'api') {
-        utopia.getRoute()?.label('error', '');
+        appconda.getRoute()?.label('error', '');
         return false;
     } else {
         throw new AppcondaException(AppcondaException.GENERAL_SERVER_ERROR, 'Unknown resource type ' + type);
@@ -388,7 +388,7 @@ App.init()
 
 App.init()
     .groups(['api', 'web'])
-    .inject('utopia')
+    .inject('appconda')
     .inject('swooleRequest')
     .inject('request')
     .inject('response')
@@ -404,7 +404,7 @@ App.init()
     .inject('queueForEvents')
     .inject('queueForCertificates')
     .action(async (
-        utopia: App,
+        appconda: App,
         swooleRequest: any,
         request: Request,
         response: Response,
@@ -424,12 +424,12 @@ App.init()
         const mainDomain = process.env._APP_DOMAIN ?? '';
 
         if (host !== mainDomain) {
-            if (await router(utopia, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb)) {
+            if (await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb)) {
                 return;
             }
         }
 
-        const route = utopia.getRoute();
+        const route = appconda.getRoute();
         Request.setRoute(route);
 
         if (!route) {
@@ -596,7 +596,7 @@ App.init()
 
 
 App.options()
-    .inject('utopia')
+    .inject('appconda')
     .inject('swooleRequest')
     .inject('request')
     .inject('response')
@@ -606,7 +606,7 @@ App.options()
     .inject('queueForUsage')
     .inject('geodb')
     .action(async (
-        utopia: App,
+        appconda: App,
         swooleRequest: any,
         request: Request,
         response: Response,
@@ -620,7 +620,7 @@ App.options()
         const mainDomain = process.env._APP_DOMAIN || '';
 
         if (host !== mainDomain) {
-            if (await router(utopia, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb)) {
+            if (await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb)) {
                 return;
             }
         }
@@ -639,7 +639,7 @@ App.options()
 
 App.error()
     .inject('error')
-    .inject('utopia')
+    .inject('appconda')
     .inject('request')
     .inject('response')
     .inject('project')
@@ -648,7 +648,7 @@ App.error()
     .inject('queueForUsage')
     .action(async (
         error: AppcondaException,
-        utopia: App,
+        appconda: App,
         request: Request,
         response: Response,
         project: Document,
@@ -657,7 +657,7 @@ App.error()
         queueForUsage: Usage
     ) => {
         const version = process.env._APP_VERSION || 'UNKNOWN';
-        const route = utopia.getRoute();
+        const route = appconda.getRoute();
         const className = error.constructor.name;
         let code = error instanceof AppcondaException ? error.getCode() : 500;
         let message = error.message;
@@ -730,7 +730,7 @@ App.error()
 
         if (logger && publish) {
             try {
-                const user = utopia.getResource('user');
+                const user = appconda.getResource('user');
                 if (user && !user.isEmpty()) {
                     log.setUser({ id: user.getId() });
                 }
@@ -847,7 +847,7 @@ App.get('/robots.txt')
     .desc('Robots.txt File')
     .label('scope', 'public')
     .label('docs', false)
-    .inject('utopia')
+    .inject('appconda')
     .inject('swooleRequest')
     .inject('request')
     .inject('response')
@@ -857,7 +857,7 @@ App.get('/robots.txt')
     .inject('queueForUsage')
     .inject('geodb')
     .action(async (
-        utopia: App,
+        appconda: App,
         swooleRequest: any,
         request: Request,
         response: Response,
@@ -874,7 +874,7 @@ App.get('/robots.txt')
             const template = new View(__dirname + '/../views/general/robots.phtml');
             response.text(template.render(false));
         } else {
-            await router(utopia, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb);
+            await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb);
         }
     });
 
@@ -882,7 +882,7 @@ App.get('/humans.txt')
     .desc('Humans.txt File')
     .label('scope', 'public')
     .label('docs', false)
-    .inject('utopia')
+    .inject('appconda')
     .inject('swooleRequest')
     .inject('request')
     .inject('response')
@@ -892,7 +892,7 @@ App.get('/humans.txt')
     .inject('queueForUsage')
     .inject('geodb')
     .action(async (
-        utopia: App,
+        appconda: App,
         swooleRequest: any,
         request: Request,
         response: Response,
@@ -909,7 +909,7 @@ App.get('/humans.txt')
             const template = new View(__dirname + '/../views/general/humans.phtml');
             response.text(template.render(false));
         } else {
-            await router(utopia, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb);
+            await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb);
         }
     });
 
@@ -1002,6 +1002,7 @@ for (const service of Object.keys(services)) {
 
 import './shared/api';
 import './shared/api/auth';
+import { Log, Logger } from '@tuval/logger';
 
 
 

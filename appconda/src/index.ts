@@ -88,7 +88,7 @@ filenames.forEach(function (file: any, index: number) {
 
     const service = require(path.resolve(fromPath));
     container.registerService( service.default);
-    //console.log(service.default.Name);
+    //console.log(service.default);
   }
 
   else if (stat.isDirectory())
@@ -118,9 +118,9 @@ userServices.forEach(function (file: string, index: number) {
 
 (async () => {
   await container.init();
-  loadComponents(coreComponentsDir);
-  loadComponents(componentsDir);
-  await componentsContainer.init();
+  //loadComponents(coreComponentsDir);
+  //loadComponents(componentsDir);
+  //await componentsContainer.init();
 
   const variables = {};
 

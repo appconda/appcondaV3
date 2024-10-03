@@ -26,7 +26,6 @@
     "@tuval/database": "1.0.20",
     "@tuval/domains": "^1.0.9",
     "@tuval/dsn": "^1.0.12",
-    "@tuval/http": "1.0.12",
     "@tuval/locale": "^1.0.5",
     "@tuval/logger": "^1.0.14",
     "@tuval/pools": "^1.0.10",

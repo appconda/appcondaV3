@@ -1,7 +1,7 @@
 import { Filter } from './Response/Filter';
 
 
-import { Route, Response as TuvalResponse } from '@tuval/http';
+import { Response as TuvalResponse } from '../../Tuval/Http';
 import { Response as ExpressResponse } from 'express';
 import { Model } from './Response/Model';
 import { Document } from '@tuval/core';

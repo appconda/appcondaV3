@@ -94,7 +94,7 @@ export class Deployment extends Model {
                 type: Model.TYPE_STRING,
                 description: 'The name of the vcs provider repository owner',
                 default: '',
-                example: 'utopia',
+                example: 'appconda',
             })
             .addRule('providerRepositoryUrl', {
                 type: Model.TYPE_STRING,

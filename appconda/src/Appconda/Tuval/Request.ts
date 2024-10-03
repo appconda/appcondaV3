@@ -1,6 +1,6 @@
 import { Filter } from './Request/Filter';
-import { Route, Request as TuvalRequest } from '@tuval/http';
 import { Request as ExpressRequest } from 'express';
+import { Route, Request as TuvalRequest} from '../../Tuval/Http';
 
 export class Request extends TuvalRequest {
     private filters: Filter[] = [];

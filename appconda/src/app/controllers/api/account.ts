@@ -12,7 +12,7 @@ import { encode } from 'html-entities';
 import strip_tags from 'striptags';
 import { Auth, EmailChallenge, Password, PasswordDictionary, PasswordHistory, PersonalData, Phone, PhoneChallenge, Phrase, TOTP } from '@tuval/auth'
 
-import { App, Request } from '@tuval/http'
+
 import { Type, TOTPChallenge } from '@tuval/auth'
 import jwt from 'jsonwebtoken';
 import { Detector } from '../../../Appconda/Detector/Detector'
@@ -32,6 +32,8 @@ import { Mail } from '../../../Appconda/Event/Mail';
 import { AppcondaException } from '../../../Appconda/Extend/Exception';
 import { Identities } from '../../../Appconda/Tuval/Database/Validators/Queries/Identities';
 import { Config } from '../../../Tuval/Config';
+import { Request } from '../../../Appconda/Tuval/Request';
+import { App } from '../../../Tuval/Http';
 
 console.log('Account Controller Loaded...')
 
