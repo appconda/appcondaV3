@@ -60,7 +60,7 @@ async function router(
     appconda: App,
     dbForConsole: Database,
     getProjectDB: (project: Document) => Database,
-    swooleRequest: any,
+    expressRequest: any,
     request: Request,
     response: Response,
     queueForEvents: Event,
@@ -108,7 +108,7 @@ async function router(
         }
     }
 
-    const path = swooleRequest.server['request_uri'] ?? '/';
+    const path = expressRequest.server['request_uri'] ?? '/';
     if (path.startsWith('/.well-known/acme-challenge')) {
         return false;
     }
@@ -129,14 +129,14 @@ async function router(
         const functionId = route.getAttribute('resourceId');
         const projectId = route.getAttribute('projectId');
 
-        let path = swooleRequest.server['request_uri'] ?? '/';
-        const query = swooleRequest.server['query_string'] ?? '';
+        let path = expressRequest.server['request_uri'] ?? '/';
+        const query = expressRequest.server['query_string'] ?? '';
         if (query) {
             path += '?' + query;
         }
 
-        let body = swooleRequest.getContent() ?? '';
-        const method = swooleRequest.server['request_method'];
+        let body = expressRequest.getContent() ?? '';
+        const method = expressRequest.server['request_method'];
 
         const requestHeaders = request.getHeaders();
 
@@ -389,7 +389,7 @@ App.init()
 App.init()
     .groups(['api', 'web'])
     .inject('appconda')
-    .inject('swooleRequest')
+    .inject('expressRequest')
     .inject('request')
     .inject('response')
     .inject('console')
@@ -405,7 +405,7 @@ App.init()
     .inject('queueForCertificates')
     .action(async (
         appconda: App,
-        swooleRequest: any,
+        expressRequest: any,
         request: Request,
         response: Response,
         console: Document,
@@ -424,7 +424,7 @@ App.init()
         const mainDomain = process.env._APP_DOMAIN ?? '';
 
         if (host !== mainDomain) {
-            if (await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb)) {
+            if (await router(appconda, dbForConsole, getProjectDB, expressRequest, request, response, queueForEvents, queueForUsage, geodb)) {
                 return;
             }
         }
@@ -560,7 +560,7 @@ App.init()
         }
 
         if (process.env._APP_OPTIONS_FORCE_HTTPS === 'enabled') {
-            if (request.getProtocol() !== 'https' && swooleRequest.header['host'] !== 'localhost' && swooleRequest.header['host'] !== process.env.APP_HOSTNAME_INTERNAL) {
+            if (request.getProtocol() !== 'https' && expressRequest.header['host'] !== 'localhost' && expressRequest.header['host'] !== process.env.APP_HOSTNAME_INTERNAL) {
                 if (request.getMethod() !== Request.METHOD_GET) {
                     throw new AppcondaException(AppcondaException.GENERAL_PROTOCOL_UNSUPPORTED, 'Method unsupported over HTTP. Please use HTTPS instead.');
                 }
@@ -597,7 +597,7 @@ App.init()
 
 App.options()
     .inject('appconda')
-    .inject('swooleRequest')
+    .inject('expressRequest')
     .inject('request')
     .inject('response')
     .inject('dbForConsole')
@@ -607,7 +607,7 @@ App.options()
     .inject('geodb')
     .action(async (
         appconda: App,
-        swooleRequest: any,
+        expressRequest: any,
         request: Request,
         response: Response,
         dbForConsole: Database,
@@ -620,7 +620,7 @@ App.options()
         const mainDomain = process.env._APP_DOMAIN || '';
 
         if (host !== mainDomain) {
-            if (await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb)) {
+            if (await router(appconda, dbForConsole, getProjectDB, expressRequest, request, response, queueForEvents, queueForUsage, geodb)) {
                 return;
             }
         }
@@ -709,8 +709,8 @@ App.error()
                 break;
         }
 
-        code = error.getCode();
-        message = error.getMessage();
+        code = error.getCode?.() || code;
+        message = error.getMessage?.() || message;
 
         const publish = error instanceof AppcondaException ? error.isPublishable() : code === 0 || code >= 500;
 
@@ -730,7 +730,7 @@ App.error()
 
         if (logger && publish) {
             try {
-                const user = appconda.getResource('user');
+                const user = await appconda.getResource('user');
                 if (user && !user.isEmpty()) {
                     log.setUser({ id: user.getId() });
                 }
@@ -848,7 +848,7 @@ App.get('/robots.txt')
     .label('scope', 'public')
     .label('docs', false)
     .inject('appconda')
-    .inject('swooleRequest')
+    .inject('expressRequest')
     .inject('request')
     .inject('response')
     .inject('dbForConsole')
@@ -858,7 +858,7 @@ App.get('/robots.txt')
     .inject('geodb')
     .action(async (
         appconda: App,
-        swooleRequest: any,
+        expressRequest: any,
         request: Request,
         response: Response,
         dbForConsole: Database,
@@ -874,7 +874,7 @@ App.get('/robots.txt')
             const template = new View(__dirname + '/../views/general/robots.phtml');
             response.text(template.render(false));
         } else {
-            await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb);
+            await router(appconda, dbForConsole, getProjectDB, expressRequest, request, response, queueForEvents, queueForUsage, geodb);
         }
     });
 
@@ -883,7 +883,7 @@ App.get('/humans.txt')
     .label('scope', 'public')
     .label('docs', false)
     .inject('appconda')
-    .inject('swooleRequest')
+    .inject('expressRequest')
     .inject('request')
     .inject('response')
     .inject('dbForConsole')
@@ -893,7 +893,7 @@ App.get('/humans.txt')
     .inject('geodb')
     .action(async (
         appconda: App,
-        swooleRequest: any,
+        expressRequest: any,
         request: Request,
         response: Response,
         dbForConsole: Database,
@@ -909,7 +909,7 @@ App.get('/humans.txt')
             const template = new View(__dirname + '/../views/general/humans.phtml');
             response.text(template.render(false));
         } else {
-            await router(appconda, dbForConsole, getProjectDB, swooleRequest, request, response, queueForEvents, queueForUsage, geodb);
+            await router(appconda, dbForConsole, getProjectDB, expressRequest, request, response, queueForEvents, queueForUsage, geodb);
         }
     });
 

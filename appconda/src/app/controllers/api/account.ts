@@ -221,9 +221,9 @@ const createSession = async (
 
 App
     .init()
-    .inject('app')
+    .inject('appconda')
     .inject('request')
-    .action((app: App, request: Request) => {
+    .action(async (app: App, request: Request) => {
         console.log('Module Accounts Yuklendi');
     })
 
@@ -392,7 +392,7 @@ App.get('/v1/account')
     .label('sdk.offline.key', 'current')
     .inject('response')
     .inject('user')
-    .action((response: Response, user: Document) => {
+    .action(async (response: Response, user: Document) => {
         if (user.isEmpty()) {
             throw new Error('USER_NOT_FOUND');
         }

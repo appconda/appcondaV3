@@ -261,7 +261,7 @@
          * @returns any
          * @throws Error
          */
-        public getResource(name: string, fresh: boolean = false): any {
+        public async getResource(name: string, fresh: boolean = false): Promise<any> {
             if (name === 'appconda') {
                 return this;
             }
@@ -271,7 +271,7 @@
                     throw new Error(`Failed to find resource: "${name}"`);
                 }
 
-                this.resources[name] = App.resourcesCallbacks[name].callback(this.getResources(App.resourcesCallbacks[name].injections));
+                this.resources[name] = await App.resourcesCallbacks[name].callback(await this.getResources(App.resourcesCallbacks[name].injections));
                 App.resourcesCallbacks[name].reset = false;
             }
 
@@ -283,11 +283,11 @@
          * @param list
          * @returns Record<string, any>
          */
-        public getResources(list: string[]): Record<string, any> {
+        public async getResources(list: string[]): Promise<Record<string, any>> {
             const resources: Record<string, any> = {};
 
             for (const name of list) {
-                resources[name] = this.getResource(name);
+                resources[name] = await this.getResource(name);
             }
 
             return resources;
@@ -398,7 +398,7 @@
          * @param response
          * @returns this
          */
-        public execute(route: Route, request: Request, response: Response): this {
+        public async execute(route: Route, request: Request, response: Response): Promise<this> {
             const argumentsList: any[] = [];
             const groups = route.getGroups();
             const pathValues = route.getPathValues(request);
@@ -407,7 +407,7 @@
                 if (route.getHook()) {
                     for (const hook of App._init) { // Global init hooks
                         if (hook.getGroups().includes('*')) {
-                            const args = this.getArguments(hook, pathValues, request.getParams());
+                            const args = await this.getArguments(hook, pathValues, request.getParams());
                             hook.getAction()(...args);
                         }
                     }
@@ -416,21 +416,21 @@
                 for (const group of groups) {
                     for (const hook of App._init) { // Group init hooks
                         if (hook.getGroups().includes(group)) {
-                            const args = this.getArguments(hook, pathValues, request.getParams());
+                            const args = await this.getArguments(hook, pathValues, request.getParams());
                             hook.getAction()(...args);
                         }
                     }
                 }
 
                 if (!response.isSent()) {
-                    const args = this.getArguments(route, pathValues, request.getParams());
+                    const args = await this.getArguments(route, pathValues, request.getParams());
                     route.getAction()(...args);
                 }
 
                 for (const group of groups) {
                     for (const hook of App._shutdown) { // Group shutdown hooks
                         if (hook.getGroups().includes(group)) {
-                            const args = this.getArguments(hook, pathValues, request.getParams());
+                            const args = await this.getArguments(hook, pathValues, request.getParams());
                             hook.getAction()(...args);
                         }
                     }
@@ -439,7 +439,7 @@
                 if (route.getHook()) {
                     for (const hook of App._shutdown) { // Global shutdown hooks
                         if (hook.getGroups().includes('*')) {
-                            const args = this.getArguments(hook, pathValues, request.getParams());
+                            const args = await this.getArguments(hook, pathValues, request.getParams());
                             hook.getAction()(...args);
                         }
                     }
@@ -451,7 +451,7 @@
                     for (const errorHook of App.errors) { // Group error hooks
                         if (errorHook.getGroups().includes(group)) {
                             try {
-                                const args = this.getArguments(errorHook, pathValues, request.getParams());
+                                const args = await this.getArguments(errorHook, pathValues, request.getParams());
                                 errorHook.getAction()(...args);
                             } catch (error: any) {
                                 throw new Error(`Error handler had an error: ${error.message}`);
@@ -463,7 +463,7 @@
                 for (const errorHook of App.errors) { // Global error hooks
                     if (errorHook.getGroups().includes('*')) {
                         try {
-                            const args = this.getArguments(errorHook, pathValues, request.getParams());
+                            const args = await this.getArguments(errorHook, pathValues, request.getParams());
                             errorHook.getAction()(...args);
                         } catch (error: any) {
                             throw new Error(`Error handler had an error: ${error.message}`);
@@ -483,7 +483,7 @@
          * @returns any[]
          * @throws Error
          */
-        protected getArguments(hook: Hook, values: Record<string, any>, requestParams: Record<string, any>): any[] {
+        protected async getArguments(hook: Hook, values: Record<string, any>, requestParams: Record<string, any>): Promise<any[]> {
             const args: any[] = [];
             for (const [key, param] of Object.entries(hook.getParams())) {
                 const typedParam = param as Param; // Type assertion
@@ -497,7 +497,7 @@
                     arg = requestParams[key];
                 } else {
                     if (typeof typedParam.default !== 'string' && typeof typedParam.default === 'function') {
-                        arg = typedParam.default(this.getResources(typedParam.injections));
+                        arg = typedParam.default(await this.getResources(typedParam.injections));
                     } else {
                         arg = typedParam.default;
                     }
@@ -534,7 +534,7 @@
          * @param response
          * @returns this
          */
-        public run(request: Request, response: Response): this {
+        public async run(request: Request, response: Response): Promise<this> {
             this.resources['request'] = request;
             this.resources['response'] = response;
 
@@ -555,21 +555,21 @@
                     for (const group of groups) {
                         for (const optionHook of App._options) { // Group options hooks
                             if (optionHook.getGroups().includes(group)) {
-                                optionHook.getAction()(...this.getArguments(optionHook, {}, request.getParams()));
+                                optionHook.getAction()(...(await this.getArguments(optionHook, {}, request.getParams())));
                             }
                         }
                     }
 
                     for (const optionHook of App._options) { // Global options hooks
                         if (optionHook.getGroups().includes('*')) {
-                            optionHook.getAction()(...this.getArguments(optionHook, {}, request.getParams()));
+                            optionHook.getAction()(...(await this.getArguments(optionHook, {}, request.getParams())));
                         }
                     }
                 } catch (e) {
                     for (const errorHook of App.errors) { // Global error hooks
                         if (errorHook.getGroups().includes('*')) {
                             App.setResource('error', () => e);
-                            errorHook.getAction()(...this.getArguments(errorHook, {}, request.getParams()));
+                            errorHook.getAction()(...(await this.getArguments(errorHook, {}, request.getParams())));
                         }
                     }
                 }
@@ -585,27 +585,27 @@
             }
 
             if (route !== null) {
-                return this.execute(route, request, response);
+                return await this.execute(route, request, response);
             } else if (method === App.REQUEST_METHOD_OPTIONS) {
                 try {
                     for (const group of groups) {
                         for (const optionHook of App._options) { // Group options hooks
                             if (optionHook.getGroups().includes(group)) {
-                                optionHook.getAction()(...this.getArguments(optionHook, {}, request.getParams()));
+                                optionHook.getAction()(...(await this.getArguments(optionHook, {}, request.getParams())));
                             }
                         }
                     }
 
                     for (const optionHook of App._options) { // Global options hooks
                         if (optionHook.getGroups().includes('*')) {
-                            optionHook.getAction()(...this.getArguments(optionHook, {}, request.getParams()));
+                            optionHook.getAction()(...(await this.getArguments(optionHook, {}, request.getParams())));
                         }
                     }
                 } catch (e) {
                     for (const errorHook of App.errors) { // Global error hooks
                         if (errorHook.getGroups().includes('*')) {
                             App.setResource('error', () => e);
-                            errorHook.getAction()(...this.getArguments(errorHook, {}, request.getParams()));
+                            errorHook.getAction()(...(await this.getArguments(errorHook, {}, request.getParams())));
                         }
                     }
                 }
@@ -613,7 +613,7 @@
                 for (const errorHook of App.errors) { // Global error hooks
                     if (errorHook.getGroups().includes('*')) {
                         App.setResource('error', () => new Error('Not Found') as any); // Customize error as needed
-                        errorHook.getAction()(...this.getArguments(errorHook, {}, request.getParams()));
+                        errorHook.getAction()(...(await this.getArguments(errorHook, {}, request.getParams())));
                     }
                 }
             }

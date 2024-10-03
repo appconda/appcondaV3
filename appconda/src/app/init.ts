@@ -7,8 +7,8 @@ import { Authorization, Document, IP, WhiteList, URLValidator, Range, Hostname, 
 import { OpenSSL } from "../Appconda/OpenSSL/OpenSSL";
 import { Email } from "../Appconda/Network/Validators/Email";
 import { AppcondaURL } from "../Appconda/Url/URL";
-import { Group, Pool } from '@tuval/pools'
-import { Cache, Redis as RedisCache, Sharding } from '@tuval/cache'
+
+import { Cache, Redis as RedisCache, Sharding } from '../Tuval/Cache'
 import { DSN } from "@tuval/dsn";
 import { createClient, RedisClientType } from 'redis';
 import { Connection, RedisConnection } from "@tuval/queue";
@@ -40,6 +40,7 @@ import jwt from 'jsonwebtoken';
 import { Device, Local, Storage } from "@tuval/storage";
 import { APP_PLATFORM_SERVER } from "./config/platforms";
 import { App } from "../Tuval/Http";
+import { Group, Pool } from "../Tuval/Pools";
 
 let geoReader: maxmind.Reader<maxmind.CityResponse> | null = null;
 
@@ -839,7 +840,7 @@ register.set('pools', () => {
                 switch (dsnScheme) {
                     case 'mysql':
                     case 'mariadb':
-                        return () => new MariaDB({
+                        return () => ({
                             host: dsnHost,
                             port: dsnPort,
                             user: dsnUser,
@@ -1048,9 +1049,10 @@ App.setResource('localeCodes', () => {
     return Config.getParam('locale-codes', []).map((locale: { code: string }) => locale.code);
 });
 
-App.setResource('queue', async (pools: Group) => {
-    const pool = await pools.get('queue').pop();
-    return pool.getResource();
+App.setResource('queue', async ({ pools }: { pools: Group }) => {
+    const pool = await pools.get('queue');
+    const connection = await pool.pop();
+    return connection.getResource();
 }, ['pools']);
 
 App.setResource('queueForMessaging', (queue: Connection) => new Messaging(queue), ['queue']);
@@ -1197,14 +1199,14 @@ App.setResource('user', async (mode: string, project: Document, console: Documen
 }, ['mode', 'project', 'console', 'request', 'response', 'dbForProject', 'dbForConsole']);
 
 
-App.setResource('project', async (dbForConsole: Database, request: Request, console: Document) => {
+App.setResource('project', async ({ dbForConsole, request, console }: { dbForConsole: Database, request: Request, console: Document }) => {
     const projectId = request.getParam('project', request.getHeader('x-appconda-project', ''));
 
     if (!projectId || projectId === 'console') {
         return console;
     }
 
-    const project = await Authorization.skip(() => dbForConsole.getDocument('projects', projectId));
+    const project = await Authorization.skip(async () => await dbForConsole.getDocument('projects', projectId));
     return project;
 }, ['dbForConsole', 'request', 'console']);
 
@@ -1307,12 +1309,11 @@ App.setResource('dbForProject', async (pools: Group, dbForConsole: Database, cac
     return database;
 }, ['pools', 'dbForConsole', 'cache', 'project']);
 
-App.setResource('dbForConsole', async (pools: Group, cache: Cache) => {
-    const pool = await pools
-        .get('console')
-        .pop();
+App.setResource('dbForConsole', async ({ pools, cache }: { pools: Group, cache: Cache }) => {
+    const pool = await pools.get('console');
+    const connection = await pool.pop();
 
-    const dbAdapter = pool.getResource();
+    const dbAdapter = connection.getResource();
 
     const database = new Database(dbAdapter, cache as any);
 
@@ -1325,7 +1326,7 @@ App.setResource('dbForConsole', async (pools: Group, cache: Cache) => {
     return database;
 }, ['pools', 'cache']);
 
-App.setResource('getProjectDB', async (pools: Group, dbForConsole: Database, cache: Cache) => {
+App.setResource('getProjectDB', async ({ pools, dbForConsole, cache }: { pools: Group, dbForConsole: Database, cache: Cache }) => {
     const databases: Record<string, Database> = {};
 
     return async (project: Document) => {
@@ -1379,14 +1380,13 @@ App.setResource('getProjectDB', async (pools: Group, dbForConsole: Database, cac
 }, ['pools', 'dbForConsole', 'cache']);
 
 
-App.setResource('cache', (pools: Group) => {
+App.setResource('cache', ({ pools }: { pools: Group }) => {
     const list = Config.getParam('pools-cache', []);
     const adapters = list.map(async (value: string) => {
-        const pool = await pools
-            .get(value)
-            .pop();
-        return pool
-            .getResource();
+        const pool = pools.get(value);
+        const connection = await pool.pop();
+
+        return connection.getResource();
     });
 
     return new Cache(new Sharding(adapters));

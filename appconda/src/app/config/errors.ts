@@ -1,6 +1,6 @@
 import { AppcondaException as Exception } from "../../Appconda/Extend/Exception";
 
-export const errors = {
+export default {
     /** General Errors */
     [Exception.GENERAL_UNKNOWN]: {
         name: Exception.GENERAL_UNKNOWN,

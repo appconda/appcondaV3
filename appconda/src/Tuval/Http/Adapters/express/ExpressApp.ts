@@ -21,7 +21,7 @@ export class ExpressApp extends App {
 
         App
             .init()
-            .inject('app')
+            .inject('appconda')
             .inject('request')
             .action((app: App, request: Request) => {
                 Request.setRoute(app.getRoute());

@@ -3,6 +3,10 @@ import { BaseService } from "../BaseService";
 import { App, Request, Response } from "../Tuval/Http";
 import path from "path";
 import { register } from "../app/controllers/general";
+import { Files } from "../Tuval/Http/Adapters/express/Files";
+import { Authorization, Role } from "@tuval/core";
+import { Log, User } from "@tuval/logger";
+import { Console } from "@tuval/cli";
 const express = require('express');
 var cors = require('cors')
 
@@ -61,19 +65,119 @@ export default class WebServerService extends BaseService {
     this.router = express.Router();
     app.use('/v1/service', this.router)
 
+
+    Files.load(path.resolve(__dirname, '../app/console'));
+
+
     const _path = path.resolve('./src/app/controllers/general');
     console.log(register)
 
 
     app.use((req, res, next) => {
-      const tuvalReq = new Request(req);
-      const tuvalRes = new Response(res);
-      App.setResource('request', () => tuvalReq); // Wrap Request in a function
-      App.setResource('response', () => tuvalRes);
+      const request = new Request(req);
+      const response = new Response(res);
+      App.setResource('expressRequest', () => req); // Wrap Request in a function
+      App.setResource('expressResponse', () => res);
+
+      if (Files.isFileLoaded(request.getURI())) {
+        const time = (60 * 60 * 24 * 365 * 2); // 45 days cache
+
+        response
+          .setContentType(Files.getFileMimeType(request.getURI()))
+          .addHeader('Cache-Control', 'public, max-age=' + time)
+          .addHeader('Expires', new Date(Date.now() + time * 1000).toUTCString())
+          .send(Files.getFileContents(request.getURI()));
+
+        return;
+      }
+
       const app = new App('UTC');
 
-      app.run(tuvalReq, tuvalRes);
-      next()
+
+      const pools = register.get('pools');
+      App.setResource('pools', () => {
+        return pools;
+      });
+
+
+      try {
+        Authorization.cleanRoles();
+        Authorization.setRole(Role.any().toString());
+
+        app.run(request, response);
+      } catch (th) {
+        const version = process.env._APP_VERSION || 'UNKNOWN';
+
+        const logger = app.getResource("logger");
+        if (logger) {
+          let user;
+          try {
+            user = app.getResource('user');
+          } catch (_th) {
+            // All good, user is optional information for logger
+          }
+
+          const route = app.getRoute();
+          const log = app.getResource("log");
+
+          if (user && !user.isEmpty()) {
+            log.setUser(new User(user.getId()));
+          }
+
+          log.setNamespace("http");
+          log.setServer(require('os').hostname());
+          log.setVersion(version);
+          log.setType(Log.TYPE_ERROR);
+          log.setMessage(th.message);
+
+          log.addTag('method', route.getMethod());
+          log.addTag('url', route.getPath());
+          log.addTag('verboseType', th.constructor.name);
+          log.addTag('code', th.code);
+          log.addTag('hostname', request.getHostname());
+          log.addTag('locale', request.getParam('locale') || request.getHeader('x-appconda-locale') || '');
+
+          log.addExtra('file', th.fileName);
+          log.addExtra('line', th.lineNumber);
+          log.addExtra('trace', th.stack);
+          log.addExtra('roles', Authorization.getRoles());
+
+          const action = `${route.getLabel("sdk.namespace", "UNKNOWN_NAMESPACE")}.${route.getLabel("sdk.method", "UNKNOWN_METHOD")}`;
+          log.setAction(action);
+
+          const isProduction = process.env._APP_ENV === 'production';
+          log.setEnvironment(isProduction ? Log.ENVIRONMENT_PRODUCTION : Log.ENVIRONMENT_STAGING);
+
+          const responseCode = logger.addLog(log);
+          Console.info('Log pushed with status code: ' + responseCode);
+        }
+
+        Console.error('[Error] Type: ' + th.constructor.name);
+        Console.error('[Error] Message: ' + th.message);
+        Console.error('[Error] File: ' + th.fileName);
+        Console.error('[Error] Line: ' + th.lineNumber);
+
+        response.setStatusCode(500);
+
+        const output = App.isDevelopment() ? {
+          message: 'Error: ' + th.message,
+          code: 500,
+          file: th.fileName,
+          line: th.lineNumber,
+          trace: th.stack,
+          version: version,
+        } : {
+          message: 'Error: Server Error',
+          code: 500,
+          version: version,
+        };
+
+        response.json(output);
+      } finally {
+        pools.reclaim();
+      }
+
+      //next()
     })
 
     app.listen(80, '0.0.0.0');
