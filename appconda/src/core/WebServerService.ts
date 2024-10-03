@@ -73,11 +73,11 @@ export default class WebServerService extends BaseService {
     console.log(register)
 
 
-    app.use((req, res, next) => {
+    app.use(async (req, res, next) => {
       const request = new Request(req);
       const response = new Response(res);
-      App.setResource('expressRequest', () => req); // Wrap Request in a function
-      App.setResource('expressResponse', () => res);
+      App.setResource('expressRequest', async () => req); // Wrap Request in a function
+      App.setResource('expressResponse', async () => res);
 
       if (Files.isFileLoaded(request.getURI())) {
         const time = (60 * 60 * 24 * 365 * 2); // 45 days cache
@@ -95,7 +95,7 @@ export default class WebServerService extends BaseService {
 
 
       const pools = register.get('pools');
-      App.setResource('pools', () => {
+      App.setResource('pools', async () => {
         return pools;
       });
 
@@ -108,7 +108,7 @@ export default class WebServerService extends BaseService {
       } catch (th) {
         const version = process.env._APP_VERSION || 'UNKNOWN';
 
-        const logger = app.getResource("logger");
+        const logger = await app.getResource("logger");
         if (logger) {
           let user;
           try {
@@ -118,7 +118,7 @@ export default class WebServerService extends BaseService {
           }
 
           const route = app.getRoute();
-          const log = app.getResource("log");
+          const log = await app.getResource("log");
 
           if (user && !user.isEmpty()) {
             log.setUser(new User(user.getId()));

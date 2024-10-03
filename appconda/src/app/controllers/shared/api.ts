@@ -443,7 +443,7 @@ App.init()
     .groups(['session'])
     .inject('user')
     .inject('request')
-    .action((user: Document, request: Request) => {
+    .action( async (user: Document, request: Request) => {
         if (request.getURI().includes('oauth2')) {
             return;
         }
@@ -686,7 +686,7 @@ App.shutdown()
 
     App.init()
     .groups(['usage'])
-    .action(() => {
+    .action( async () => {
         if (process.env._APP_USAGE_STATS !== 'enabled') {
             throw new AppcondaException(AppcondaException.GENERAL_USAGE_DISABLED);
         }

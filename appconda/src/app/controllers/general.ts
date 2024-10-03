@@ -25,6 +25,7 @@ import { Config } from "../../Tuval/Config";
 import { Auth } from '@tuval/auth';
 import path from 'path';
 import { App } from '../../Tuval/Http';
+import { Log, Logger } from '@tuval/logger';
 
 export const register = reg;
 
@@ -377,7 +378,7 @@ App.init()
     .groups(['database', 'functions', 'storage', 'messaging'])
     .inject('project')
     .inject('request')
-    .action((project: Document, request: Request) => {
+    .action( async (project: Document, request: Request) => {
         if (project.getId() === 'console') {
             const message = !request.getHeader('x-appconda-project') ?
                 'No Appconda project was specified. Please specify your project ID when initializing your Appconda SDK.' :
@@ -1002,14 +1003,14 @@ for (const service of Object.keys(services)) {
 
 import './shared/api';
 import './shared/api/auth';
-import { Log, Logger } from '@tuval/logger';
+
 
 
 
 App.wildcard()
     .groups(['api'])
     .label('scope', 'global')
-    .action(() => {
+    .action(async () => {
         throw new AppcondaException(AppcondaException.GENERAL_ROUTE_NOT_FOUND, '');
     });
 

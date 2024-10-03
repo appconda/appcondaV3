@@ -445,7 +445,7 @@
                     }
                 }
             } catch (e) {
-                App.setResource('error', () => e);
+                App.setResource('error', async () => e);
 
                 for (const group of groups) {
                     for (const errorHook of App.errors) { // Group error hooks
