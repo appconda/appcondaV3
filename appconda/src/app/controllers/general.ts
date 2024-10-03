@@ -1,28 +1,32 @@
 
 import { Authorization, Document, Hostname, ID, Text } from '@tuval/core';
-import { V16 as RequestV16 } from '../../../Appconda/Tuval/Request/Filters/V16';
-import { V17 as ResponseV17 } from '../../../Appconda/Tuval/Response/Filters/V17';
-import { APP_STORAGE_CERTIFICATES, APP_VERSION_STABLE, FUNCTION_ALLOWLIST_HEADERS_REQUEST, FUNCTION_ALLOWLIST_HEADERS_RESPONSE, METRIC_EXECUTIONS, METRIC_EXECUTIONS_COMPUTE, METRIC_EXECUTIONS_MB_SECONDS, METRIC_FUNCTION_ID_EXECUTIONS, METRIC_FUNCTION_ID_EXECUTIONS_COMPUTE, METRIC_FUNCTION_ID_EXECUTIONS_MB_SECONDS, 
+import { V16 as RequestV16 } from '../../Appconda/Tuval/Request/Filters/V16';
+import { V17 as ResponseV17 } from '../../Appconda/Tuval/Response/Filters/V17';
+import {
+    APP_STORAGE_CERTIFICATES, APP_VERSION_STABLE, FUNCTION_ALLOWLIST_HEADERS_REQUEST, FUNCTION_ALLOWLIST_HEADERS_RESPONSE, METRIC_EXECUTIONS, METRIC_EXECUTIONS_COMPUTE, METRIC_EXECUTIONS_MB_SECONDS, METRIC_FUNCTION_ID_EXECUTIONS, METRIC_FUNCTION_ID_EXECUTIONS_COMPUTE, METRIC_FUNCTION_ID_EXECUTIONS_MB_SECONDS,
     register as reg
- } from '../../init';
-import { Response } from '../../../Appconda/Tuval/Response';
+} from '../init';
+import { Response } from '../../Appconda/Tuval/Response';
 import { Database, Query } from '@tuval/database';
-import { Usage } from '../../../Appconda/Event/Usage';
+import { Usage } from '../../Appconda/Event/Usage';
 import { App } from '@tuval/http';
-import { Request } from '../../../Appconda/Tuval/Request';
-import { AppcondaException } from '../../../Appconda/Extend/Exception';
-import { Event } from '../../../Appconda/Event/Event';
-import { Executor } from '../../../Appconda/Executor/Executor';
+import { Request } from '../../Appconda/Tuval/Request';
+import { AppcondaException } from '../../Appconda/Extend/Exception';
+import { Event } from '../../Appconda/Event/Event';
+import { Executor } from '../../Appconda/Executor/Executor';
 import { Console } from '@tuval/cli'
 import { Locale } from '@tuval/locale';
-import { Certificate } from '../../../Appconda/Event/Certificate';
+import { Certificate } from '../../Appconda/Event/Certificate';
 import { Domain } from '@tuval/domains';
-import { Origin } from '../../../Appconda/Network/Validators/Origin';
+import { Origin } from '../../Appconda/Network/Validators/Origin';
 import { DSN } from '@tuval/dsn';
-import { View } from '../../../Appconda/Tuval/View';
+import { View } from '../../Appconda/Tuval/View';
 import { promises as fs } from 'fs';
+import { Config } from "../../Tuval/Config";
+import { Auth } from '@tuval/auth';
+import path from 'path';
 
-export const register =reg;
+export const register = reg;
 
 function versionCompare(version1: string, version2: string, operator: string): boolean {
     const parseVersion = (version: string) => version.split('.').map(Number);
@@ -45,9 +49,12 @@ function versionCompare(version1: string, version2: string, operator: string): b
     return operator === '==' || operator === '>=' || operator === '<=';
 }
 
+
+
 Config.setParam('domainVerification', false);
 Config.setParam('cookieDomain', 'localhost');
 Config.setParam('cookieSamesite', Response.COOKIE_SAMESITE_NONE);
+
 
 async function router(
     utopia: App,
@@ -977,10 +984,26 @@ App.get('/.well-known/acme-challenge/*')
         response.text(content);
     });
 
+const services = Config.getParam('services', []);
+for (const service of Object.keys(services)) {
+    const controller = services[service].controller;
+    const controllerPath =path.resolve(__dirname + '/' + controller)
+    console.log(controllerPath);
+    try {
+       const a =  require(controllerPath);
+       console.log(a);
+    } catch (error) {
+         console.error(error);
+    }
+}
+
+
+
+
 import './shared/api';
 import './shared/api/auth';
-import { Auth } from '@tuval/auth';
-import { Config } from '../../../Tuval/Config';
+
+
 
 App.wildcard()
     .groups(['api'])
@@ -989,6 +1012,3 @@ App.wildcard()
         throw new AppcondaException(AppcondaException.GENERAL_ROUTE_NOT_FOUND, '');
     });
 
-for (const service of Config.getParam('services', [])) {
-    import(service.controller);
-}

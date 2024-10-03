@@ -2,7 +2,7 @@ import e from "express";
 import { BaseService } from "../BaseService";
 import { App, Request, Response } from "@tuval/http";
 import path from "path";
-import { register } from "../app/controllers/api/general";
+import { register } from "../app/controllers/general";
 const express = require('express');
 var cors = require('cors')
 
@@ -61,7 +61,7 @@ export default class WebServerService extends BaseService {
     this.router = express.Router();
     app.use('/v1/service', this.router)
 
-    const _path = path.resolve('./src/app/controllers/api/general');
+    const _path = path.resolve('./src/app/controllers/general');
     console.log(register)
 
 

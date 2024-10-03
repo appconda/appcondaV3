@@ -269,7 +269,7 @@ export class AppcondaException extends BaseException {
 
     constructor(
         type: string = AppcondaException.GENERAL_UNKNOWN,
-        message: string  ,
+        message: string  = null as any ,
         code?: number | string ,
         previous?: Error 
     ) {

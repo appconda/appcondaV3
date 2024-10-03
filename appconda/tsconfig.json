@@ -9,13 +9,14 @@
    
   },
     "compilerOptions": {
-      "target": "es6",
-      "module": "commonjs",
+      "target": "ESNext",
+      "module": "CommonJS",
       "outDir": "dist",
-      "strict": true,
+      "strict": false,
       "esModuleInterop": true,
       "skipLibCheck": true,
       "noImplicitAny": false,
+
       "experimentalDecorators": true
     },
     "exclude": [

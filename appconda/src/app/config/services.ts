@@ -1,5 +1,5 @@
 export default {
-    'web/home': {
+   /*  'web/home': {
         key: 'web/home',
         name: 'Home',
         subtitle: '',
@@ -37,13 +37,13 @@ export default {
         tests: false,
         optional: false,
         icon: '',
-    },
+    }, */
     account: {
         key: 'account',
         name: 'Account',
         subtitle: 'The Account service allows you to authenticate and manage a user account.',
         description: '/docs/services/account.md',
-        controller: 'api/account.php',
+        controller: 'api/account.ts',
         sdk: true,
         docs: true,
         docsUrl: 'https://appconda.io/docs/client/account',
@@ -51,7 +51,7 @@ export default {
         optional: true,
         icon: '/images/services/account.png',
     },
-    avatars: {
+   /*  avatars: {
         key: 'avatars',
         name: 'Avatars',
         subtitle: 'The Avatars service aims to help you complete everyday tasks related to your app image, icons, and avatars.',
@@ -272,5 +272,5 @@ export default {
         tests: true,
         optional: true,
         icon: '/images/services/messaging.png',
-    },
+    }, */
 };
