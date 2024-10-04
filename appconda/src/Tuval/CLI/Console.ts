@@ -47,7 +47,17 @@ export class Console {
      */
     public static success(message: string): boolean {
         try {
-            console.log(cc.set("fg_green", "bg_dark_grey", message));
+
+            /* console.log("\x1b[32m Output with green text \x1b[0m")
+            console.log("\x1b[35m Output with magenta text \x1b[0m")
+            console.log("\x1b[34m Output with blue text \x1b[0m")
+            
+            console.log("\x1b[41m Output with red background \x1b[0m")
+            console.log("\x1b[42m Output with green background \x1b[0m")
+            console.log("\x1b[43m Output with yellow background \x1b[0m") */
+
+            console.log(`\x1b[32m ${message} \x1b[0m`);
+
             return true;
         } catch (e) {
             return false;
@@ -81,7 +91,7 @@ export class Console {
      */
     public static info(message: string): boolean {
         try {
-            process.stdout.write("\x1b[34m" + message + "\x1b[0m\n");
+            console.log(`\x1b[34m ${message} \x1b[0m`);
             return true;
         } catch (e) {
             return false;
@@ -98,7 +108,7 @@ export class Console {
      */
     public static warning(message: string): boolean {
         try {
-            console.warn(message);
+            console.log(`\x1b[43m ${message} \x1b[0m`);
             return true;
         } catch (e) {
             return false;
