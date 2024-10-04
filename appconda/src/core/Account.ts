@@ -4,8 +4,8 @@ import e from "express";
 import { ListAppletDatabase } from "../modules/task/TaskListDatabase";
 import { Task } from "../modules/task/Task";
 import { IAppletInfo } from "../modules/task/IAppletInfo";
-import { Database, Query } from "@tuval/database";
-import { Document } from "@tuval/core";
+import { Database, Query } from "../Tuval/Database";
+import { Document } from "../Tuval/Core";
 
 const actions = Symbol('Actions'); // just to be sure there won't be collisions
 

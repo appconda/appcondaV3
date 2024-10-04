@@ -1,4 +1,4 @@
-import { Document } from '@tuval/core';
+import { Document } from '../../Tuval/Core';
 import { Client, Connection } from '../../Tuval/Queue';
 
 

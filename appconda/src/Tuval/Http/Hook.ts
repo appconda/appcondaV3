@@ -1,4 +1,4 @@
-import { Validator } from "@tuval/core";
+import { Validator } from "../../Tuval/Core";
 
 
 export class Hook {

@@ -1,5 +1,5 @@
 
-import { Validator } from '@tuval/core';
+import { Validator } from '../../../Tuval/Core';
 import { Config } from '../../../Tuval/Config';
 
 export class Event extends Validator {

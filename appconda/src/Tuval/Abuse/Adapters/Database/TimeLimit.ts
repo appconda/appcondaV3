@@ -1,8 +1,8 @@
 
 import { TimeLimit as TimeLimitAdapter } from "../TimeLimit";
-import { Database as AppcondaDB, Authorization, Duplicate, Query } from "@tuval/database";
+import { Database as AppcondaDB, Authorization, Duplicate, Query } from "../../../../Tuval/Database";
 import { DateTime } from 'luxon';
-import {Document} from "@tuval/core";
+import { Document } from "../../../../Tuval/Core";
 
 export class TimeLimit extends TimeLimitAdapter {
     public static COLLECTION = 'abuse';

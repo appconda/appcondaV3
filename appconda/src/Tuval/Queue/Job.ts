@@ -1,4 +1,4 @@
-import { Hook } from '@tuval/core';
+import { Hook } from '../Core';
 
 export class Job extends Hook {
     /**

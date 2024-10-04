@@ -1,4 +1,4 @@
-import { Key } from '@tuval/database';
+import { Key } from '../../../../Tuval/Database';
 
 export class CustomId extends Key {
     /**

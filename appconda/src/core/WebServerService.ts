@@ -4,13 +4,18 @@ import { App } from "../Tuval/Http";
 import path from "path";
 import { register } from "../app/controllers/general";
 import { Files } from "../Tuval/Http/Adapters/express/Files";
-import { Authorization, Role } from "@tuval/core";
-import { Log, User } from "@tuval/logger";
-import { Console } from "@tuval/cli";
+import { Authorization, Document, ID, Permission, Role } from "../Tuval/Core";
+import { Log, User } from "../Tuval/Logger";
+import { Console } from "../Tuval/CLI";
 import { Request } from "../Appconda/Tuval/Request";
 import { Response } from "../Appconda/Tuval/Response";
+import { Audit } from "../Tuval/Audit";
+import { TimeLimit } from "../Tuval/Abuse/Adapters/Database/TimeLimit";
+import { Config } from "../Tuval/Config";
+import { Database } from "../Tuval/Database";
 const express = require('express');
 var cors = require('cors')
+const cookieParser = require('cookie-parser');
 
 
 
@@ -43,7 +48,147 @@ export default class WebServerService extends BaseService {
     return this.router;
   }
 
+  private async  setupServer() {
+    const app = new App('UTC');
+
+    const pools = await register.get('pools');
+    App.setResource('pools', async () => pools);
+
+    // Wait for database to be ready
+    let attempts = 0;
+    const maxAttempts = 10;
+    const sleepDuration = 1000; // 1 second
+
+    let dbForConsole;
+    while (attempts < maxAttempts) {
+        try {
+            attempts++;
+            dbForConsole = await app.getResource('dbForConsole');
+            break; // Exit loop if successful
+        } catch (e) {
+            Console.warning(`Database not ready. Retrying connection (${attempts})...`);
+            if (attempts >= maxAttempts) {
+                throw new Error('Failed to connect to database: ' + e.message);
+            }
+            await new Promise(resolve => setTimeout(resolve, sleepDuration));
+        }
+    }
+
+    Console.success('[Setup] - Server database init started...');
+
+    try {
+        Console.success('[Setup] - Creating database: appwrite...');
+        await dbForConsole.create();
+    } catch (e) {
+        Console.success('[Setup] - Skip: metadata table already exists');
+    }
+
+    if (await dbForConsole.getCollection(Audit.COLLECTION).isEmpty()) {
+        const audit = new Audit(dbForConsole);
+        await audit.setup();
+    }
+
+    if (await dbForConsole.getCollection(TimeLimit.COLLECTION).isEmpty()) {
+        const adapter = new TimeLimit("", 0, 1, dbForConsole);
+        await adapter.setup();
+    }
+
+    const collections = Config.getParam('collections', []);
+    const consoleCollections = collections['console'];
+    for (const [key, collection] of Object.entries(consoleCollections)) {
+        if ((collection['$collection'] ?? '') !== Database.METADATA) {
+            continue;
+        }
+        if (!await dbForConsole.getCollection(key).isEmpty()) {
+            continue;
+        }
+
+        Console.success(`[Setup] - Creating collection: ${collection['$id']}...`);
+
+        const attributes = collection['attributes'].map(attribute => new Document({
+            '$id': ID.custom(attribute['$id']),
+            'type': attribute['type'],
+            'size': attribute['size'],
+            'required': attribute['required'],
+            'signed': attribute['signed'],
+            'array': attribute['array'],
+            'filters': attribute['filters'],
+            'default': attribute['default'] ?? null,
+            'format': attribute['format'] ?? ''
+        }));
+
+        const indexes = collection['indexes'].map(index => new Document({
+            '$id': ID.custom(index['$id']),
+            'type': index['type'],
+            'attributes': index['attributes'],
+            'lengths': index['lengths'],
+            'orders': index['orders'],
+        }));
+
+        await dbForConsole.createCollection(key, attributes, indexes);
+    }
+
+    if (await dbForConsole.getDocument('buckets', 'default').isEmpty() && !await dbForConsole.exists(dbForConsole.getDatabase(), 'bucket_1')) {
+        Console.success('[Setup] - Creating default bucket...');
+        await dbForConsole.createDocument('buckets', new Document({
+            '$id': ID.custom('default'),
+            '$collection': ID.custom('buckets'),
+            'name': 'Default',
+            'maximumFileSize': parseInt(process.env._APP_STORAGE_LIMIT || '0', 10),
+            'allowedFileExtensions': [],
+            'enabled': true,
+            'compression': 'gzip',
+            'encryption': true,
+            'antivirus': true,
+            'fileSecurity': true,
+            '$permissions': [
+                Permission.create(Role.any()),
+                Permission.read(Role.any()),
+                Permission.update(Role.any()),
+                Permission.delete(Role.any()),
+            ],
+            'search': 'buckets Default',
+        }));
+
+        const bucket = await dbForConsole.getDocument('buckets', 'default');
+
+        Console.success('[Setup] - Creating files collection for default bucket...');
+        const files = collections['buckets']['files'] ?? [];
+        if (files.length === 0) {
+            throw new Error('Files collection is not configured.');
+        }
+
+        const fileAttributes = files['attributes'].map(attribute => new Document({
+            '$id': ID.custom(attribute['$id']),
+            'type': attribute['type'],
+            'size': attribute['size'],
+            'required': attribute['required'],
+            'signed': attribute['signed'],
+            'array': attribute['array'],
+            'filters': attribute['filters'],
+            'default': attribute['default'] ?? null,
+            'format': attribute['format'] ?? ''
+        }));
+
+        const fileIndexes = files['indexes'].map(index => new Document({
+            '$id': ID.custom(index['$id']),
+            'type': index['type'],
+            'attributes': index['attributes'],
+            'lengths': index['lengths'],
+            'orders': index['orders'],
+        }));
+
+        await dbForConsole.createCollection('bucket_' + bucket.getInternalId(), fileAttributes, fileIndexes);
+    }
+
+    await pools.reclaim();
+
+    Console.success('[Setup] - Server database init completed...');
+}
+
   async construct() {
+
+    await this.setupServer();
     const app = express();
 
     app.use(cors({
@@ -74,6 +219,7 @@ export default class WebServerService extends BaseService {
     const _path = path.resolve('./src/app/controllers/general');
     console.log(register)
 
+    app.use(cookieParser());
 
     app.use(async (req, res, next) => {
       const request = new Request(req);
@@ -179,7 +325,7 @@ export default class WebServerService extends BaseService {
         pools.reclaim();
       }
 
-      //next()
+    //  next()
     })
 
     app.listen(80, '0.0.0.0');

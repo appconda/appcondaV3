@@ -3,7 +3,7 @@ import { Hook } from './Hook';
 import { Route } from './Route';
 import { Request } from './Request';
 import { Response } from './Response';
-import { Validator } from '@tuval/core';
+import { Validator } from '../../Tuval/Core';
 import { Router } from './Router';
 import { parse } from 'url';
 
@@ -409,11 +409,9 @@ export class App {
                     if (hook.getGroups().includes('*')) {
                         const args = await this.getArguments(hook, pathValues, request.getParams());
                         const action = hook.getAction();
-                        if (action instanceof Promise) {
-                            await action(...args);
-                        } else {
-                            action(...args);
-                        }
+
+                        await action(...args);
+
                     }
                 }
             }
@@ -423,11 +421,8 @@ export class App {
                     if (hook.getGroups().includes(group)) {
                         const args = await this.getArguments(hook, pathValues, request.getParams());
                         const action = hook.getAction();
-                        if (action instanceof Promise) {
-                            await action(...args);
-                        } else {
-                            action(...args);
-                        }
+                        await action(...args);
+
                     }
                 }
             }

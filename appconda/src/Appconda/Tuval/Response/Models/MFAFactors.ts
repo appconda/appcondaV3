@@ -1,6 +1,6 @@
 import { Response } from '../../Response';
 import { Model } from '../Model';
-import { Type } from '@tuval/auth';
+import { Type } from '../../../../Tuval/Auth';
 
 export class MFAFactors extends Model {
     constructor() {

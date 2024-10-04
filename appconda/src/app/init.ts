@@ -1,15 +1,15 @@
 
-import { PublicDomain } from "@tuval/domains";
-import { Registry } from "@tuval/registry";
+import { PublicDomain } from "../Tuval/Domains";
+import { Registry } from "../Tuval/Registry";
 import { Config } from "../Tuval/Config";
-import { Database, Query, Structure, Datetime as DatetimeValidator, MariaDB } from "@tuval/database";
-import { Authorization, Document, IP, WhiteList, URLValidator, Range, Hostname, ID } from "@tuval/core";
+import { Database, Query, Structure, Datetime as DatetimeValidator, MariaDB } from "../Tuval/Database";
+import { Authorization, Document, IP, WhiteList, URLValidator, Range, Hostname, ID } from "../Tuval/Core";
 import { OpenSSL } from "../Appconda/OpenSSL/OpenSSL";
 import { Email } from "../Appconda/Network/Validators/Email";
 import { AppcondaURL } from "../Appconda/Url/URL";
 
 import { Cache, Redis as RedisCache, Sharding } from '../Tuval/Cache'
-import { DSN } from "@tuval/dsn";
+import { DSN } from "../Tuval/DSN";
 import { createClient, RedisClientType } from 'redis';
 import { Connection, RedisConnection } from "../Tuval/Queue";
 import nodemailer from 'nodemailer';
@@ -18,8 +18,8 @@ import path, { join } from "path";
 import { existsSync, readFileSync } from "fs";
 import { Hooks } from "../Appconda/Hooks/Hooks";
 import http from 'http';
-import { Locale } from "@tuval/locale";
-import { Logger, Log } from '@tuval/logger';
+import { Locale } from "../Tuval/Locale";
+import { Logger, Log } from "../Tuval/Logger";
 import url from 'url';
 import { Messaging } from "../Appconda/Event/Messaging";
 import { Database as EventDatabase } from "../Appconda/Event/Database";
@@ -33,11 +33,11 @@ import { Usage } from "../Appconda/Event/Usage";
 import { Certificate } from "../Appconda/Event/Certificate";
 import { Migration } from "../Appconda/Event/Migration";
 import { Origin } from "../Appconda/Network/Validators/Origin";
-import { Auth } from "@tuval/auth";
+import { Auth } from "../Tuval/Auth";
 import { Request } from "../Appconda/Tuval/Request";
 import { Response } from "../Appconda/Tuval/Response";
 import jwt from 'jsonwebtoken';
-import { Device, Local, Storage } from "@tuval/storage";
+import { Device, Local, Storage } from "../Tuval/Storage";
 import { APP_PLATFORM_SERVER } from "./config/platforms";
 import { App } from "../Tuval/Http";
 import { Group, Pool } from "../Tuval/Pools";

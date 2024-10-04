@@ -1,7 +1,7 @@
 
-import { Authorization, DateTime, Document } from "@tuval/core";
+import { Authorization, DateTime, Document } from "../../../../Tuval/Core";
 import { AppcondaException } from "../../../../Appconda/Extend/Exception";
-import { Auth } from "@tuval/auth";
+import { Auth } from "../../../../Tuval/Auth";
 import moment from 'moment';
 import _default, * as maxmind from 'maxmind'
 import { Request } from "../../../../Appconda/Tuval/Request";

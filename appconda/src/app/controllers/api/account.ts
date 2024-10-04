@@ -1,19 +1,20 @@
 
-import { Database, Query, Duplicate, UID, Queries, Limit, Offset } from '@tuval/database'
+import { Database, Query, Duplicate, UID, Queries, Limit, Offset } from '../../../Tuval/Database'
 import {
     ArrayList, Authorization, DateTime, Document, Exception, URLValidator,
     Host, ID, Permission, Role, Text, WhiteList,
     Boolean,
     Assoc
-} from '@tuval/core'
-import { Locale } from '@tuval/locale'
-import { Audit } from '@tuval/audit'
+} from '../../../Tuval/Core'
+import { Locale } from '../../../Tuval/Locale'
+import { Audit } from '../../../Tuval/Audit'
 import { encode } from 'html-entities';
 import strip_tags from 'striptags';
-import { Auth, EmailChallenge, Password, PasswordDictionary, PasswordHistory, PersonalData, Phone, PhoneChallenge, Phrase, TOTP } from '@tuval/auth'
+import { Auth, EmailChallenge, Password, PasswordDictionary, PasswordHistory, 
+    PersonalData, Phone, PhoneChallenge, Phrase, TOTP } from '../../../Tuval/Auth'
 
 
-import { Type, TOTPChallenge } from '@tuval/auth'
+import { Type, TOTPChallenge } from '../../../Tuval/Auth'
 import jwt from 'jsonwebtoken';
 import { Detector } from '../../../Appconda/Detector/Detector'
 import _default, * as maxmind from 'maxmind'

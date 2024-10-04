@@ -1,5 +1,5 @@
 
-import { Document } from '@tuval/core';
+import { Document } from '../../../../Tuval/Core';
 import { Response } from '../../Response';
 import { Attribute } from './Attribute';
 

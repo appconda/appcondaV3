@@ -1,4 +1,4 @@
-import { Exception } from "@tuval/core";
+import { Exception } from "../../Tuval/Core";
 
 export class Config {
     private static params: { [key: string]: any } = {};

@@ -3,7 +3,7 @@ import { Job } from "./Job";
 import { Message } from "./Message";
 //import { Console } from "./Console";
 import { Adapter } from "./Adapter";
-import { Validator , Hook} from "@tuval/core";
+import { Validator , Hook} from "../../Tuval/Core";
 
 type ResourceCallback = {
     callback: (...args: any[]) => any;

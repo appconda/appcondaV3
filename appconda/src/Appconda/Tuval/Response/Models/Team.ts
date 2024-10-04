@@ -1,4 +1,4 @@
-import { Document } from '@tuval/core';
+import { Document } from '../../../../Tuval/Core';
 import { Response } from '../../Response';
 import { Model } from '../Model';
 

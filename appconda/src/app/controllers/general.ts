@@ -1,5 +1,5 @@
 
-import { Authorization, Document, Hostname, ID, Text } from '@tuval/core';
+import { Authorization, Document, Hostname, ID, Text } from '../../Tuval/Core';
 import { V16 as RequestV16 } from '../../Appconda/Tuval/Request/Filters/V16';
 import { V17 as ResponseV17 } from '../../Appconda/Tuval/Response/Filters/V17';
 import {
@@ -7,25 +7,26 @@ import {
     register as reg
 } from '../init';
 import { Response } from '../../Appconda/Tuval/Response';
-import { Database, Query } from '@tuval/database';
+import { Database, Query } from '../../Tuval/Database';
 import { Usage } from '../../Appconda/Event/Usage';
 import { Request } from '../../Appconda/Tuval/Request';
 import { AppcondaException } from '../../Appconda/Extend/Exception';
 import { Event } from '../../Appconda/Event/Event';
 import { Executor } from '../../Appconda/Executor/Executor';
-import { Console } from '@tuval/cli'
-import { Locale } from '@tuval/locale';
+import { Console } from '../../Tuval/CLI';
+import { Locale } from '../../Tuval/Locale';
 import { Certificate } from '../../Appconda/Event/Certificate';
-import { Domain } from '@tuval/domains';
+import { Domain } from '../../Tuval/Domains';
 import { Origin } from '../../Appconda/Network/Validators/Origin';
-import { DSN } from '@tuval/dsn';
+import { DSN } from '../../Tuval/DSN';
 import { View } from '../../Appconda/Tuval/View';
 import { promises as fs } from 'fs';
 import { Config } from "../../Tuval/Config";
-import { Auth } from '@tuval/auth';
+import { Auth } from '../../Tuval/Auth';
 import path from 'path';
 import { App } from '../../Tuval/Http';
-import { Log, Logger } from '@tuval/logger';
+import { Log, Logger } from '../../Tuval/Logger';
+import { parse } from 'url';
 
 export const register = reg;
 
@@ -386,7 +387,7 @@ App.init()
             throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, message);
         }
     });
-
+// setroute init
 App.init()
     .groups(['api', 'web'])
     .inject('appconda')
@@ -508,9 +509,13 @@ App.init()
         }
 
         const referrer = request.getReferer();
-        const origin = new URL(request.getOrigin(referrer)).hostname;
+        const parsedUrl = parse(referrer, true);
+        const origin = parsedUrl.hostname ?? '';
+        const protocol = parsedUrl.protocol ?? '';
+        const port = parsedUrl.port ?? '';
+        /* const origin = new URL(request.getOrigin(referrer)).hostname;
         const protocol = new URL(request.getOrigin(referrer)).protocol;
-        const port = new URL(request.getOrigin(referrer)).port;
+        const port = new URL(request.getOrigin(referrer)).port; */
 
         let refDomainOrigin = 'localhost';
         const validator = new Hostname(clients);

@@ -1,4 +1,4 @@
-import { Document, DateTime, ID, Role } from '@tuval/core';
+import { Document, DateTime, ID, Role } from '../../../Tuval/Core';
 import { Adapter } from '../Adapter';
 import { createClient } from 'redis';
 

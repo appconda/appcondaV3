@@ -1,4 +1,4 @@
-import { View as OldView } from '@tuval/core';
+import { View as OldView } from '../../Tuval/Core';
 
 export class View extends OldView {
     /**

@@ -664,49 +664,6 @@
     "@tufjs/canonical-json" "2.0.0"
     minimatch "^9.0.3"
 
-"@tuval/audit@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@tuval/audit/-/audit-1.0.8.tgz#be23568005194c460a1d93edaac25aec2e283f6d"
-  integrity sha512-PizjFukINOSHJv4bEHVHkGlQrTMGKbVFaj8dKDwik1Xr/PKucYBxvG6MIzKrfGMmaLnglkcOQ/jv1cnkBy6bjw==
-  dependencies:
-    "@tuval/core" "2.0.6"
-    "@tuval/database" "1.0.12"
-    argon2 "^0.41.1"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
-    validator "^13.12.0"
-
-"@tuval/auth@1.0.13":
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.13.tgz#419ba15aa9ac76abdcde345464c0b457e6a7db91"
-  integrity sha512-ns6nlV0mn0F1LF4wM0I1TmEQcg8HbxlXQDElAhvxPlKXb08hjIypZ4BpG1ikyYMHkmVhueve3SV4jdPk1JVBvw==
-  dependencies:
-    "@tuval/core" "^2.0.10"
-    argon2 "^0.41.1"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
-    validator "^13.12.0"
-
 "@tuval/cache@1.0.7":
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/@tuval/cache/-/cache-1.0.7.tgz#487963836c030510e9581d28471cb3d79d7ec16e"
@@ -726,43 +683,6 @@
   resolved "https://registry.yarnpkg.com/@tuval/cache/-/cache-1.0.3.tgz#a32da5a3c8fc9a676daccfecacaa571d39fb3894"
   integrity sha512-mss7Df5aTlN/12Da0K2XvoJYBTAKRM/yJaGq65pZ5BXVIXtiE7a1oUfvIYhY0dQt6zlVNNVVoguorfDnirD0NQ==
   dependencies:
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    pako "^2.1.0"
-    validator "^13.12.0"
-
-"@tuval/cli@^1.0.13":
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/@tuval/cli/-/cli-1.0.13.tgz#8d6ad212233b1915db64e61354bdd2d24a642eb2"
-  integrity sha512-8iNYrxvogHhL4WavC8AiIwTzBhg/UPWJoZjGYGmDSCx4i1ud3k05WSYjpNcBVLYwPKy0fifqEEsJrRdRq/mAfw==
-  dependencies:
-    "@tuval/core" "2.0.6"
-    "@tuval/database" "1.0.12"
-    argon2 "^0.41.1"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
-    validator "^13.12.0"
-
-"@tuval/core@2.0.10", "@tuval/core@^2.0.10":
-  version "2.0.10"
-  resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.10.tgz#2c1d8d3323340802232f5aa22892f6ccf941910c"
-  integrity sha512-RpmEpaFWJhL/cCNSRrcdP6sPIbjhL6Z1fezOWnVjMmN196BElWvPtFo/ZnqA0f2gG294JJXWdPG8Y/ZlsxFNmg==
-  dependencies:
-    "@tuval/cache" "^1.0.2"
     diskusage "^1.2.0"
     googleapis "^144.0.0"
     ioredis "^5.4.1"
@@ -816,44 +736,6 @@
     moment "^2.30.1"
     mysql2 "^3.11.3"
     pako "^2.1.0"
-    validator "^13.12.0"
-
-"@tuval/database@1.0.20":
-  version "1.0.20"
-  resolved "https://registry.yarnpkg.com/@tuval/database/-/database-1.0.20.tgz#7655b50b46452e0828a6cd116c8b643457af9e35"
-  integrity sha512-4fOSMeeSj97u8WGG9iVov0YpvIOEDr/Ru+BuT0Der+EFCZdxWBEa20xPkkKjb8OvXRXKerukyKqpm/h1jG5PHw==
-  dependencies:
-    "@tuval/cache" "^1.0.2"
-    "@tuval/http" "1.0.7"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    pako "^2.1.0"
-    validator "^13.12.0"
-
-"@tuval/domains@^1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@tuval/domains/-/domains-1.0.9.tgz#ef4dfa5f83e21d46f60f5ef28291f5cfb314449d"
-  integrity sha512-JAOXRLtF/TVIOXmBZA3IUdmOMhxi9q+PyDPKosJJbnKsz/N+MPSTFlzARVTCHd8wAyEQQepXdz94dr2bL21VQg==
-  dependencies:
-    "@tuval/core" "2.0.6"
-    "@tuval/database" "1.0.12"
-    argon2 "^0.41.1"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
     validator "^13.12.0"
 
 "@tuval/dsn@^1.0.12":
@@ -914,29 +796,6 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
-"@tuval/logger@^1.0.14":
-  version "1.0.14"
-  resolved "https://registry.yarnpkg.com/@tuval/logger/-/logger-1.0.14.tgz#1b56608d41e6c2f167f919542bbdb62ed9a64329"
-  integrity sha512-FOx5tqDVmKMY54Wcldm7AgPjjuKogUcVUgbJv1fEUXSwLFDHIQWwgISzqSb1z6xDA/vur3u2WDW7THGhRsjO6Q==
-  dependencies:
-    "@tuval/core" "2.0.6"
-    "@tuval/database" "1.0.12"
-    argon2 "^0.41.1"
-    axios "^1.7.7"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
-    validator "^13.12.0"
-
 "@tuval/pools@^1.0.10":
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/@tuval/pools/-/pools-1.0.10.tgz#0ee50f8d474e22a1f9a8de127636bc8a608f47ca"
@@ -979,21 +838,6 @@
     pako "^2.1.0"
     scrypt-js "^3.0.1"
     uuid "^10.0.0"
-    validator "^13.12.0"
-
-"@tuval/storage@1.0.5":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@tuval/storage/-/storage-1.0.5.tgz#9727c4af058052b9fad09a426a272e5518290c4d"
-  integrity sha512-zagBGC9UxRF+CQ1uQ2GbCP/nCXpB5BlRVCKUrU04HPOB1gzlzdpb1dup7OxGwX49W3tIKfS9VSgIG8xA3dkxdg==
-  dependencies:
-    "@tuval/cache" "^1.0.2"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    pako "^2.1.0"
     validator "^13.12.0"
 
 "@types/body-parser@*":
@@ -1400,15 +1244,6 @@ axios@^1.6.1, axios@^1.6.8:
   version "1.6.8"
   resolved "https://registry.npmjs.org/axios/-/axios-1.6.8.tgz"
   integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
-  dependencies:
-    follow-redirects "^1.15.6"
-    form-data "^4.0.0"
-    proxy-from-env "^1.1.0"
-
-axios@^1.7.7:
-  version "1.7.7"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.7.tgz#2f554296f9892a72ac8d8e4c5b79c14a91d0a47f"
-  integrity sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.0"
@@ -1885,7 +1720,7 @@ continuation-local-storage@^3.2.1:
 
 cookie-parser@^1.4.6:
   version "1.4.6"
-  resolved "https://registry.npmjs.org/cookie-parser/-/cookie-parser-1.4.6.tgz"
+  resolved "https://registry.yarnpkg.com/cookie-parser/-/cookie-parser-1.4.6.tgz#3ac3a7d35a7a03bbc7e365073a26074824214594"
   integrity sha512-z3IzaNjdwUC2olLIB5/ITd0/setiaFMLYiZJle7xg5Fe9KWAceil7xszYfHHBtDFYLSgJduS2Ty0P1uJdPDJeA==
   dependencies:
     cookie "0.4.1"
@@ -4089,6 +3924,11 @@ node-addon-api@^8.1.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.1.0.tgz#55a573685dd4bd053f189cffa4e6332d2b1f1645"
   integrity sha512-yBY+qqWSv3dWKGODD6OGE6GnTX7Q2r+4+DfpqxHSHh8x0B4EKP9+wVGLS6U/AM1vxSNNmUEuIV5EGhYwPpfOwQ==
+
+node-console-colors@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/node-console-colors/-/node-console-colors-1.1.5.tgz#6f7716f5ea16db71c6434fe25c3e12764de78b4d"
+  integrity sha512-PvndhaJGOV2vkwu8ugfOgiRkXEyu5AgTlldD3f68w9QYC44yXARQQR4STvXC6CF+ZfyeKbNoLddjR3dx8qdBEQ==
 
 node-cron@^3.0.3:
   version "3.0.3"

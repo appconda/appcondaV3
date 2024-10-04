@@ -183,7 +183,7 @@ export class Request extends BaseRequest {
     }
 
     public getReferer(defaultValue: string = ''): string {
-        return this.req.get('Referer') ?? defaultValue;
+        return this.req.headers['referer'] ?? defaultValue;
     }
 
     public getOrigin(defaultValue: string = ''): string {

@@ -1,4 +1,4 @@
-import { Validator, Hostname } from '@tuval/core';
+import { Validator, Hostname } from '../../../Tuval/Core';
 import { parse } from 'url';
 
 export class Origin extends Validator {

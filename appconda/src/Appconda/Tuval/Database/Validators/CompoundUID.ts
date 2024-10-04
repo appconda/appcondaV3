@@ -1,5 +1,5 @@
-import { UID } from '@tuval/database';
-import { Validator } from '@tuval/core';
+import { UID } from '../../../../Tuval/Database';
+import { Validator } from '../../../../Tuval/Core';
 
 export class CompoundUID extends Validator {
     public getDescription(): string {

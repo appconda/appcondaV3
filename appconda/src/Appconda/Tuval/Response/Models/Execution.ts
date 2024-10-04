@@ -1,4 +1,4 @@
-import { Role } from '@tuval/core';
+import { Role } from '../../../../Tuval/Core';
 import { Response } from '../../Response';
 import { Model } from '../Model';
 

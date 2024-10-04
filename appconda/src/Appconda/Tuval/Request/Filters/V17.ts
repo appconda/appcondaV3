@@ -1,6 +1,6 @@
-import { Query } from '@tuval/database';
+import { Query } from '../../../../Tuval/Database';
 import { Filter } from '../Filter';
-import { Boolean, Exception } from '@tuval/core';
+import { Boolean, Exception } from '../../../../Tuval/Core';
 
 class V17 extends Filter {
     protected static readonly CHAR_SINGLE_QUOTE = "'";

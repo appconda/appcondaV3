@@ -1,6 +1,7 @@
 
-import { Document } from '@tuval/core';
-import { Cursor, Database, Filter, Limit, Offset, Order, Queries } from '@tuval/database'; // Replace with actual package
+import { Document } from '../../../../../Tuval/Core';
+import { Cursor, Database, Filter, Limit, Offset, Order, Queries } from '../../../../../Tuval/Database';
+
 import { Config } from '../../../../../Tuval/Config';
 
 export class Base extends Queries {

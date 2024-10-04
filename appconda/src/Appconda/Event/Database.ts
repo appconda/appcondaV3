@@ -1,5 +1,5 @@
-import { Document } from '@tuval/core';
-import { DSN } from '@tuval/dsn';
+import { Document } from '../../Tuval/Core';
+import { DSN } from '../../Tuval/DSN';
 
 import { Event } from './Event';
 import { Client, Connection } from '../../Tuval/Queue';

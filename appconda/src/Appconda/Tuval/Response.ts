@@ -4,7 +4,7 @@ import { Filter } from './Response/Filter';
 import { Response as TuvalResponse } from '../../Tuval/Http';
 import { Response as ExpressResponse } from 'express';
 import { Model } from './Response/Model';
-import { Document } from '@tuval/core';
+import { Document } from '../../Tuval/Core';
 import { None } from './Response/Models/None';
 import { Any } from './Response/Models/Any';
 import { ErrorModel } from './Response/Models/Error';

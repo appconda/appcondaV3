@@ -1,4 +1,4 @@
-import { Auth } from "@tuval/auth";
+import { Auth } from "../../Tuval/Auth";
 
 const member = [
     'global',

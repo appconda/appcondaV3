@@ -1,6 +1,6 @@
 import { Response } from '../../Response';
 import { Any } from './Any';
-import {Document as DatabaseDocument } from '@tuval/core';
+import { Document as DatabaseDocument } from '../../../../Tuval/Core';
 
 export class ModelDocument extends Any {
     constructor() {

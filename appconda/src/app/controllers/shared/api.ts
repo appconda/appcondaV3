@@ -1,6 +1,6 @@
-import { Authorization, Document, Role, WhiteList } from "@tuval/core";
+import { Authorization, Document, Role, WhiteList } from "../../../Tuval/Core";
 import { AppcondaException } from "../../../Appconda/Extend/Exception";
-import { Auth, TOTP } from "@tuval/auth";
+import { Auth, TOTP } from "../../../Tuval/Auth";
 import { Request } from "../../../Appconda/Tuval/Request";
 import moment from "moment";
 import { TimeLimit } from "../../../Tuval/Abuse/Adapters/Database/TimeLimit";
@@ -13,7 +13,7 @@ import { Delete } from "../../../Appconda/Event/Delete";
 import { Build } from "../../../Appconda/Event/Build";
 import { Usage } from "../../../Appconda/Event/Usage";
 import { Database as EventDatabase } from "../../../Appconda/Event/Database";
-import { Database } from "@tuval/database";
+import { Database } from "../../../Tuval/Database";
 import { DateTime } from 'luxon';
 
 import { createHash } from 'crypto';

@@ -1,6 +1,7 @@
-import { Auth } from "@tuval/auth";
-import { ID } from "@tuval/core";
-import { Database } from "@tuval/database";
+
+import { Auth } from "../../Tuval/Auth";
+import { ID } from "../../Tuval/Core";
+import { Database } from "../../Tuval/Database";
 
 const providers = process.env.OAUTH_PROVIDERS || [];
 const auth = process.env.AUTH || [];

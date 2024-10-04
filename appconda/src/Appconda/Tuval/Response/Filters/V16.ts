@@ -1,4 +1,4 @@
-import { DateTime } from '@tuval/core';
+import { DateTime } from '../../../../Tuval/Core';
 import { Response } from '../../Response';
 import { Filter } from '../Filter';
 

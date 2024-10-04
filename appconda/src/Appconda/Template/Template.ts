@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'fs';
 import * as fs from 'fs/promises';
 import { parse as parseUrl, format as formatUrl } from 'url';
 import { View } from '../Tuval/View';
-import { Exception } from '@tuval/core';
+import { Exception } from '../../Tuval/Core';
 
 export class Template extends View {
     protected content: string = '';

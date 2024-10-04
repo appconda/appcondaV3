@@ -1,7 +1,7 @@
-import { Auth } from '@tuval/auth';
+import { Auth } from '../../../../Tuval/Auth';
 import { Response } from '../../Response';
 import { Model } from '../Model';
-import { Document } from '@tuval/core';
+import { Document } from '../../../../Tuval/Core';
 import { Config } from '../../../../Tuval/Config';
 
 
