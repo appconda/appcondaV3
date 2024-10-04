@@ -50,7 +50,6 @@ export default class WebServerService extends BaseService {
 
   private async  setupServer() {
     const app = new App('UTC');
-
     const pools = await register.get('pools');
     App.setResource('pools', async () => pools);
 

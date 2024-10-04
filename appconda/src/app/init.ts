@@ -73,7 +73,7 @@ export function createRedisInstance(dsnHost: string, dsnPort: number, dsnPass?: 
         password: dsnPass || undefined,
     });
 
-    // Handle connection errors
+    // Bağlantı hatalarını ele al
     client.on('error', (err) => {
         console.error('Redis Client Error', err);
     });
@@ -81,10 +81,10 @@ export function createRedisInstance(dsnHost: string, dsnPort: number, dsnPass?: 
     // Connect to Redis
     client.connect();
 
-    // Note: The 'redis' package does not have a direct equivalent to Redis::OPT_READ_TIMEOUT
-    // However, you can configure socket timeouts if necessary
-    // Example:
-    // client.options.socket.connectTimeout = 0; // 0 for no timeout
+    // Not: 'redis' paketinin Redis::OPT_READ_TIMEOUT ile doğrudan bir karşılığı yoktur
+    // Ancak, gerekirse soket zaman aşımlarını yapılandırabilirsiniz
+    // Örnek:
+    // client.options.socket.connectTimeout = 0; // zaman aşımı yok için 0
 
     return client;
 }
