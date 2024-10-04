@@ -7,6 +7,7 @@ import { Authorization, Document, IP, WhiteList, URLValidator, Range, Hostname, 
 import { OpenSSL } from "../Appconda/OpenSSL/OpenSSL";
 import { Email } from "../Appconda/Network/Validators/Email";
 import { AppcondaURL } from "../Appconda/Url/URL";
+import { Redis } from 'ioredis';
 
 import { Cache, Redis as RedisCache, Sharding } from '../Tuval/Cache'
 import { DSN } from "../Tuval/DSN";
@@ -67,8 +68,7 @@ export function createRedisInstance(dsnHost: string, dsnPort: number, dsnPass?: 
         socket: {
             host: dsnHost,
             port: dsnPort,
-            // The 'redis' package handles persistent connections internally
-            // You can configure reconnection strategies if needed
+ 
         },
         password: dsnPass || undefined,
     });
@@ -883,7 +883,9 @@ register.set('pools', () => {
                         adapter = (() => {
                             switch (dsnScheme) {
                                 case 'redis':
-                                    return new RedisConnection(dsnHost, dsnPort as any);
+                                    const redis = new Redis(Number.parseInt(dsnPort), dsnHost, {});
+                                    return redis;
+                                // return new RedisConnection(dsnHost, dsnPort as any);
                                 default:
                                     return null;
                             }
@@ -1384,12 +1386,18 @@ App.setResource('getProjectDB', async ({ pools, dbForConsole, cache }: { pools: 
 
 App.setResource('cache', async ({ pools }: { pools: Group }) => {
     const list = Config.getParam('pools-cache', []);
-    const adapters = list.map(async (value: string) => {
+    const adapters = [];
+    for (const value of list) {
         const pool = pools.get(value);
         const connection = await pool.pop();
-
-        return connection.getResource();
-    });
+        adapters.push(connection.getResource());
+    }
+    /*  const adapters = list.map(async (value: string) => {
+         const pool = pools.get(value);
+         const connection = await pool.pop();
+ 
+         return connection.getResource();
+     }); */
 
     return new Cache(new Sharding(adapters));
 }, ['pools']);

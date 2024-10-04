@@ -80,10 +80,12 @@ export default class WebServerService extends BaseService {
         Console.success('[Setup] - Creating database: appwrite...');
         await dbForConsole.create();
     } catch (e) {
+      console.log(e)
         Console.success('[Setup] - Skip: metadata table already exists');
     }
 
-    if (await dbForConsole.getCollection(Audit.COLLECTION).isEmpty()) {
+    const auditCollection= await dbForConsole.getCollection(Audit.COLLECTION);
+    if (auditCollection.isEmpty()) {
         const audit = new Audit(dbForConsole);
         await audit.setup();
     }

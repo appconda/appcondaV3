@@ -1,5 +1,5 @@
 
-import { Validator } from '@tuval/http';
+import { Validator } from '../../../Tuval/Core';
 import { Database } from '../Database';
 import { Document } from '../Document';
 

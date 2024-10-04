@@ -1,4 +1,4 @@
-import { Numeric, Range } from '@tuval/http';
+import { Numeric, Range } from '../../../../Tuval/Core';
 import { Query } from '../../Query';
 
 import { Base } from './Base';

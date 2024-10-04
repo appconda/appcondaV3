@@ -1,5 +1,5 @@
 
-import { Validator } from "@tuval/http";
+import { Validator } from "../../../Tuval/Core";
 import { Query } from "../Query";
 import { Base } from "./Query/Base";
 

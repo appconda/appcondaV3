@@ -1,4 +1,4 @@
-import { Validator } from '@tuval/core'; // Replace with actual package
+import { Validator } from '../../../Tuval/Core'; // Replace with actual package
 
 /**
  * Password.

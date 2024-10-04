@@ -3,7 +3,7 @@ import { Base } from './Base';
 import { Database } from '../../Database';
 import { Datetime } from '../Datetime';
 import { Query } from '../../Query';
-import { Boolean, FloatValidator, Integer, Text, Validator } from '@tuval/http';
+import { Boolean, FloatValidator, Integer, Text, Validator } from '../../../../Tuval/Core';
 
 interface AttributeSchema {
     type: string;

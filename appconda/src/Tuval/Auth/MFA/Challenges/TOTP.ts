@@ -1,4 +1,4 @@
-import { Document } from '@tuval/core';
+import { Document } from '../../../../Tuval/Core';
 import { totp } from 'otplib';
 import { TOTP as TOTPType } from '../Types/TOTP';
 

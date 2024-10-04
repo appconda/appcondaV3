@@ -1,7 +1,7 @@
 
 import { Challenge } from '../Challenge';
 import { Type } from '../Type';
-import { Document } from '@tuval/core'; 
+import { Document } from '../../../../Tuval/Core'; 
 
 export class PhoneChallenge extends Challenge {
     public static verify(challenge: Document, otp: string): boolean {

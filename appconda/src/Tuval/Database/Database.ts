@@ -14,7 +14,7 @@ import { Document as DocumentValidator } from './Validators/Queries/Document';
 import { Documents as DocumentsValidator } from './Validators/Queries/Documents';
 import { Duplicate as DuplicateException } from './Exceptions/Duplicate';
 import { LimitException as LimitException } from './Exceptions/Limit';
-import { Query as QueryException } from './Exceptions/Query';
+import { QueryException } from './Exceptions/Query';
 import { Timeout as TimeoutException } from './Exceptions/Timeout';
 import { Conflict as ConflictException } from './Exceptions/Conflict';
 import { Restricted as RestrictedException } from './Exceptions/Restricted';
@@ -27,7 +27,7 @@ import { ID } from './Helpers/ID';
 import { Structure } from './Validators/Structure';
 import { Authorization } from './Validators/Authorization';
 import { DateTime } from './DateTime';
-import { Cache } from '@tuval/cache';
+import { Cache } from '../../Tuval/Cache';
 
 
 export class Database {
@@ -580,7 +580,7 @@ export class Database {
         }
 
         database = database ?? this.adapter.getDatabase();
-        this.adapter.create(database);
+        await this.adapter.create(database);
 
         const attributes = Database.COLLECTION.getAttribute('attributes').map(attribute => new Document(attribute));
 

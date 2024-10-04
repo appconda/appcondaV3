@@ -1,4 +1,4 @@
-import { Authorization, DateTime, Document, Role, Roles } from '@tuval/core';
+import { Authorization, DateTime, Document, Role, Roles } from '../../Tuval/Core';
 import argon2 from 'argon2';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto-js';

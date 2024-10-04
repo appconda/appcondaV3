@@ -1,4 +1,4 @@
-import { Validator } from "@tuval/http";
+import { Validator } from "../../../Tuval/Core";
 
 export class Key extends Validator {
     protected allowInternal: boolean = false;

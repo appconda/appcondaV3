@@ -1,6 +1,6 @@
 
 
-import { Validator } from '@tuval/http';
+import { Validator } from '../../../Tuval/Core';
 import { Role } from '../Helpers/Role';
 import { Key } from './Key';
 import { Label } from './Label';

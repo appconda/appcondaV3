@@ -140,6 +140,7 @@ export abstract class SQL extends Adapter {
             const [rows] = await this.getPDO().execute<RowDataPacket[]>(query, values);
             return rows.length > 0;
         } catch (e: any) {
+            //return false;
             throw new DatabaseException('Failed to check existence: ' + e.message, e.code, e);
         }
     }

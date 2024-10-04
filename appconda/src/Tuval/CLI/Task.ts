@@ -1,4 +1,4 @@
-import { Hook } from "@tuval/core";
+import { Hook } from "../../Tuval/Core";
 
 
 export class Task extends Hook {

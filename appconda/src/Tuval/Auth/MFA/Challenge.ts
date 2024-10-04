@@ -1,4 +1,4 @@
-import { Document } from '@tuval/core'; // Replace with actual package
+import { Document } from '../../../Tuval/Core';
 
 export abstract class Challenge {
      static verify(user: Document, otp: string): boolean {

@@ -1,5 +1,5 @@
 import { totp } from 'otplib';
-import { Document } from '@tuval/core'
+import { Document } from '../../../../Tuval/Core';
 import { Type } from '../Type';
 
 

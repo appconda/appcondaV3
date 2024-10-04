@@ -1,6 +1,6 @@
 import { Response } from '../../Response';
 import { Model } from '../Model';
-import { Compression } from '@tuval/storage';
+import { Compression } from '../../../../Tuval/Storage';
 
 export class Bucket extends Model {
     constructor() {

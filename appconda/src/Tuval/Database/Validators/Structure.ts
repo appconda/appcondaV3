@@ -3,7 +3,7 @@ import { Database } from '../Database';
 import { Document } from '../Document';
 import { Datetime as DatetimeValidator } from './Datetime';
 import {Exception as DatabaseException } from '../Exception';
-import { Boolean, FloatValidator, Integer, Range, Text, Validator } from '@tuval/http';
+import { Boolean, FloatValidator, Integer, Range, Text, Validator } from '../../../Tuval/Core';
 
 
 export class Structure extends Validator {

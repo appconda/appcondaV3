@@ -1,5 +1,5 @@
 
-import { Hook, Validator } from '@tuval/core';
+import { Hook, Validator } from '../../Tuval/Core';
 import { execSync } from 'child_process';
 import { Task } from './Task';
 
