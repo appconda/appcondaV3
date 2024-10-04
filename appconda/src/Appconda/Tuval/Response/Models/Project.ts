@@ -219,7 +219,8 @@ export class Project extends Model {
         const services = Config.getParam('services', []);
         const auth = Config.getParam('auth', []);
 
-        for (const method of auth) {
+        for (const methodKey of Object.keys(auth)) {
+            const method = auth[methodKey];
             const name = method.name ?? '';
             const key = method.key ?? '';
 
@@ -231,7 +232,8 @@ export class Project extends Model {
             });
         }
 
-        for (const service of services) {
+        for (const serviceKey of Object.keys(services)) {
+            const service = services[serviceKey];
             if (!service.optional) {
                 continue;
             }

@@ -11,7 +11,7 @@ import { AppcondaURL } from "../Appconda/Url/URL";
 import { Cache, Redis as RedisCache, Sharding } from '../Tuval/Cache'
 import { DSN } from "@tuval/dsn";
 import { createClient, RedisClientType } from 'redis';
-import { Connection, RedisConnection } from "@tuval/queue";
+import { Connection, RedisConnection } from "../Tuval/Queue";
 import nodemailer from 'nodemailer';
 import _default, * as maxmind from 'maxmind'
 import path, { join } from "path";
@@ -1055,19 +1055,21 @@ App.setResource('queue', async ({ pools }: { pools: Group }) => {
     return connection.getResource();
 }, ['pools']);
 
-App.setResource('queueForMessaging', async (queue: Connection) => new Messaging(queue), ['queue']);
-App.setResource('queueForMails', async (queue: Connection) => new Mail(queue), ['queue']);
-App.setResource('queueForBuilds', async (queue: Connection) => new Build(queue), ['queue']);
+App.setResource('queueForMessaging', async ({ queue }: { queue: Connection }) => new Messaging(queue), ['queue']);
+App.setResource('queueForMails', async ({ queue }: { queue: Connection }) => new Mail(queue), ['queue']);
+App.setResource('queueForBuilds', async ({ queue }: { queue: Connection }) => new Build(queue), ['queue']);
 App.setResource('queueForDatabase', async (queue: Connection) => new EventDatabase(queue), ['queue']);
-App.setResource('queueForDeletes', async (queue: Connection) => new Delete(queue), ['queue']);
-App.setResource('queueForEvents', async (queue: Connection) => new Event(queue), ['queue']);
-App.setResource('queueForAudits', async (queue: Connection) => new Audit(queue), ['queue']);
-App.setResource('queueForFunctions', async (queue: Connection) => new Func(queue), ['queue']);
-App.setResource('queueForUsage', async (queue: Connection) => new Usage(queue), ['queue']);
-App.setResource('queueForCertificates', async (queue: Connection) => new Certificate(queue), ['queue']);
-App.setResource('queueForMigrations', async (queue: Connection) => new Migration(queue), ['queue']);
+App.setResource('queueForDeletes', async ({ queue }: { queue: Connection }) => new Delete(queue), ['queue']);
+App.setResource('queueForEvents', async ({ queue }: { queue: Connection }) => new Event(queue), ['queue']);
+App.setResource('queueForAudits', async ({ queue }: { queue: Connection }) => new Audit(queue), ['queue']);
+App.setResource('queueForFunctions', async ({ queue }: { queue: Connection }) => new Func(queue), ['queue']);
+App.setResource('queueForUsage', async ({ queue }: { queue: Connection }) => {
+    return new Usage(queue);
+}, ['queue']);
+App.setResource('queueForCertificates', async ({ queue }: { queue: Connection }) => new Certificate(queue), ['queue']);
+App.setResource('queueForMigrations', async ({ queue }: { queue: Connection }) => new Migration(queue), ['queue']);
 
-App.setResource('clients', async (request: any, console: Document, project: Document) => {
+App.setResource('clients', async ({ request, console, project }: { request: Request, console: Document, project: Document }) => {
     console.setAttribute('platforms', [{
         '$collection': ID.custom('platforms'),
         'name': 'Current Host',
@@ -1108,7 +1110,7 @@ App.setResource('clients', async (request: any, console: Document, project: Docu
 }, ['request', 'console', 'project']);
 
 
-App.setResource('user', async (mode: string, project: Document, console: Document, request: Request, response: Response, dbForProject: Database, dbForConsole: Database) => {
+App.setResource('user', async ({ mode, project, console, request, response, dbForProject, dbForConsole }: { mode: string, project: Document, console: Document, request: Request, response: Response, dbForProject: Database, dbForConsole: Database }) => {
     Authorization.setDefaultStatus(true);
 
     Auth.setCookieName('a_session_' + project.getAttribute('id', ''));
@@ -1210,7 +1212,7 @@ App.setResource('project', async ({ dbForConsole, request, console }: { dbForCon
     return project;
 }, ['dbForConsole', 'request', 'console']);
 
-App.setResource('session',async (user: Document) => {
+App.setResource('session', async ({ user }: { user: Document }) => {
     if (user.isEmpty()) {
         return;
     }
@@ -1231,7 +1233,7 @@ App.setResource('session',async (user: Document) => {
     return;
 }, ['user']);
 
-App.setResource('console',async () => {
+App.setResource('console', async () => {
     return new Document({
         '$id': ID.custom('console'),
         '$internalId': ID.custom('console'),
@@ -1272,7 +1274,7 @@ App.setResource('console',async () => {
 }, []);
 
 
-App.setResource('dbForProject', async (pools: Group, dbForConsole: Database, cache: Cache, project: Document) => {
+App.setResource('dbForProject', async ({ pools, dbForConsole, cache, project }: { pools: Group, dbForConsole: Database, cache: Cache, project: Document }) => {
     if (project.isEmpty() || project.getId() === 'console') {
         return dbForConsole;
     }
@@ -1392,19 +1394,19 @@ App.setResource('cache', async ({ pools }: { pools: Group }) => {
     return new Cache(new Sharding(adapters));
 }, ['pools']);
 
-App.setResource('deviceForLocal', async() => {
+App.setResource('deviceForLocal', async () => {
     return new Local();
 });
 
-App.setResource('deviceForFiles', async (project: Document) => {
+App.setResource('deviceForFiles', async ({ project }: { project: Document }) => {
     return getDevice(`${APP_STORAGE_UPLOADS}/app-${project.getId()}`);
 }, ['project']);
 
-App.setResource('deviceForFunctions', async (project: Document) => {
+App.setResource('deviceForFunctions', async ({ project }: { project: Document }) => {
     return getDevice(`${APP_STORAGE_FUNCTIONS}/app-${project.getId()}`);
 }, ['project']);
 
-App.setResource('deviceForBuilds',async (project: Document) => {
+App.setResource('deviceForBuilds', async ({ project }: { project: Document }) => {
     return getDevice(`${APP_STORAGE_BUILDS}/app-${project.getId()}`);
 }, ['project']);
 
@@ -1504,19 +1506,19 @@ function getDevice(root: string): Device {
     }
 }
 
-App.setResource('mode', async (request: Request) => {
+App.setResource('mode', async ({ request }: { request: Request }) => {
     return request.getParam('mode', request.getHeader('x-appconda-mode', APP_MODE_DEFAULT));
 }, ['request']);
 
-App.setResource('geodb', async (register: Registry) => {
+App.setResource('geodb', async ({ register }: { register: Registry }) => {
     return register.get('geodb');
 }, ['register']);
 
-App.setResource('passwordsDictionary',async (register: Registry) => {
+App.setResource('passwordsDictionary', async ({ register }: { register: Registry }) => {
     return register.get('passwordsDictionary');
 }, ['register']);
 
-App.setResource('servers', async() => {
+App.setResource('servers', async () => {
     const platforms = Config.getParam('platforms');
     const server = platforms[APP_PLATFORM_SERVER];
 
@@ -1527,11 +1529,11 @@ App.setResource('servers', async() => {
     return languages;
 });
 
-App.setResource('promiseAdapter',async (register: Registry) => {
+App.setResource('promiseAdapter', async ({ register }: { register: Registry }) => {
     return register.get('promiseAdapter');
 }, ['register']);
 
-App.setResource('schema',async (appconda: any, dbForProject: Database) => {
+App.setResource('schema', async ({ appconda, dbForProject }: { appconda: any, dbForProject: Database }) => {
     const complexity = (complexity: number, args: any) => {
         const queries = Query.parseQueries(args.queries || []);
         const query = Query.getByType(queries, [Query.TYPE_LIMIT])[0] || null;
@@ -1613,19 +1615,19 @@ App.setResource('schema',async (appconda: any, dbForProject: Database) => {
     ); */
 }, ['appconda', 'dbForProject']);
 
-App.setResource('contributors',async () => {
+App.setResource('contributors', async () => {
     const path = 'app/config/contributors.json';
     const list = (existsSync(path)) ? JSON.parse(readFileSync(path, 'utf-8')) : [];
     return list;
 });
 
-App.setResource('employees', async() => {
+App.setResource('employees', async () => {
     const path = 'app/config/employees.json';
     const list = (existsSync(path)) ? JSON.parse(readFileSync(path, 'utf-8')) : [];
     return list;
 });
 
-App.setResource('heroes', async() => {
+App.setResource('heroes', async () => {
     const path = 'app/config/heroes.json';
     const list = (existsSync(path)) ? JSON.parse(readFileSync(path, 'utf-8')) : [];
     return list;
@@ -1635,7 +1637,7 @@ App.setResource('heroes', async() => {
     return new VcsGitHub(cache);
 }, ['cache']); */
 
-App.setResource('requestTimestamp',async (request: Request) => {
+App.setResource('requestTimestamp', async ({ request }: { request: Request }) => {
     const timestampHeader = request.getHeader('x-appconda-timestamp');
     let requestTimestamp;
     if (timestampHeader) {
@@ -1648,6 +1650,6 @@ App.setResource('requestTimestamp',async (request: Request) => {
     return requestTimestamp;
 }, ['request']);
 
-App.setResource('plan',async (plan: any[] = []) => {
+App.setResource('plan', async ({ plan = [] }: { plan: any[] }) => {
     return [];
 });

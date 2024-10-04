@@ -294,7 +294,7 @@ export class AppcondaException extends BaseException {
             this.stack = previous.stack;
         }
 
-        super(this.message);
+       // super(this.message);
         this.name = 'AppwriteException';
     }
 

@@ -3,7 +3,7 @@ import { Request as ExpressRequest } from 'express';
 import { Route, Request as TuvalRequest} from '../../Tuval/Http';
 
 export class Request extends TuvalRequest {
-    private filters: Filter[] = [];
+    protected filters: Filter[] = [];
     private static route: Route = null as any;
 
     constructor(request: ExpressRequest) {
@@ -97,7 +97,7 @@ export class Request extends TuvalRequest {
      * @return Record<string, any>
      */
     public getHeaders(): Record<string, any> {
-        const headers = this.getHeaders();
+        const headers = super.getHeaders();
 
         if (!this.rawRequest.cookies) {
             return headers;

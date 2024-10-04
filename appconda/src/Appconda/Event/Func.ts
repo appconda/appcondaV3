@@ -1,7 +1,6 @@
 import { Document } from '@tuval/core';
-import { Client } from '@tuval/queue';
-import { Connection } from '@tuval/queue';
 import { Event } from './Event';
+import { Client, Connection } from '../../Tuval/Queue';
 
 export class Func extends Event {
     protected jwt: string = '';
@@ -68,7 +67,7 @@ export class Func extends Event {
     }
 
     public getData(): string {
-        return this.data;
+        return this.data ;
     }
 
     public setJWT(jwt: string): this {

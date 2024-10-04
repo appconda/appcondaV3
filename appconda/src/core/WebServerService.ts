@@ -1,12 +1,14 @@
 import e from "express";
 import { BaseService } from "../BaseService";
-import { App, Request, Response } from "../Tuval/Http";
+import { App } from "../Tuval/Http";
 import path from "path";
 import { register } from "../app/controllers/general";
 import { Files } from "../Tuval/Http/Adapters/express/Files";
 import { Authorization, Role } from "@tuval/core";
 import { Log, User } from "@tuval/logger";
 import { Console } from "@tuval/cli";
+import { Request } from "../Appconda/Tuval/Request";
+import { Response } from "../Appconda/Tuval/Response";
 const express = require('express');
 var cors = require('cors')
 

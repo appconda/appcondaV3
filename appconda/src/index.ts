@@ -1,6 +1,9 @@
 
 import { BaseService } from './BaseService';
 import { BaseComponent } from './BaseComponent';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 (global as any)['BaseService'] = BaseService;
 (global as any)['RealmoceanService'] = BaseService;

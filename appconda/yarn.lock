@@ -959,27 +959,6 @@
     uuid "^10.0.0"
     validator "^13.12.0"
 
-"@tuval/queue@^1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@tuval/queue/-/queue-1.0.6.tgz#0085afbfabb5fe87bfd6a084ccc999f403a9f050"
-  integrity sha512-YlFYKR717FnuSXrVPupl6Gje/DKlvcla8QSjbYL39FpenCYqCo2dyJnLJvt+oQDq/giqiJiAzh7zYFfVq6dQ+Q==
-  dependencies:
-    "@tuval/core" "2.0.6"
-    argon2 "^0.41.1"
-    bcrypt "^5.1.1"
-    crypto-js "^4.2.0"
-    diskusage "^1.2.0"
-    googleapis "^144.0.0"
-    ioredis "^5.4.1"
-    md5 "^2.3.0"
-    moment "^2.30.1"
-    mysql2 "^3.11.3"
-    otplib "^12.0.1"
-    pako "^2.1.0"
-    scrypt-js "^3.0.1"
-    uuid "^10.0.0"
-    validator "^13.12.0"
-
 "@tuval/registry@^1.0.9":
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/@tuval/registry/-/registry-1.0.9.tgz#22a661d7823854fabb082c847f860688f3348408"
@@ -2213,7 +2192,7 @@ domutils@^3.0.1:
 
 dotenv@^16.4.5:
   version "16.4.5"
-  resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.4.5.tgz"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.5.tgz#cdd3b3b604cb327e286b4762e13502f717cb099f"
   integrity sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==
 
 dynamic-dedupe@^0.3.0:

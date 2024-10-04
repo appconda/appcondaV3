@@ -1,5 +1,5 @@
-import { Client } from '@tuval/queue';
-import { Connection } from '@tuval/queue';
+
+import { Client, Connection } from '../../Tuval/Queue';
 import { Event } from './Event';
 
 export class Audit extends Event {

@@ -1,6 +1,6 @@
 import { Document } from '@tuval/core';
-import { Client } from '@tuval/queue';
-import { Connection } from '@tuval/queue';
+import { Client, Connection } from '../../Tuval/Queue';
+
 
 export class Event {
     public static readonly DATABASE_QUEUE_NAME = 'v1-database';

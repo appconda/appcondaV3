@@ -1,8 +1,8 @@
 import { Document } from '@tuval/core';
 import { DSN } from '@tuval/dsn';
-import { Client } from '@tuval/queue';
-import { Connection } from '@tuval/queue';
+
 import { Event } from './Event';
+import { Client, Connection } from '../../Tuval/Queue';
 
 export class Database extends Event {
     protected type: string = '';

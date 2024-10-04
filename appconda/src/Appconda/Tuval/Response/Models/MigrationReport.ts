@@ -5,7 +5,7 @@ export class MigrationReport extends Model {
     constructor() {
         super();
 
-        this
+      /*   this
             .addRule(Resource.TYPE_USER, {
                 type: Model.TYPE_INTEGER,
                 description: 'Number of users to be migrated.',
@@ -59,7 +59,7 @@ export class MigrationReport extends Model {
                 description: 'Version of the Appconda instance to be migrated.',
                 default: '',
                 example: '1.4.0',
-            });
+            }); */
     }
 
     /**

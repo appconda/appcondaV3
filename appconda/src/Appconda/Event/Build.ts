@@ -1,7 +1,6 @@
 import { Document } from '@tuval/core';
-import { Client } from '@tuval/queue';
-import { Connection } from '@tuval/queue';
 import { Event } from './Event';
+import { Client, Connection } from '../../Tuval/Queue';
 
 export class Build extends Event {
     protected type: string = '';

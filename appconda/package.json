@@ -29,7 +29,6 @@
     "@tuval/locale": "^1.0.5",
     "@tuval/logger": "^1.0.14",
     "@tuval/pools": "^1.0.10",
-    "@tuval/queue": "^1.0.6",
     "@tuval/registry": "^1.0.9",
     "@tuval/storage": "1.0.5",
     "angel-eval": "^1.0.7",

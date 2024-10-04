@@ -449,7 +449,7 @@ export class Response extends TuvalResponse {
         this.setModel(new Mock());
 
         // Call parent constructor
-        super(response);
+       
     }
 
     /**
