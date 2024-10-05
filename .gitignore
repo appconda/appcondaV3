@@ -12,7 +12,7 @@
 !/.idea/php.xml
 .DS_Store
 .php_cs.cache
-debug/
+
 app/sdks
 dev/yasd_init.php
 .phpunit.result.cache
