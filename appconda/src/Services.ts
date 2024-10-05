@@ -9,6 +9,7 @@ export const Services = {
     Flow:'com.realmocean.service.flow',
     Jira:'com.realmocean.service.jira',
     Github:'com.realmocean.service.github',
-    Sms:'com.realmocean.service.sms'
+    Sms:'com.realmocean.service.sms',
+    ID: 'com.appconda.service.id'
 
 }

@@ -2,8 +2,8 @@ import { BaseComponent } from "../../BaseComponent";
 import { BaseService } from "../../BaseService";
 import { Container } from "../../Container";
 import { Services } from "../../Services";
-import EmailService, { EmailServiceAccessObject } from "../../core/EmailService";
-import QDMSService from "../../core/QdmsService";
+import EmailService, { EmailServiceAccessObject } from "../../Services/EmailService";
+import QDMSService from "../../Services/QdmsService";
 
 export default class CreateAccessKey extends BaseComponent {
 

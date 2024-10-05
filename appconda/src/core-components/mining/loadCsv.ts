@@ -2,8 +2,8 @@ import { BaseComponent } from "../../BaseComponent";
 import { BaseService } from "../../BaseService";
 import { Container } from "../../Container";
 import { Services } from "../../Services";
-import MiningService from "../../core/MiningService";
-import QDMSService from "../../core/QdmsService";
+import MiningService from "../../Services/MiningService";
+import QDMSService from "../../Services/QdmsService";
 
 export default class LoadCsv extends BaseComponent {
 

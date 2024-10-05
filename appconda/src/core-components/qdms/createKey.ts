@@ -2,7 +2,7 @@ import { BaseComponent } from "../../BaseComponent";
 import { BaseService } from "../../BaseService";
 import { Container } from "../../Container";
 import { Services } from "../../Services";
-import QDMSService from "../../core/QdmsService";
+import QDMSService from "../../Services/QdmsService";
 
 export default class CreateAccessKey extends BaseComponent {
 

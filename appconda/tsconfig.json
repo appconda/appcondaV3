@@ -24,5 +24,5 @@
     ],
     "include": [
       "src/**/*.ts"
-, "src/core/ConfigService.ts", "src/core/ConfigService.ts", "src/services/_TestService.js", "src/modules/mining/utils/generic/intervaltree.js", "src/modules/mining/utils/generic/intervaltree.js", "src/modules/mining/utils/generic/numeric.js", "src/modules/mining/utils/generic/humanize-duration.js", "test/mining/csv_importing.ts", "src/modules/sdk/id.js"    ]
+, "src/Services/ConfigService.ts", "src/Services/ConfigService.ts", "src/_services/_TestService.js", src/Services/mining-service/mining/utils/generic/intervaltree.jss", src/Services/mining-service/mining/utils/generic/intervaltree.jss", src/Services/mining-service/mining/utils/generic/numeric.jss", src/Services/mining-service/mining/utils/generic/humanize-duration.jss", "test/mining/csv_importing.ts", "src/modules/sdk/id.js"    ]
   }

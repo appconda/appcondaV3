@@ -2,9 +2,9 @@ import { BaseComponent } from "../../BaseComponent";
 import { BaseService } from "../../BaseService";
 import { Container } from "../../Container";
 import { Services } from "../../Services";
-import EmailService from "../../core/EmailService";
-import MiningService from "../../core/MiningService";
-import QDMSService from "../../core/QdmsService";
+import EmailService from "../../Services/EmailService";
+import MiningService from "../../Services/MiningService";
+import QDMSService from "../../Services/QdmsService";
 
 export default class WatchIssues extends BaseComponent {
 

@@ -1,19 +1,20 @@
 import e from "express";
 import { BaseComponent } from "./BaseComponent";
 import { Container } from "./Container";
-import CspService from "./core/CSPService";
-import type DatabaseService from "./core/DatabaseService";
-import EmailService from "./core/EmailService";
-import EncryptionService from "./core/EncryptionService";
-import JiraService from "./core/JiraService";
-import KVService from "./core/KVService";
-import type ScheduleService from "./core/ScheduleService";
-import SchemaService from "./core/SchemaService";
-import type WebServerService from "./core/WebServerService";
+import CspService from "./Services/CSPService";
+import type DatabaseService from "./Services/database-service/service.ts";
+import EmailService from "./Services/EmailService";
+import EncryptionService from "./Services/EncryptionService";
+import JiraService from "./Services/JiraService";
+import KVService from "./Services/KVService";
+import type ScheduleService from "./Services/ScheduleService";
+import SchemaService from "./Services/SchemaService";
+import type WebServerService from "./Services/WebServerService";
 import express from "express";
 import { Services } from "./Services";
-import FlowService from "./core/FlowService";
-import SmsService from "./core/SMSService";
+import FlowService from "./Services/FlowService";
+import SmsService from "./Services/SMSService";
+import IDService from "./Services/id-service/service";
 const crypto = require('crypto');
 
 
@@ -219,6 +220,10 @@ export abstract class BaseService {
 
     public get flowService(): FlowService {
         return this.services.get(Services.Flow);
+    }
+
+    public get idService(): IDService {
+        return this.services.get(Services.ID);
     }
 
 

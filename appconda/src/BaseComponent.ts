@@ -1,6 +1,6 @@
 import { BaseService } from "./BaseService";
 import { Container } from "./Container";
-import WebServerService from "./core/WebServerService";
+import WebServerService from "./Services/WebServerService";
 
 const multer = require("multer");
 

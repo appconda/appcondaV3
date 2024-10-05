@@ -1,6 +1,6 @@
 import { BaseService } from "../BaseService";
-import MiningService from "./MiningService";
-import { CsvImporter } from "./mining-service/mining/objects/log/importer/csv/importer";
+import MiningService from "../Services/MiningService";
+import { CsvImporter } from "../Services/mining-service/mining/objects/log/importer/csv/importer";
 import { nanoid } from "../modules/nanoid/nanoid";
 
 const csv =
