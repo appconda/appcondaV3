@@ -1,5 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { Exception } from './Exception';
+import Handlebars from 'handlebars';
+
 
 class View {
     public static readonly FILTER_ESCAPE = 'escape';
@@ -120,14 +122,21 @@ class View {
             throw new Exception(`"${this.path}" view template is not readable`);
         }
 
+        const template = Handlebars.compile(html);
+        html = template(this.params);
+
         if (minify) {
             html = this.minifyHtml(html);
         }
 
+    
         return html;
     }
 
     private minifyHtml(html: string): string {
+
+        
+
         const search = [
             />[^\S ]+/g,  // strip whitespaces after tags, except space
             /[^\S ]+</g,  // strip whitespaces before tags, except space
@@ -139,6 +148,8 @@ class View {
             '<',
             ' ',
         ];
+
+        
 
         return html.replace(search[0], replace[0])
                    .replace(search[1], replace[1])

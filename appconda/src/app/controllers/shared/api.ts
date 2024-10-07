@@ -21,6 +21,7 @@ import { Filesystem } from "../../../Tuval/Cache/Adapters/Filesystem";
 import { Cache } from "../../../Tuval/Cache";
 import { Func } from "../../../Appconda/Event/Func";
 import { App } from "../../../Tuval/Http";
+import { Config } from "../../../Tuval/Config";
 
 function md5(data: string): string {
     return createHash('md5').update(data).digest('hex');
@@ -34,7 +35,7 @@ const parseLabel = (label: string, responsePayload: any, requestParams: any, use
         const parts = match.split('.');
 
         if (parts.length !== 2) {
-            throw new AppcondaException(AppcondaException.GENERAL_SERVER_ERROR, `The server encountered an error while parsing the label: ${label}. Please create an issue on GitHub to allow us to investigate further https://github.com/appwrite/appwrite/issues/new/choose`);
+            throw new AppcondaException(AppcondaException.GENERAL_SERVER_ERROR, `The server encountered an error while parsing the label: ${label}. Please create an issue on GitHub to allow us to investigate further https://github.com/appconda/appconda/issues/new/choose`);
         }
 
         const [namespace, replace] = parts;
@@ -159,11 +160,11 @@ App.init()
             }
         }
 
-        const roles = process.env.ROLES ? JSON.parse(process.env.ROLES) : [];
+        const roles = Config.getParam('roles', []);
         const scope = route.getLabel('scope', 'none'); // Allowed scope for chosen route
         const scopes = roles[role]['scopes']; // Allowed scopes for user role
 
-        const authKey = request.getHeader('x-appwrite-key', '');
+        const authKey = request.getHeader('x-appconda-key', '');
 
         if (authKey) { // API Key authentication
             // Do not allow API key and session to be set at the same time

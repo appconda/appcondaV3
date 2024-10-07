@@ -195,8 +195,8 @@ export class Firebase extends OAuth2 {
             JSON.stringify({
                 'roleId': 'appwriteMigrations',
                 'role': {
-                    'title': 'Appwrite Migrations',
-                    'description': 'A helper role for Appwrite Migrations',
+                    'title': 'Appconda Migrations',
+                    'description': 'A helper role for Appconda Migrations',
                     'includedPermissions': this.iamPermissions,
                     'stage': 'GA'
                 }
@@ -215,9 +215,9 @@ export class Firebase extends OAuth2 {
                 'Content-Type': 'application/json'
             },
             JSON.stringify({
-                'accountId': 'appwrite-' + uid,
+                'accountId': 'appconda-' + uid,
                 'serviceAccount': {
-                    'displayName': 'Appwrite Migrations ' + uid
+                    'displayName': 'Appconda Migrations ' + uid
                 }
             })
         );
@@ -255,7 +255,7 @@ export class Firebase extends OAuth2 {
         }
 
         for (const account of serviceAccounts['accounts']) {
-            if (account['email'].includes('appwrite-')) {
+            if (account['email'].includes('appconda-')) {
                 await this.request(
                     'DELETE',
                     `https://iam.googleapis.com/v1/projects/${projectId}/serviceAccounts/${account['email']}`,

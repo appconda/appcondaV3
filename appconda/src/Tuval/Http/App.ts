@@ -430,11 +430,9 @@ export class App {
             if (!response.isSent()) {
                 const args = await this.getArguments(route, pathValues, request.getParams());
                 const action = route.getAction();
-                if (action instanceof Promise) {
-                    await action(...args);
-                } else {
-                    action(...args);
-                }
+
+                await action(...args);
+
             }
 
             for (const group of groups) {
@@ -442,11 +440,9 @@ export class App {
                     if (hook.getGroups().includes(group)) {
                         const args = await this.getArguments(hook, pathValues, request.getParams());
                         const action = hook.getAction();
-                        if (action instanceof Promise) {
-                            await action(...args);
-                        } else {
-                            action(...args);
-                        }
+
+                        action(...args);
+
                     }
                 }
             }
@@ -456,11 +452,9 @@ export class App {
                     if (hook.getGroups().includes('*')) {
                         const args = await this.getArguments(hook, pathValues, request.getParams());
                         const action = hook.getAction();
-                        if (action instanceof Promise) {
-                            await action(...args);
-                        } else {
-                            action(...args);
-                        }
+
+                        await action(...args);
+
                     }
                 }
             }
@@ -490,16 +484,16 @@ export class App {
                     try {
                         const args = await this.getArguments(errorHook, pathValues, request.getParams());
                         const action = errorHook.getAction();
-                        if (action instanceof Promise) {
-                            await action(...args);
-                        } else {
-                            action(...args);
-                        }
+
+                        await action(...args);
+
                     } catch (error: any) {
                         throw new Error(`Error handler had an error: ${error.message}`);
                     }
                 }
             }
+
+            throw new Error(e);
         }
 
         return this;

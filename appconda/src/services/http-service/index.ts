@@ -69,7 +69,7 @@ export default class WebServerService extends BaseService {
         Console.success('[Setup] - Server database init started...');
 
         try {
-            Console.success('[Setup] - Creating database: appwrite...');
+            Console.success('[Setup] - Creating database: appconda...');
             await dbForConsole.create();
         } catch (e) {
             console.log(e)
@@ -127,7 +127,9 @@ export default class WebServerService extends BaseService {
             await dbForConsole.createCollection(key, attributes, indexes);
         }
 
-        if (await dbForConsole.getDocument('buckets', 'default').isEmpty() && !await dbForConsole.exists(dbForConsole.getDatabase(), 'bucket_1')) {
+        const bucketCollection = await dbForConsole.getCollection('buckets');
+        const a = await dbForConsole.exists(dbForConsole.getDatabase(), 'bucket_1');
+        if (bucketCollection.isEmpty() && !a) {
             Console.success('[Setup] - Creating default bucket...');
             await dbForConsole.createDocument('buckets', new Document({
                 '$id': ID.custom('default'),
@@ -212,7 +214,7 @@ export default class WebServerService extends BaseService {
         app.use('/v1/service', this.router)
 
 
-        Files.load(path.resolve(__dirname, '../app/console'));
+        Files.load(path.resolve(__dirname, '../../app/console'));
 
 
         const _path = path.resolve('./src/app/controllers/general');

@@ -17,4 +17,15 @@ export class Exception extends Error {
     }
 
     public code: number;
+
+    public  getCode(): number {
+        if (typeof this.code === 'string') {
+            if (!isNaN(Number(this.code))) {
+                this.code = parseInt(this.code, 10);
+            } else {
+                this.code = 0;
+            }
+        }
+        return this.code;
+    }
 }

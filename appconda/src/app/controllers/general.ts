@@ -804,7 +804,7 @@ App.error()
                 message = 'Server Error';
         }
 
-        const output = process.env.NODE_ENV === 'development' ? {
+        const output = process.env._APP_ENV === 'development' ? {
             message,
             code,
             file,

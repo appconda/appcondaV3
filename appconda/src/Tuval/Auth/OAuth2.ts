@@ -59,7 +59,7 @@ export abstract class OAuth2 {
         const options: RequestInit = {
             method,
             headers: {
-                'User-Agent': 'Appwrite OAuth2',
+                'User-Agent': 'Appconda OAuth2',
                 'Content-Length': payload.length.toString(),
                 ...headers
             },

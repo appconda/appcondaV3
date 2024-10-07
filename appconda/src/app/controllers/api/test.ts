@@ -1,3 +1,4 @@
+import path from "path";
 import { Response } from "../../../Appconda/Tuval/Response";
 import { App } from "../../../Tuval/Http";
 
@@ -10,16 +11,17 @@ App
         console.log('Module Test Yuklendi');
     })
 
-    App
-    .post('/v1/test')
+App
+    .get('/v1/test')
     .desc('Get all users')
-    .groups(['api', 'account', 'auth'])
+    //.groups(['api', 'account', 'auth'])
     .label('event', 'users.[userId].create')
     .label('scope', 'sessions.write')
-    .label('auth.type', 'emailPassword')
+    .label('auth.type', 'anonymous')
     .label('audits.event', 'user.create')
     .label('audits.resource', 'user/{response.$id}')
     .label('audits.userId', '{response.$id}')
+    .label('error', path.resolve(__dirname , '../../views/general/error.phtml'))
     .label('sdk.auth', [])
     .label('sdk.namespace', 'account')
     .label('sdk.method', 'create')

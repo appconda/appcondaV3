@@ -77,7 +77,7 @@ export default class WebServerService extends BaseService {
     Console.success('[Setup] - Server database init started...');
 
     try {
-        Console.success('[Setup] - Creating database: appwrite...');
+        Console.success('[Setup] - Creating database: appconda...');
         await dbForConsole.create();
     } catch (e) {
       console.log(e)

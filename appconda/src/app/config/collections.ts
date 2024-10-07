@@ -1218,13 +1218,13 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+               /*  {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_KEY,
@@ -1380,13 +1380,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [Database.LENGTH_KEY],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+               /*  {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_userId'),
                     'type' : Database.INDEX_KEY,
@@ -1523,20 +1523,20 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+                /* {
                     '$id' : ID.custom('_fulltext_name'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['name'],
                     'lengths' : [],
                     'orders' : [],
-                },
-                {
+                }, */
+                /* {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_enabled'),
                     'type' : Database.INDEX_KEY,
@@ -1759,13 +1759,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+                /* {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['name'],
                     'lengths' : [],
                     'orders' : [Database.ORDER_ASC],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_type'),
                     'type' : Database.INDEX_KEY,
@@ -1780,13 +1780,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+               /*  {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                }
+                } */
             ],
         },
     
@@ -1940,13 +1940,13 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+               /*  {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
             ],
         },
     
@@ -2034,7 +2034,7 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+              /*   {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['name'],
@@ -2047,7 +2047,7 @@ const auth = process.env.AUTH || [];
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [Database.ORDER_ASC],
-                }
+                } */
             ],
         },
     
@@ -2195,13 +2195,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [],
                     'orders' : [],
                 },
-                {
+                /* {
                     '$id' : ID.custom('_fulltext_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
             ],
         },
     
@@ -2400,13 +2400,13 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+            /*     {
                     '$id' : ID.custom('_fulltext_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_KEY,
@@ -3049,13 +3049,13 @@ const auth = process.env.AUTH || [];
                 }
             ],
             'indexes' : [
-                {
+               /*  {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_KEY,
@@ -3479,13 +3479,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+                /* {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_size'),
                     'type' : Database.INDEX_KEY,
@@ -3837,13 +3837,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [Database.LENGTH_KEY],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+               /*  {
                     '$id' : ID.custom('_fulltext_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_trigger'),
                     'type' : Database.INDEX_KEY,
@@ -3982,13 +3982,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [Database.LENGTH_KEY],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+               /*  {
                     '$id' : ID.custom('_fulltext_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
             ],
         },
         'migrations' : {
@@ -4118,13 +4118,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [Database.LENGTH_KEY],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+               /*  {
                     '$id' : ID.custom('_fulltext_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                }
+                } */
             ],
         },
     }, commonCollections);
@@ -5803,13 +5803,13 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+                /* {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_bucket'),
                     'type' : Database.INDEX_KEY,
@@ -5953,13 +5953,13 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+                /* {
                     '$id' : ID.custom('_fulltext_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_KEY,
