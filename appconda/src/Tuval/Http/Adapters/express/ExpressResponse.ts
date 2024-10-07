@@ -157,7 +157,8 @@ export class Response extends BaseResponse{
     }
 
     public setContentType(type: string, charset: string = ''): this {
-        this.contentType = type + (charset ? `; charset=${charset}` : '');
+        this.addHeader('Content-Type', type + (charset ? `; charset=${charset}` : ''));
+        //this.contentType = type + (charset ? `; charset=${charset}` : '');
         return this;
     }
 
