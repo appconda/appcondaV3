@@ -263,8 +263,8 @@ App.post('/v1/account')
 
         email = email.toLowerCase();
         if (project.getId() === 'console') {
-            const whitelistEmails : string[]= project.getAttribute('authWhitelistEmails');
-            const whitelistIPs : string[]= project.getAttribute('authWhitelistIPs');
+            const whitelistEmails: string[] = project.getAttribute('authWhitelistEmails');
+            const whitelistIPs: string[] = project.getAttribute('authWhitelistIPs');
 
             if (whitelistEmails.length > 0 && !whitelistEmails.includes(email) &&
                 !whitelistEmails.includes(email.toUpperCase())) {
@@ -339,18 +339,20 @@ App.post('/v1/account')
             user.removeAttribute('$internalId');
             user = await Authorization.skip(async () => await dbForProject.createDocument('users', user));
             try {
-              /*   const target = await Authorization.skip(async () => await dbForProject.createDocument('targets', new Document({
+                const targetDocument = new Document({
                     '$permissions': [
                         Permission.read(Role.user(user.getId())),
                         Permission.update(Role.user(user.getId())),
-                        Permission.delete(Role.user(user.getId())),
+                        Permission.delete(Role.user(user.getId()))
                     ],
                     'userId': user.getId(),
                     'userInternalId': user.getInternalId(),
                     'providerType': MESSAGE_TYPE_EMAIL,
                     'identifier': email,
-                })));
-                user.setAttribute('targets', [...user.getAttribute('targets', []), target]); */
+                });
+                const target = await Authorization.skip(async () => await dbForProject.createDocument('targets', targetDocument));
+
+                user.setAttribute('targets', [...user.getAttribute('targets', []), target]);
             } catch (error) {
                 if (error instanceof Duplicate) {
                     const existingTarget = await dbForProject.findOne('targets', [
@@ -1088,7 +1090,8 @@ App.get('/v1/account/sessions/oauth2/:provider')
         if (appSecret && appSecret.version) {
             const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
             const buffer = Buffer.from(key, 'utf-8');
-            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, buffer, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
+            appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, buffer, 0, Buffer.from(appSecret.iv, 'hex'),
+                Buffer.from(appSecret.tag, 'hex'));
         }
 
         if (!appId || !appSecret) {

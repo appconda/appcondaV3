@@ -82,7 +82,7 @@ export class Document extends Map<string, any> {
     }
 
     public getInternalId(): string {
-        return this.getAttribute('$internalId', '');
+        return this.getAttribute('$internalId', '').toString();
     }
 
     public setInternalId(id: string): void {
