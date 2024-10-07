@@ -60,11 +60,11 @@ export class Container {
         for (const k in this.instances_) {
             if (this.instances_[k] instanceof BaseService) {
                 //console.log(`constructing ${k}`);
-                try {
+                //try {
                     await this.instances_[k].construct();
-                } catch (e) {
+               /*  } catch (e) {
                     console.log(e);
-                }
+                } */
             } else {
                 console.log(`not base`);
             }
@@ -84,11 +84,11 @@ export class Container {
 
         if (init_failures.length) {
             console.error('init failures', init_failures);
-            throw new CompositeError(
+            /* throw new CompositeError(
                 `failed to initialize these services: ` +
                 init_failures.map(({ k }) => k).join(', '),
                 init_failures.map(({ k, e }) => e)
-            );
+            ); */
         }
 
 

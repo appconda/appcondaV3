@@ -45,7 +45,7 @@ export class Redis implements Adapter {
             data: data,
         });
 
-        return this.redis.hset(key, hash, value).then(() => data).catch(() => false);
+        return this.redis.set(key, value).then(() => data).catch(() => false);
     }
 
     list(key: string): Promise<string[]> {

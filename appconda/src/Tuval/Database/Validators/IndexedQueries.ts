@@ -1,6 +1,6 @@
 
 import { Database } from '../Database';
-import { Document } from '../Document';
+import { Document } from '../../Core';
 import { Query } from '../Query';
 import { Queries } from './Queries';
 import { Base } from './Query/Base';

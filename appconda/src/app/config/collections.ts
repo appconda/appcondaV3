@@ -425,13 +425,13 @@ const auth = process.env.AUTH || [];
                     'lengths' : [],
                     'orders' : [Database.ORDER_ASC],
                 },
-                {
+                /* {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : '_key_accessedAt',
                     'type' : Database.INDEX_KEY,
@@ -4403,7 +4403,7 @@ const auth = process.env.AUTH || [];
                     '$id' : ID.custom('search'),
                     'type' : Database.VAR_STRING,
                     'format' : '',
-                    'size' : 16384,
+                    'size' : 255,
                     'signed' : true,
                     'required' : false,
                     'default' : null,
@@ -4412,13 +4412,13 @@ const auth = process.env.AUTH || [];
                 },
             ],
             'indexes' : [
-                {
+               /*  {
                     '$id' : ID.custom('_key_search'),
                     'type' : Database.INDEX_FULLTEXT,
                     'attributes' : ['search'],
                     'lengths' : [],
                     'orders' : [],
-                },
+                }, */
                 {
                     '$id' : ID.custom('_key_name'),
                     'type' : Database.INDEX_KEY,

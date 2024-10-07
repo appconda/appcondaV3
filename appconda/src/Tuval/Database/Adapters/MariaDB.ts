@@ -1,13 +1,13 @@
 import { SQL } from './SQL';
 import { Pool, PoolConnection, RowDataPacket } from 'mysql2/promise';
 import { Database } from '../Database';
-import { Document } from '../Document';
 import { Exception as DatabaseException } from '../Exception';
 import { Duplicate as DuplicateException } from '../Exceptions/Duplicate';
 import { Query } from '../Query';
 import { Authorization } from '../Validators/Authorization';
 import { Truncate as TruncateException } from '../Exceptions/Truncate';
 import { Timeout as TimeoutException } from '../Exceptions/Timeout';
+import { Document } from '../../Core';
 
 function formatDateToMySQL(date: Date): string {
     const pad = (num: number) => (num < 10 ? '0' : '') + num;
@@ -894,9 +894,9 @@ export class MariaDB extends SQL {
 
             sql = this.trigger(Database.EVENT_DOCUMENT_CREATE, sql);
 
-            console.log('connection istendi')
+           
             const connection = await this.pool.getConnection();
-            console.log('connection alindi')
+       
             try {
                
                 await connection.execute(sql, values);
@@ -933,8 +933,7 @@ export class MariaDB extends SQL {
                 await connection.execute(`DELETE FROM ${this.getSQLTable(name + '_perms')} WHERE _document = ?;`, [document.getId()]);
                 throw error;
             } finally {
-                console.log('connection release edildi')
-               console.log(await this.checkPoolStatus())
+               //console.log(await this.checkPoolStatus())
                 connection.release();
                 this.pool.releaseConnection(connection);
             }

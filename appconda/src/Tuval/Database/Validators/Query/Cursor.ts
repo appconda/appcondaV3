@@ -1,5 +1,5 @@
 
-import { Document } from '../../Document';
+import { Document } from '../../../Core';
 import { Base } from './Base';
 import { Query } from '../../Query';
 import { UID } from '../UID';

@@ -1,7 +1,7 @@
 import { Pool, PoolConnection, QueryOptions, RowDataPacket } from 'mysql2/promise';
 import { Adapter } from '../Adapter';
 import { Database } from '../Database';
-import { Document } from '../Document';
+import { Document } from '../../Core';
 import { Exception as DatabaseException } from '../Exception';
 import { Query } from '../Query';
 

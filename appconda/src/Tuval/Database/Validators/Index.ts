@@ -1,7 +1,7 @@
 
 import { Validator } from '../../../Tuval/Core';
 import { Database } from '../Database';
-import { Document } from '../Document';
+import { Document } from '../../Core';
 
 
 export class Index extends Validator {

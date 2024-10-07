@@ -98,7 +98,7 @@ export abstract class BaseService {
     }
 
     async setupRouter() {
-        const router = this.webServer.getRouter();
+       /*  const router = this.webServer.getRouter();
 
         router.post(`/${this.uid}/:methodName`, async (req: e.Request, res: e.Response) => {
 
@@ -125,7 +125,7 @@ export abstract class BaseService {
                 res.status(500);
                 res.send(e.toString())
             }
-        })
+        }) */
     }
 
     async __on(id: string, args: any[]) {

@@ -6,7 +6,6 @@ import md5 from 'md5';
 
 import { Exception as DatabaseException } from './Exception';
 import { Adapter } from './Adapter';
-import { Document } from './Document';
 import { Permission } from './Helpers/Permission';
 import { Role } from './Helpers/Role';
 import { Permissions } from './Validators/Permissions';
@@ -28,6 +27,7 @@ import { Structure } from './Validators/Structure';
 import { Authorization } from './Validators/Authorization';
 import { DateTime } from './DateTime';
 import { Cache } from '../../Tuval/Cache';
+import { Document } from '../Core';
 
 
 export class Database {
@@ -758,6 +758,7 @@ export class Database {
         }
 
         const collection = await this.silent(async () => await this.getDocument(Database.METADATA, id));
+
 
         if (
             id !== Database.METADATA &&
@@ -3134,7 +3135,7 @@ export class Database {
 
             //document.setAttribute('$collection', old.getAttribute('$collection'));   // Make sure user doesn't switch collection ID
             if (this.adapter.getSharedTables()) {
-                document.setAttribute('$tenant' , old.getAttribute('$tenant'));           // Make sure user doesn't switch tenant
+                document.setAttribute('$tenant', old.getAttribute('$tenant'));           // Make sure user doesn't switch tenant
             }
             document.setAttribute('$createdAt', old.getCreatedAt());                 // Make sure user doesn't switch createdAt
             document = new Document(document.getArrayCopy());

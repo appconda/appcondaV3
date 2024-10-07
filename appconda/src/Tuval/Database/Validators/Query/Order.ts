@@ -1,4 +1,4 @@
-import { Document } from '../../Document';
+import { Document } from '../../../Core';
 import { Query } from '../../Query';
 import { Base } from './Base';
 

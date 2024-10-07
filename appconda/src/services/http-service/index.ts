@@ -82,7 +82,9 @@ export default class WebServerService extends BaseService {
             await audit.setup();
         }
 
-        if (await dbForConsole.getCollection(TimeLimit.COLLECTION).isEmpty()) {
+        const timelimitCollection = await dbForConsole.getCollection(TimeLimit.COLLECTION);
+
+        if (timelimitCollection.isEmpty()) {
             const adapter = new TimeLimit("", 0, 1, dbForConsole);
             await adapter.setup();
         }
@@ -94,7 +96,9 @@ export default class WebServerService extends BaseService {
             if ((collection['$collection'] ?? '') !== Database.METADATA) {
                 continue;
             }
-            if (!await dbForConsole.getCollection(key).isEmpty()) {
+
+            const collectionDB = await dbForConsole.getCollection(key);
+            if (!collectionDB.isEmpty()) {
                 continue;
             }
 

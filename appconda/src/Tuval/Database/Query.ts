@@ -1,5 +1,5 @@
-import { Document } from './Document';
-import { Query as QueryException } from './Exceptions/Query';
+import { Document } from '../Core';
+import { QueryException } from './Exceptions/Query';
 
 
 
@@ -263,7 +263,7 @@ export class Query {
      * @returns { method: string, attribute?: string, values: any[] }
      */
     toArray(): { method: string; attribute?: string; values: any[] } {
-        const array: { method: string; attribute?: string; values: any[] } = { 
+        const array: { method: string; attribute?: string; values: any[] } = {
             method: this.method,
             values: [] // Initialize values property
         };
