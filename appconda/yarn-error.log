@@ -1,8 +1,8 @@
 Arguments: 
-  /usr/local/bin/node /usr/local/bin/yarn add @tuval/audit
+  /usr/local/bin/node /usr/local/bin/yarn add @typescript@latest
 
 PATH: 
-  /opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Applications/iTerm.app/Contents/Resources/utilities
+  /opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin
 
 Yarn version: 
   1.22.19
@@ -14,8 +14,8 @@ Platform:
   darwin arm64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/@tuval%2faudit: Not found
-      at params.callback [as _callback] (/usr/local/lib/node_modules/yarn/lib/cli.js:66145:18)
+  Error: https://registry.yarnpkg.com/@typescript: Request "https://registry.yarnpkg.com/@typescript" returned a 405
+      at params.callback [as _callback] (/usr/local/lib/node_modules/yarn/lib/cli.js:66154:18)
       at self.callback (/usr/local/lib/node_modules/yarn/lib/cli.js:140890:22)
       at Request.emit (node:events:515:28)
       at Request.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:141862:10)
@@ -47,27 +47,23 @@ npm manifest:
     "license": "ISC",
     "dependencies": {
       "@langchain/openai": "^0.0.28",
-      "@tuval/auth": "1.0.8",
-      "@tuval/config": "^1.0.7",
-      "@tuval/core": "2.0.10",
-      "@tuval/database": "1.0.9",
-      "@tuval/http": "1.0.12",
-      "@tuval/locale": "^1.0.5",
-      "@tuval/queue": "^1.0.6",
-      "@tuval/storage": "1.0.5",
       "angel-eval": "^1.0.7",
+      "argon2": "^0.41.1",
       "async_hooks": "^1.0.0",
       "aws-sdk": "^2.1691.0",
       "axios": "^1.6.8",
       "azure-devops-node-api": "^13.0.0",
+      "bcrypt": "^5.1.1",
       "bpmn-moddle": "^9.0.1",
       "brotli-wasm": "^3.0.1",
+      "chalk": "^5.3.0",
       "cheerio": "^1.0.0-rc.12",
       "composite-error": "^1.0.2",
       "cookie-parser": "^1.4.6",
       "cors": "^2.8.5",
       "cron": "^3.1.7",
       "cron-parser": "^4.9.0",
+      "crypto-js": "^4.2.0",
       "device-detector-js": "^3.0.3",
       "diskusage": "^1.2.0",
       "dotenv": "^16.4.5",
@@ -76,9 +72,11 @@ npm manifest:
       "handlebars": "^4.7.8",
       "handlebars-async-helpers": "^1.0.6",
       "helmet": "^7.1.0",
+      "html-entities": "^2.5.2",
       "humanize-duration": "^3.32.0",
       "i": "^0.3.7",
       "install": "^0.13.0",
+      "ioredis": "^5.4.1",
       "is-number": "^7.0.0",
       "jsdom": "^24.0.0",
       "jsonwebtoken": "^9.0.2",
@@ -92,19 +90,23 @@ npm manifest:
       "mysql2": "^3.11.3",
       "nan": "^2.20.0",
       "nanoid": "^5.0.7",
+      "node-console-colors": "^1.1.5",
       "node-cron": "^3.0.3",
-      "nodemailer": "^6.9.13",
+      "nodemailer": "^6.9.15",
       "nodemon": "^3.1.0",
       "npm": "^10.7.0",
       "numeric": "^1.2.6",
       "object-path": "^0.11.8",
       "on-finished": "^2.4.1",
+      "otplib": "^12.0.1",
       "pm2": "^5.3.1",
       "redis": "^4.7.0",
       "reflect-metadata": "^0.2.2",
       "rimraf": "^3.0.2",
+      "scrypt-js": "^3.0.1",
       "snappy": "^7.2.2",
       "soap": "^1.0.0",
+      "striptags": "^3.2.0",
       "ts-node": "^10.9.2",
       "ts-node-dev": "^1.1.8",
       "tsconfig-paths": "^4.2.0",
@@ -112,6 +114,7 @@ npm manifest:
       "typescript": "^4.9.5",
       "ua-parser-js": "^1.0.39",
       "undici": "^6.13.0",
+      "validator": "^13.12.0",
       "winston": "^3.14.2",
       "winston-daily-rotate-file": "^5.0.0",
       "xml2js": "^0.6.2",
@@ -796,226 +799,6 @@ Lockfile:
       "@tufjs/canonical-json" "2.0.0"
       minimatch "^9.0.3"
   
-  "@tuval/auth@1.0.8":
-    version "1.0.8"
-    resolved "https://registry.yarnpkg.com/@tuval/auth/-/auth-1.0.8.tgz#cb8551719a52ca075f5f96256120d91b71ae4237"
-    integrity sha512-CAQD47SuH1y7+uESF+kuh795qkHG5H+pNUScLnLW5+1X9C5UAsHUyFF4JuRp+w4kWEJbxaKazl7CF06CL97U2g==
-    dependencies:
-      "@tuval/core" "^2.0.7"
-      argon2 "^0.41.1"
-      bcrypt "^5.1.1"
-      crypto-js "^4.2.0"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      otplib "^12.0.1"
-      pako "^2.1.0"
-      scrypt-js "^3.0.1"
-      uuid "^10.0.0"
-      validator "^13.12.0"
-  
-  "@tuval/cache@^1.0.2":
-    version "1.0.3"
-    resolved "https://registry.yarnpkg.com/@tuval/cache/-/cache-1.0.3.tgz#a32da5a3c8fc9a676daccfecacaa571d39fb3894"
-    integrity sha512-mss7Df5aTlN/12Da0K2XvoJYBTAKRM/yJaGq65pZ5BXVIXtiE7a1oUfvIYhY0dQt6zlVNNVVoguorfDnirD0NQ==
-    dependencies:
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/config@^1.0.7":
-    version "1.0.7"
-    resolved "https://registry.yarnpkg.com/@tuval/config/-/config-1.0.7.tgz#161382b7f1e1cdd9d56953142c4b83101fe86566"
-    integrity sha512-jYTHrBmoQxSSN2o+LKg9MWyoeD5G090XmDKUX5pNwtKcpTP35nBtpJl803AKVa5w2U5f7ufcjI0A7M1LadRSDg==
-    dependencies:
-      "@tuval/core" "2.0.6"
-      argon2 "^0.41.1"
-      bcrypt "^5.1.1"
-      crypto-js "^4.2.0"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      otplib "^12.0.1"
-      pako "^2.1.0"
-      scrypt-js "^3.0.1"
-      uuid "^10.0.0"
-      validator "^13.12.0"
-  
-  "@tuval/core@2.0.10":
-    version "2.0.10"
-    resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.10.tgz#2c1d8d3323340802232f5aa22892f6ccf941910c"
-    integrity sha512-RpmEpaFWJhL/cCNSRrcdP6sPIbjhL6Z1fezOWnVjMmN196BElWvPtFo/ZnqA0f2gG294JJXWdPG8Y/ZlsxFNmg==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/core@2.0.6":
-    version "2.0.6"
-    resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.6.tgz#5a3bb7a4a8d2b78e178e898d5172a47bd8bcb59f"
-    integrity sha512-ZSr4Tr4n33RYvcJSq5Qp1OcugzDr/9V/PLEoxnSygCbMUsqsOF2bt16zwR2kHXAqLu+KufIgjuk4UubVJJXHvA==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/core@^2.0.1", "@tuval/core@^2.0.5":
-    version "2.0.5"
-    resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.5.tgz#c3a706a3f06c2b559539e454c9c2cb4ac9902dec"
-    integrity sha512-rQahP+TL7PKRcXyu6TQT0s171lJrrcwjYdu+e7WpHX5kgEdv9vnF7UIow1UsTBP2BemlG3i+UrOydJGKbKBp0w==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/core@^2.0.7":
-    version "2.0.7"
-    resolved "https://registry.yarnpkg.com/@tuval/core/-/core-2.0.7.tgz#8972aaaf173ebdc454a421aa2b166b18449096c4"
-    integrity sha512-ddv+5qX4RtA0LQmzOTYh84OBYebrdhiWXEvOnzgxbhScpM9SSL3RExgHacayEN6BDRbm5gCoTTuJEjoV9b3X0w==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/database@1.0.9":
-    version "1.0.9"
-    resolved "https://registry.yarnpkg.com/@tuval/database/-/database-1.0.9.tgz#8fbaf77247d8ce1f1275add67ea0d9b98d0a4cfd"
-    integrity sha512-0/xNy/OHSrkk5mR10mPkTyQHqcCIESPTRaJ9xKscGPNk/JmNs/GYs137eLu+dRQZS7ouQ+cQpmhoaURH00X1Dg==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      "@tuval/http" "1.0.7"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/http@1.0.12":
-    version "1.0.12"
-    resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.12.tgz#9d6fbab7677dcfd1bd4cd200426d5bb84600897e"
-    integrity sha512-wdAxYeFIaxCk9axKGnVlbazK8mHeEkcndY9hnoVbcfCxioL4udyMkUAzazmLEkW4++YWKEKgHGidHRVzXyJwZw==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      "@tuval/core" "^2.0.1"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/http@1.0.7":
-    version "1.0.7"
-    resolved "https://registry.yarnpkg.com/@tuval/http/-/http-1.0.7.tgz#2d5743b41489d1f1e508c655655830ebb05589b9"
-    integrity sha512-tmjlXUtQJBjMRmt/FhebcXWRgcyC4Gp650ib0LtMcwwQJ8HjoXfBavyBOYPyoYJ68mEVtg9jys3w2IhIMpGlRg==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
-  "@tuval/locale@^1.0.5":
-    version "1.0.5"
-    resolved "https://registry.yarnpkg.com/@tuval/locale/-/locale-1.0.5.tgz#3f60b5681e3c30d11e1d9cc5f50739b469ef931c"
-    integrity sha512-jKmuE430tIblTxqwNhNe9pstCWGKrYEbWv0HTFe2uxQMREXOOqk78o7dod03HEb6LzYOesLUpo4tm7QHXXcmNA==
-    dependencies:
-      "@tuval/core" "^2.0.5"
-      argon2 "^0.41.1"
-      bcrypt "^5.1.1"
-      crypto-js "^4.2.0"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      otplib "^12.0.1"
-      pako "^2.1.0"
-      scrypt-js "^3.0.1"
-      uuid "^10.0.0"
-      validator "^13.12.0"
-  
-  "@tuval/queue@^1.0.6":
-    version "1.0.6"
-    resolved "https://registry.yarnpkg.com/@tuval/queue/-/queue-1.0.6.tgz#0085afbfabb5fe87bfd6a084ccc999f403a9f050"
-    integrity sha512-YlFYKR717FnuSXrVPupl6Gje/DKlvcla8QSjbYL39FpenCYqCo2dyJnLJvt+oQDq/giqiJiAzh7zYFfVq6dQ+Q==
-    dependencies:
-      "@tuval/core" "2.0.6"
-      argon2 "^0.41.1"
-      bcrypt "^5.1.1"
-      crypto-js "^4.2.0"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      otplib "^12.0.1"
-      pako "^2.1.0"
-      scrypt-js "^3.0.1"
-      uuid "^10.0.0"
-      validator "^13.12.0"
-  
-  "@tuval/storage@1.0.5":
-    version "1.0.5"
-    resolved "https://registry.yarnpkg.com/@tuval/storage/-/storage-1.0.5.tgz#9727c4af058052b9fad09a426a272e5518290c4d"
-    integrity sha512-zagBGC9UxRF+CQ1uQ2GbCP/nCXpB5BlRVCKUrU04HPOB1gzlzdpb1dup7OxGwX49W3tIKfS9VSgIG8xA3dkxdg==
-    dependencies:
-      "@tuval/cache" "^1.0.2"
-      diskusage "^1.2.0"
-      googleapis "^144.0.0"
-      ioredis "^5.4.1"
-      md5 "^2.3.0"
-      moment "^2.30.1"
-      mysql2 "^3.11.3"
-      pako "^2.1.0"
-      validator "^13.12.0"
-  
   "@types/body-parser@*":
     version "1.19.2"
     resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.19.2.tgz"
@@ -1669,7 +1452,7 @@ Lockfile:
   
   chalk@^5.3.0:
     version "5.3.0"
-    resolved "https://registry.npmjs.org/chalk/-/chalk-5.3.0.tgz"
+    resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.3.0.tgz#67c20a7ebef70e7f3970a01f90fa210cb6860385"
     integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
   
   charenc@0.0.2:
@@ -1896,7 +1679,7 @@ Lockfile:
   
   cookie-parser@^1.4.6:
     version "1.4.6"
-    resolved "https://registry.npmjs.org/cookie-parser/-/cookie-parser-1.4.6.tgz"
+    resolved "https://registry.yarnpkg.com/cookie-parser/-/cookie-parser-1.4.6.tgz#3ac3a7d35a7a03bbc7e365073a26074824214594"
     integrity sha512-z3IzaNjdwUC2olLIB5/ITd0/setiaFMLYiZJle7xg5Fe9KWAceil7xszYfHHBtDFYLSgJduS2Ty0P1uJdPDJeA==
     dependencies:
       cookie "0.4.1"
@@ -2203,7 +1986,7 @@ Lockfile:
   
   dotenv@^16.4.5:
     version "16.4.5"
-    resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.4.5.tgz"
+    resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.5.tgz#cdd3b3b604cb327e286b4762e13502f717cb099f"
     integrity sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==
   
   dynamic-dedupe@^0.3.0:
@@ -2751,14 +2534,6 @@ Lockfile:
       google-auth-library "^9.0.0"
       googleapis-common "^7.0.0"
   
-  googleapis@^144.0.0:
-    version "144.0.0"
-    resolved "https://registry.yarnpkg.com/googleapis/-/googleapis-144.0.0.tgz#969aff29be76e308ea75ee52f10991af4c8ddc63"
-    integrity sha512-ELcWOXtJxjPX4vsKMh+7V+jZvgPwYMlEhQFiu2sa9Qmt5veX8nwXPksOWGGN6Zk4xCiLygUyaz7xGtcMO+Onxw==
-    dependencies:
-      google-auth-library "^9.0.0"
-      googleapis-common "^7.0.0"
-  
   gopd@^1.0.1:
     version "1.0.1"
     resolved "https://registry.yarnpkg.com/gopd/-/gopd-1.0.1.tgz#29ff76de69dac7489b7c0918a5788e56477c332c"
@@ -2865,6 +2640,11 @@ Lockfile:
     integrity sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==
     dependencies:
       whatwg-encoding "^3.1.1"
+  
+  html-entities@^2.5.2:
+    version "2.5.2"
+    resolved "https://registry.yarnpkg.com/html-entities/-/html-entities-2.5.2.tgz#201a3cf95d3a15be7099521620d19dfb4f65359f"
+    integrity sha512-K//PSRMQk4FZ78Kyau+mZurHn3FH0Vwr+H36eE0rPbeYkRRi9YxceYPhuN60UwWorxyKHhqoAJl2OFKa4BVtaA==
   
   htmlparser2@^8.0.1:
     version "8.0.2"
@@ -4096,6 +3876,11 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.1.0.tgz#55a573685dd4bd053f189cffa4e6332d2b1f1645"
     integrity sha512-yBY+qqWSv3dWKGODD6OGE6GnTX7Q2r+4+DfpqxHSHh8x0B4EKP9+wVGLS6U/AM1vxSNNmUEuIV5EGhYwPpfOwQ==
   
+  node-console-colors@^1.1.5:
+    version "1.1.5"
+    resolved "https://registry.yarnpkg.com/node-console-colors/-/node-console-colors-1.1.5.tgz#6f7716f5ea16db71c6434fe25c3e12764de78b4d"
+    integrity sha512-PvndhaJGOV2vkwu8ugfOgiRkXEyu5AgTlldD3f68w9QYC44yXARQQR4STvXC6CF+ZfyeKbNoLddjR3dx8qdBEQ==
+  
   node-cron@^3.0.3:
     version "3.0.3"
     resolved "https://registry.npmjs.org/node-cron/-/node-cron-3.0.3.tgz"
@@ -4136,10 +3921,10 @@ Lockfile:
       tar "^6.1.2"
       which "^4.0.0"
   
-  nodemailer@^6.9.13:
-    version "6.9.13"
-    resolved "https://registry.npmjs.org/nodemailer/-/nodemailer-6.9.13.tgz"
-    integrity sha512-7o38Yogx6krdoBf3jCAqnIN4oSQFx+fMa0I7dK1D+me9kBxx12D+/33wSb+fhOCtIxvYJ+4x4IMEhmhCKfAiOA==
+  nodemailer@^6.9.15:
+    version "6.9.15"
+    resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-6.9.15.tgz#57b79dc522be27e0e47ac16cc860aa0673e62e04"
+    integrity sha512-AHf04ySLC6CIfuRtRiEYtGEXgRfa6INgWGluDhnxTZhHSKvrBu7lc1VVchQ0d8nPc4cFaZoPq8vkyNoZr0TpGQ==
   
   nodemon@^3.1.0:
     version "3.1.0"
@@ -4540,11 +4325,6 @@ Lockfile:
     version "0.2.9"
     resolved "https://registry.npmjs.org/pako/-/pako-0.2.9.tgz"
     integrity sha512-NUcwaKxUxWrZLpDG+z/xZaCgQITkA/Dv4V/T6bw7VON6l1Xz/VnrBqrYjZQ12TamKHzITTfOEIYUj48y2KXImA==
-  
-  pako@^2.1.0:
-    version "2.1.0"
-    resolved "https://registry.yarnpkg.com/pako/-/pako-2.1.0.tgz#266cc37f98c7d883545d11335c00fbd4062c9a86"
-    integrity sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==
   
   parse-conflict-json@^3.0.0, parse-conflict-json@^3.0.1:
     version "3.0.1"
@@ -5417,7 +5197,16 @@ Lockfile:
     resolved "https://registry.npmjs.org/streamsearch/-/streamsearch-1.1.0.tgz"
     integrity sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==
   
-  "string-width-cjs@npm:string-width@^4.2.0", "string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.3:
+  "string-width-cjs@npm:string-width@^4.2.0":
+    version "4.2.3"
+    resolved "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz"
+    integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
+    dependencies:
+      emoji-regex "^8.0.0"
+      is-fullwidth-code-point "^3.0.0"
+      strip-ansi "^6.0.1"
+  
+  "string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.3:
     version "4.2.3"
     resolved "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz"
     integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -5461,7 +5250,14 @@ Lockfile:
     dependencies:
       safe-buffer "~5.1.0"
   
-  "strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  "strip-ansi-cjs@npm:strip-ansi@^6.0.1":
+    version "6.0.1"
+    resolved "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz"
+    integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
+    dependencies:
+      ansi-regex "^5.0.1"
+  
+  strip-ansi@^6.0.0, strip-ansi@^6.0.1:
     version "6.0.1"
     resolved "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz"
     integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -5484,6 +5280,11 @@ Lockfile:
     version "2.0.1"
     resolved "https://registry.npmjs.org/strip-json-comments/-/strip-json-comments-2.0.1.tgz"
     integrity sha1-PFMZQukIwml8DsNEhYwobHygpgo=
+  
+  striptags@^3.2.0:
+    version "3.2.0"
+    resolved "https://registry.yarnpkg.com/striptags/-/striptags-3.2.0.tgz#cc74a137db2de8b0b9a370006334161f7dd67052"
+    integrity sha512-g45ZOGzHDMe2bdYMdIvdAfCQkCTDMGBazSw1ypMowwGIee7ZQ5dU0rBJ8Jqgl+jAKIv4dbeE1jscZq9wid1Tkw==
   
   supports-color@^5.5.0:
     version "5.5.0"
@@ -5863,11 +5664,6 @@ Lockfile:
     version "8.3.2"
     resolved "https://registry.npmjs.org/uuid/-/uuid-8.3.2.tgz"
     integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
-  
-  uuid@^10.0.0:
-    version "10.0.0"
-    resolved "https://registry.yarnpkg.com/uuid/-/uuid-10.0.0.tgz#5a95aa454e6e002725c79055fd42aaba30ca6294"
-    integrity sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==
   
   uuid@^3.2.1:
     version "3.4.0"

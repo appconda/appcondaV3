@@ -80,7 +80,7 @@ function loadComponents(directory) {
   });
 }
 
-const services = require('./core/config/services');
+const services = require('./services/config/services');
 
 for (const [key, value] of Object.entries(services)) {
   const service = value as any;

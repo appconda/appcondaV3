@@ -2,27 +2,25 @@
   "ts-node": {
     // It is faster to skip typechecking.
     // Remove if you want ts-node to do typechecking.
-   // "transpileOnly": true,
+    // "transpileOnly": true,
     "compilerOptions": {
       "module": "commonjs"
     }
-   
   },
-    "compilerOptions": {
-      "target": "ESNext",
-      "module": "CommonJS",
-      "outDir": "dist",
-      "strict": false,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "noImplicitAny": false,
-
-      "experimentalDecorators": true
-    },
-    "exclude": [
-      "types"
-    ],
-    "include": [
-      "src/**/*.ts"
-, "src/Services/ConfigService.ts", "src/Services/ConfigService.ts", "src/_services/_TestService.js", src/Services/mining-service/mining/utils/generic/intervaltree.jss", src/Services/mining-service/mining/utils/generic/intervaltree.jss", src/Services/mining-service/mining/utils/generic/numeric.jss", src/Services/mining-service/mining/utils/generic/humanize-duration.jss", "test/mining/csv_importing.ts", "src/modules/sdk/id.js"    ]
-  }
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "experimentalDecorators": true
+  },
+  "exclude": [
+    "types"
+  ],
+  "include": [
+    "src/**/*.ts"
+  ]
+}
