@@ -339,7 +339,7 @@ App.post('/v1/account')
             user.removeAttribute('$internalId');
             user = await Authorization.skip(async () => await dbForProject.createDocument('users', user));
             try {
-                const target = await Authorization.skip(async () => await dbForProject.createDocument('targets', new Document({
+              /*   const target = await Authorization.skip(async () => await dbForProject.createDocument('targets', new Document({
                     '$permissions': [
                         Permission.read(Role.user(user.getId())),
                         Permission.update(Role.user(user.getId())),
@@ -350,7 +350,7 @@ App.post('/v1/account')
                     'providerType': MESSAGE_TYPE_EMAIL,
                     'identifier': email,
                 })));
-                user.setAttribute('targets', [...user.getAttribute('targets', []), target]);
+                user.setAttribute('targets', [...user.getAttribute('targets', []), target]); */
             } catch (error) {
                 if (error instanceof Duplicate) {
                     const existingTarget = await dbForProject.findOne('targets', [

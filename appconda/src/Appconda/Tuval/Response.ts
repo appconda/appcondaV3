@@ -509,7 +509,7 @@ export class Response extends TuvalResponse {
      * @param model Model type
      */
     public dynamic(document: Document, model: string): void {
-        const output = this.output({ ...document }, model);
+        const output = document.getArrayCopy();// this.output({ ...(document.getArrayCopy()) }, model);
         const filteredOutput = this.applyFilters(output, model);
 
         switch (this.getContentType()) {

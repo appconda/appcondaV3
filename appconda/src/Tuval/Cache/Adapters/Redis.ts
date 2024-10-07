@@ -54,7 +54,7 @@ export class Redis implements Adapter {
 
     purge(key: string, hash: string = ''): Promise<boolean> {
         if (hash) {
-            return this.redis.hdel(key, hash).then((result) => !!result);
+            return this.redis.del(key).then((result) => !!result);
         }
 
         return this.redis.del(key).then((result) => !!result);
