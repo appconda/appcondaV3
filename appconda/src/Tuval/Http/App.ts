@@ -459,7 +459,8 @@ export class App {
                 }
             }
         } catch (e) {
-            App.setResource('error', async () => e);
+          
+             App.setResource('error', async () => e);
 
             for (const group of groups) {
                 for (const errorHook of App.errors) { // Group error hooks
@@ -493,7 +494,7 @@ export class App {
                 }
             }
 
-            throw new Error(e);
+            throw new Error(e); 
         }
 
         return this;

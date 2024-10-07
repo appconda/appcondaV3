@@ -549,6 +549,7 @@ export abstract class SQL extends Adapter {
 
         if (query.isNested()) {
             for (const value of query.getValues()) {
+                values.push(value);
                 // await this.bindConditionValue(stmt, value);
             }
             return;
@@ -556,6 +557,7 @@ export abstract class SQL extends Adapter {
 
         if (await this.getSupportForJSONOverlaps() && query.onArray() && query.getMethod() === Query.TYPE_CONTAINS) {
             const placeholder = this.getSQLPlaceholder(query) + '_0';
+            values.push(JSON.stringify(query.getValues()));
             // stmt.bindValue(placeholder, JSON.stringify(query.getValues()), 'string');
             return;
         }
@@ -574,7 +576,9 @@ export abstract class SQL extends Adapter {
                     default:
                         return value;
                 }
+
             })();
+            values.push(processedValue);
 
             const placeholder = this.getSQLPlaceholder(query) + '_' + key;
             // stmt.bindValue(placeholder, processedValue, this.getPDOType(processedValue));

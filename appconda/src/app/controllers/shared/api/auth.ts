@@ -55,43 +55,43 @@ App.init()
         const auths = project.getAttribute('auths', {});
         switch (route.getLabel('auth.type', '')) {
             case 'emailPassword':
-                if (!auths.emailPassword) {
+                if ((auths.emailPassword ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'Email / Password authentication is disabled for this project');
                 }
                 break;
 
             case 'magic-url':
-                if (!auths.usersAuthMagicURL) {
+                if ((auths.usersAuthMagicURL ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'Magic URL authentication is disabled for this project');
                 }
                 break;
 
             case 'anonymous':
-                if (!auths.anonymous) {
+                if ((auths.anonymous ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'Anonymous authentication is disabled for this project');
                 }
                 break;
 
             case 'phone':
-                if (!auths.phone) {
+                if ((auths.phone ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'Phone authentication is disabled for this project');
                 }
                 break;
 
             case 'invites':
-                if (!auths.invites) {
+                if ((auths.invites ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'Invites authentication is disabled for this project');
                 }
                 break;
 
             case 'jwt':
-                if (!auths.JWT) {
+                if ((auths.JWT ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'JWT authentication is disabled for this project');
                 }
                 break;
 
             case 'email-otp':
-                if (!auths.emailOTP) {
+                if ((auths.emailOTP ?? true) === false) {
                     throw new AppcondaException(AppcondaException.USER_AUTH_METHOD_UNSUPPORTED, 'Email OTP authentication is disabled for this project');
                 }
                 break;

@@ -319,7 +319,7 @@ export class Database {
 
                 if ('$id' in value) {
                     return new Document(value);
-                } else {
+                } else if (Array.isArray(value)){
                     value = value.map((item: any) => {
                         if (typeof item === 'object' && '$id' in item) {
                             return new Document(item);
@@ -340,7 +340,11 @@ export class Database {
                 }
                 try {
                     const date = new Date(value);
-                    return date.toISOString();
+                    const pad = (num: number) => (num < 10 ? '0' : '') + num;
+
+                    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+                           `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+                    
                 } catch (error) {
                     return value;
                 }
@@ -380,7 +384,7 @@ export class Database {
         }
 
         try {
-            return callback();
+            return await callback();
         } finally {
             this.silentListeners = previous;
         }
@@ -566,8 +570,8 @@ export class Database {
         return this.adapter.rollbackTransaction();
     }
 
-    public withTransaction<T>(callback: () => T): T {
-        return this.adapter.withTransaction(callback);
+    public async withTransaction<T>(callback: () => T): Promise<T> {
+        return await this.adapter.withTransaction(callback);
     }
 
     public ping(): Promise<boolean> {
@@ -3484,7 +3488,7 @@ export class Database {
                                 }
                                 if (
                                     oldValue?.getId() !== value
-                                    && this.skipRelationships(() => this.findOne(relatedCollection.getId(), [
+                                    && await this.skipRelationships(async () => await this.findOne(relatedCollection.getId(), [
                                         Query.select(['$id']),
                                         Query.equal(twoWayKey, [value]),
                                     ]))
@@ -3492,7 +3496,7 @@ export class Database {
                                     throw new DuplicateException('Document already has a related document');
                                 }
 
-                                this.skipRelationships(() => this.updateDocument(
+                                await this.skipRelationships(async () => await this.updateDocument(
                                     relatedCollection.getId(),
                                     related.getId(),
                                     related.setAttribute(twoWayKey, document.getId())
@@ -3504,7 +3508,7 @@ export class Database {
 
                                     if (
                                         oldValue?.getId() !== value.getId()
-                                        && this.skipRelationships(() => this.findOne(relatedCollection.getId(), [
+                                        && await this.skipRelationships(async () => await this.findOne(relatedCollection.getId(), [
                                             Query.select(['$id']),
                                             Query.equal(twoWayKey, [value.getId()]),
                                         ]))
@@ -4103,7 +4107,7 @@ export class Database {
      * @throws RestrictedException
      * @throws StructureException
      */
-    private deleteRestrict(
+    private async deleteRestrict(
         relatedCollection: Document,
         document: Document,
         value: any,
@@ -4111,7 +4115,7 @@ export class Database {
         twoWay: boolean,
         twoWayKey: string,
         side: string
-    ): void {
+    ): Promise<void> {
         if (value instanceof Document && value.isEmpty()) {
             value = null;
         }
@@ -4129,8 +4133,8 @@ export class Database {
             && side === Database.RELATION_SIDE_CHILD
             && !twoWay
         ) {
-            Authorization.skip(() => {
-                const related = this.findOne(relatedCollection.getId(), [
+            Authorization.skip(async () => {
+                const related = await this.findOne(relatedCollection.getId(), [
                     Query.select(['$id']),
                     Query.equal(twoWayKey, [document.getId()])
                 ]);
@@ -4139,7 +4143,7 @@ export class Database {
                     return;
                 }
 
-                this.skipRelationships(() => this.updateDocument(
+                await this.skipRelationships(async () => await this.updateDocument(
                     relatedCollection.getId(),
                     related.getId(),
                     new Document({
@@ -4153,7 +4157,7 @@ export class Database {
             relationType === Database.RELATION_MANY_TO_ONE
             && side === Database.RELATION_SIDE_CHILD
         ) {
-            const related = Authorization.skip(() => this.findOne(relatedCollection.getId(), [
+            const related = await Authorization.skip(async () => await this.findOne(relatedCollection.getId(), [
                 Query.select(['$id']),
                 Query.equal(twoWayKey, [document.getId()])
             ]));
@@ -4198,9 +4202,9 @@ export class Database {
                     break;
                 }
 
-                Authorization.skip(() => {
+                await Authorization.skip(async () => {
                     if (!twoWay && side === Database.RELATION_SIDE_CHILD) {
-                        const related = this.findOne(relatedCollection.getId(), [
+                        const related = await this.findOne(relatedCollection.getId(), [
                             Query.select(['$id']),
                             Query.equal(twoWayKey, [document.getId()])
                         ]);
@@ -4218,7 +4222,7 @@ export class Database {
                         if (!value) {
                             return;
                         }
-                        const related = this.getDocument(relatedCollection.getId(), value.getId(), [Query.select(['$id'])]);
+                        const related = await this.getDocument(relatedCollection.getId(), value.getId(), [Query.select(['$id'])]);
                         if (!(related instanceof Document)) {
                             return;
                         }
@@ -4379,7 +4383,7 @@ export class Database {
             case Database.RELATION_MANY_TO_MANY:
                 const junction = this.getJunctionCollection(collection, relatedCollection, side);
 
-                const junctions = await this.skipRelationships(() => this.find(junction, [
+                const junctions = await this.skipRelationships(async () => await this.find(junction, [
                     Query.select(['$id', key]),
                     Query.equal(twoWayKey, [document.getId()]),
                     Query.limit(Number.MAX_SAFE_INTEGER)
@@ -4597,8 +4601,8 @@ export class Database {
      * @return Document | false
      * @throws DatabaseException
      */
-    public findOne(collection: string, queries: Query[] = []): Document | false {
-        const results = this.silent(() => this.find(collection, [
+    public async findOne(collection: string, queries: Query[] = []): Promise<Document | false> {
+        const results = await this.silent(async () => await this.find(collection, [
             Query.limit(1),
             ...queries
         ]));

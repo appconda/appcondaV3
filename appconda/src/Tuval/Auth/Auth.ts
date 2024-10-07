@@ -21,7 +21,8 @@ export class Auth {
     ];
 
     public static readonly DEFAULT_ALGO = 'argon2';
-    public static readonly DEFAULT_ALGO_OPTIONS = { type: 'argon2', memoryCost: 2048, timeCost: 4, threads: 3 };
+    public static readonly DEFAULT_ALGO_OPTIONS = { 
+        type: argon2.argon2id, memoryCost: 2048, timeCost: 4, threads: 3 };
 
     /**
      * User Roles.
@@ -211,7 +212,8 @@ export class Auth {
 
         switch (algo) {
             case 'argon2':
-                return await argon2.hash(input, options);
+                const hash = await argon2.hash(input, options);
+                return hash;
             case 'bcrypt':
                 const saltRounds = options.saltRounds || 10;
                 return await bcrypt.hash(input, saltRounds);

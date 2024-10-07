@@ -521,9 +521,15 @@ Database.addFilter(
 Database.addFilter(
     'encrypt',
     (value: any) => {
+        
         const key: string = process.env._APP_OPENSSL_KEY_V1 as any;
-        const iv = OpenSSL.randomPseudoBytes(OpenSSL.cipherIVLength(OpenSSL.CIPHER_AES_128_GCM));
-
+        let iv ;
+        try {
+         iv = OpenSSL.randomPseudoBytes(OpenSSL.cipherIVLength( OpenSSL.CIPHER_AES_128_GCM, value));
+        }
+        catch (error) {
+            console.log(error);
+        }
 
         const buffer = Buffer.from(key, 'utf-8');
 
@@ -543,7 +549,8 @@ Database.addFilter(
         value = JSON.parse(value);
         const key = process.env['_APP_OPENSSL_KEY_V' + value.version] as string;
         const buffer = Buffer.from(key, 'utf-8');
-        return OpenSSL.decrypt(value.data, value.method, buffer, 0, Buffer.from(value.iv, 'hex'), Buffer.from(value.tag, 'hex'));
+        return OpenSSL.decrypt(value.data, value.method, buffer, 0, 
+            Buffer.from(value.iv, 'hex'), null);
     }
 );
 

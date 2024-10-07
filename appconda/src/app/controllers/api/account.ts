@@ -10,8 +10,10 @@ import { Locale } from '../../../Tuval/Locale'
 import { Audit } from '../../../Tuval/Audit'
 import { encode } from 'html-entities';
 import strip_tags from 'striptags';
-import { Auth, EmailChallenge, Password, PasswordDictionary, PasswordHistory, 
-    PersonalData, Phone, PhoneChallenge, Phrase, TOTP } from '../../../Tuval/Auth'
+import {
+    Auth, EmailChallenge, Password, PasswordDictionary, PasswordHistory,
+    PersonalData, Phone, PhoneChallenge, Phrase, TOTP
+} from '../../../Tuval/Auth'
 
 
 import { Type, TOTPChallenge } from '../../../Tuval/Auth'
@@ -247,7 +249,7 @@ App.post('/v1/account')
     .label('abuse-limit', 10)
     .param('userId', '', new CustomId(), 'User ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
     .param('email', '', new Email(), 'User email.')
-    .param('password', '', (project, passwordsDictionary) => new PasswordDictionary(passwordsDictionary, project.getAttribute('auths', [])['passwordDictionary'] ?? false), 'New user password. Must be between 8 and 256 chars.', false, ['project', 'passwordsDictionary'])
+    .param('password', '', ({ project, passwordsDictionary }: { project: Document, passwordsDictionary: any }) => new PasswordDictionary(passwordsDictionary, project.getAttribute('auths', [])['passwordDictionary'] ?? false), 'New user password. Must be between 8 and 256 chars.', false, ['project', 'passwordsDictionary'])
     .param('name', '', new Text(128), 'User name. Max length: 128 chars.', true)
     .inject('request')
     .inject('response')
@@ -261,14 +263,15 @@ App.post('/v1/account')
 
         email = email.toLowerCase();
         if (project.getId() === 'console') {
-            const whitelistEmails = project.getAttribute('authWhitelistEmails');
-            const whitelistIPs = project.getAttribute('authWhitelistIPs');
+            const whitelistEmails : string[]= project.getAttribute('authWhitelistEmails');
+            const whitelistIPs : string[]= project.getAttribute('authWhitelistIPs');
 
-            if (whitelistEmails && !whitelistEmails.includes(email) && !whitelistEmails.includes(email.toUpperCase())) {
+            if (whitelistEmails.length > 0 && !whitelistEmails.includes(email) &&
+                !whitelistEmails.includes(email.toUpperCase())) {
                 throw new Error('USER_EMAIL_NOT_WHITELISTED');
             }
 
-            if (whitelistIPs && !whitelistIPs.includes(request.getIP())) {
+            if (whitelistIPs.length > 0 && !whitelistIPs.includes(request.getIP())) {
                 throw new Error('USER_IP_NOT_WHITELISTED');
             }
         }
@@ -334,9 +337,9 @@ App.post('/v1/account')
                 'accessedAt': DateTime.now(),
             });
             user.removeAttribute('$internalId');
-            user = await Authorization.skip(() => dbForProject.createDocument('users', user));
+            user = await Authorization.skip(async () => await dbForProject.createDocument('users', user));
             try {
-                const target = await Authorization.skip(() => dbForProject.createDocument('targets', new Document({
+                const target = await Authorization.skip(async () => await dbForProject.createDocument('targets', new Document({
                     '$permissions': [
                         Permission.read(Role.user(user.getId())),
                         Permission.update(Role.user(user.getId())),

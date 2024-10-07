@@ -13,7 +13,7 @@ function formatDateToMySQL(date: Date): string {
     const pad = (num: number) => (num < 10 ? '0' : '') + num;
 
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
-           `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 export class MariaDB extends SQL {
@@ -28,13 +28,13 @@ export class MariaDB extends SQL {
         this.tenant = tenant;
     }
 
-    async  checkPoolStatus() {
+    async checkPoolStatus() {
         const poolStatus = {
             totalConnections: (this as any).pool.pool._allConnections.length,
             freeConnections: (this as any).pool.pool._freeConnections.length,
             waitingConnections: (this as any).pool.pool._connectionQueue.length
         };
-    
+
         console.log('Pool Status:', poolStatus);
     }
 
@@ -858,8 +858,8 @@ export class MariaDB extends SQL {
             const updatedAt = document.getUpdatedAt();
             attributes['_createdAt'] = formatDateToMySQL(createdAt ? new Date(createdAt) : new Date());
             attributes['_updatedAt'] = formatDateToMySQL(updatedAt ? new Date(updatedAt) : new Date());
-        
-              attributes['_permissions'] = JSON.stringify(document.getPermissions());
+
+            attributes['_permissions'] = JSON.stringify(document.getPermissions());
 
             if (this.sharedTables) {
                 attributes['_tenant'] = this.tenant;
@@ -894,11 +894,11 @@ export class MariaDB extends SQL {
 
             sql = this.trigger(Database.EVENT_DOCUMENT_CREATE, sql);
 
-           
+
             const connection = await this.pool.getConnection();
-       
+
             try {
-               
+
                 await connection.execute(sql, values);
 
                 // Handle permissions
@@ -923,17 +923,17 @@ export class MariaDB extends SQL {
                     await connection.execute(perm.sql, perm.values);
                 }
 
-                // Set internal ID if available
-                if (document.getInternalId()) {
-                    document.setInternalId(document.getInternalId());
-                }
+                const dbDocument = await this.getDocument(collection, document.getId(), [Query.select(['$internalId'])]);
+                document.setAttribute('$internalId', dbDocument.getInternalId());
+               
+                
             } catch (error: any) {
                 // Rollback by deleting inserted records
                 await connection.execute(`DELETE FROM ${this.getSQLTable(name)} WHERE _uid = ?;`, [document.getId()]);
                 await connection.execute(`DELETE FROM ${this.getSQLTable(name + '_perms')} WHERE _document = ?;`, [document.getId()]);
                 throw error;
             } finally {
-               //console.log(await this.checkPoolStatus())
+                //console.log(await this.checkPoolStatus())
                 connection.release();
                 this.pool.releaseConnection(connection);
             }
@@ -1447,7 +1447,7 @@ export class MariaDB extends SQL {
         const selections = this.getAttributeSelections(queries);
 
         const sql = `
-            SELECT ${this.getAttributeProjection(selections, 'table_main')}
+            SELECT ${await this.getAttributeProjection(selections, 'table_main')}
             FROM ${this.getSQLTable(name)} as table_main
             ${sqlWhere}
             ${sqlOrder}
@@ -1470,7 +1470,7 @@ export class MariaDB extends SQL {
 
         // Bind other query values
         for (const query of queries) {
-            values.push(... await this.bindConditionValue(values, query));
+            await this.bindConditionValue(values, query);
         }
 
         if (this.sharedTables) {
@@ -1976,11 +1976,11 @@ export class MariaDB extends SQL {
         });
     }
 
-    public  getCountOfDefaultAttributes(): number {
+    public getCountOfDefaultAttributes(): number {
         return Database.INTERNAL_ATTRIBUTES.length;
     }
 
-    public  getCountOfDefaultIndexes(): number {
+    public getCountOfDefaultIndexes(): number {
         return Database.INTERNAL_INDEXES.length;
     }
 

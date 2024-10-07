@@ -98,11 +98,11 @@ export abstract class Adapter {
         return this._inTransaction > 0;
     }
 
-    public withTransaction<T>(callback: () => T): T {
+    public async withTransaction<T>(callback: () => T): Promise<T> {
         this.startTransaction();
 
         try {
-            const result = callback();
+            const result = await callback();
             this.commitTransaction();
             return result;
         } catch (e) {
