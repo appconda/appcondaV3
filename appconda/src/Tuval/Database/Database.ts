@@ -298,7 +298,7 @@ export class Database {
 
         Database.addFilter(
             'json',
-            (value: any) => {
+           async (value: any) => {
                 value = (value instanceof Document) ? value.getArrayCopy() : value;
 
                 if (Array.isArray(value) && value.length > 0 && value[0] instanceof Document) {
@@ -310,7 +310,7 @@ export class Database {
 
                 return JSON.stringify(value);
             },
-            (value: any) => {
+            async (value: any) => {
                 if (typeof value !== 'string') {
                     return value;
                 }
@@ -334,7 +334,7 @@ export class Database {
 
         Database.addFilter(
             'datetime',
-            (value: string | null) => {
+           async (value: string | null) => {
                 if (value === null) {
                     return null;
                 }
@@ -349,7 +349,7 @@ export class Database {
                     return value;
                 }
             },
-            (value: string | null) => {
+           async (value: string | null) => {
                 return value;
             }
         );
@@ -2391,7 +2391,7 @@ export class Database {
         }
 
         let castedDocument = this.casting(collectionDoc, document);
-        castedDocument = this.decode(collectionDoc, castedDocument, selections);
+        castedDocument = await this.decode(collectionDoc, castedDocument, selections);
         this.map = {};
 
         if (this.resolveRelationships && (selects.length === 0 || nestedSelections.length > 0)) {
@@ -2694,7 +2694,7 @@ export class Database {
             document.setAttribute('$tenant', this.adapter.getTenant());
         }
 
-        document = this.encode(collectionDoc, document);
+        document = await this.encode(collectionDoc, document);
 
         if (this.validate) {
             const validator = new Permissions();
@@ -2720,7 +2720,7 @@ export class Database {
             document = await this.silent(async () => await this.populateDocumentRelationships(collectionDoc, document));
         }
 
-        document = this.decode(collectionDoc, document);
+        document = await this.decode(collectionDoc, document);
 
         this.trigger(Database.EVENT_DOCUMENT_CREATE, document);
         return document;
@@ -2763,7 +2763,7 @@ export class Database {
                 .setAttribute('$createdAt', createdAt && this.preserveDates ? createdAt : time)
                 .setAttribute('$updatedAt', updatedAt && this.preserveDates ? updatedAt : time);
 
-            documents[i] = this.encode(collectionDoc, document);
+            documents[i] = await this.encode(collectionDoc, document);
 
             const validator = new Structure(collectionDoc);
             if (!validator.isValid(documents[i])) {
@@ -2784,7 +2784,7 @@ export class Database {
                 documents[i] = await this.silent(async () => await this.populateDocumentRelationships(collectionDoc, documents[i]));
             }
 
-            documents[i] = this.decode(collectionDoc, documents[i]);
+            documents[i] = await this.decode(collectionDoc, documents[i]);
         }
 
         this.trigger(Database.EVENT_DOCUMENTS_CREATE, documents);
@@ -3277,7 +3277,7 @@ export class Database {
                 throw new ConflictException('Document was updated after the request timestamp');
             }
 
-            document = this.encode(collectionDoc, document);
+            document = await this.encode(collectionDoc, document);
 
             const structureValidator = new Structure(collectionDoc);
 
@@ -3298,7 +3298,7 @@ export class Database {
             document = await this.silent(async () => await this.populateDocumentRelationships(collectionDoc, document));
         }
 
-        document = this.decode(collectionDoc, document);
+        document = await this.decode(collectionDoc, document);
 
         this.purgeRelatedDocuments(collectionDoc, id);
         this.purgeCachedDocument(collectionDoc.getId(), id);
@@ -3342,7 +3342,7 @@ export class Database {
 
                 const updatedAt = document.getUpdatedAt();
                 document.setAttribute('$updatedAt', !updatedAt || !this.preserveDates ? time : updatedAt);
-                documents[i] = this.encode(collectionDoc, document);
+                documents[i] = await this.encode(collectionDoc, document);
 
                 const old = await Authorization.skip(async () => await this.silent(
                     () => this.getDocument(
@@ -3380,7 +3380,7 @@ export class Database {
                 document = await this.silent(async () => await this.populateDocumentRelationships(collectionDoc, document));
             }
 
-            documents[i] = this.decode(collectionDoc, document);
+            documents[i] = await this.decode(collectionDoc, document);
 
             this.purgeCachedDocument(collectionDoc.getId(), document.getId());
         }
@@ -4505,7 +4505,7 @@ export class Database {
             throw new DatabaseException("Cursor Document must be from the same Collection.");
         }
 
-        const cursorData = cursor ? this.encode(collectionDoc, cursor).getArrayCopy() : [];
+        const cursorData = cursor ? (await this.encode(collectionDoc, cursor)).getArrayCopy() : [];
 
         queries = [
             ...selects,
@@ -4568,7 +4568,7 @@ export class Database {
                 node = this.silent(() => this.populateDocumentRelationships(collectionDoc, node, nestedSelections));
             }
             node = this.casting(collectionDoc, node);
-            node = this.decode(collectionDoc, node, selections);
+            node = await this.decode(collectionDoc, node, selections);
 
             if (!node.isEmpty()) {
                 node.setAttribute('$collection', collectionDoc.getId());
@@ -4719,7 +4719,7 @@ export class Database {
      * @return Document
      * @throws DatabaseException
      */
-    public encode(collection: Document, document: Document): Document {
+    public async encode(collection: Document, document: Document): Promise<Document> {
         const attributes = collection.getAttribute('attributes', []);
 
         const internalAttributes = Database.INTERNAL_ATTRIBUTES.filter((attribute: Document) => {
@@ -4751,7 +4751,7 @@ export class Database {
             for (let i = 0; i < value.length; i++) {
                 if (value[i] !== null) {
                     for (const filter of filters) {
-                        value[i] = this.encodeAttribute(filter, value[i], document);
+                        value[i] = await this.encodeAttribute(filter, value[i], document);
                     }
                 }
             }
@@ -4775,7 +4775,7 @@ export class Database {
      * @return Document
      * @throws DatabaseException
      */
-    public decode(collection: Document, document: Document, selections: string[] = []): Document {
+    public async decode(collection: Document, document: Document, selections: string[] = []): Promise<Document> {
         const attributes = collection.getAttribute('attributes', []).filter(
             (attribute: any) => attribute['type'] !== Database.VAR_RELATIONSHIP
         );
@@ -4819,7 +4819,7 @@ export class Database {
 
             for (let i = 0; i < value.length; i++) {
                 for (const filter of filters.reverse()) {
-                    value[i] = this.decodeAttribute(filter, value[i], document);
+                    value[i] = await this.decodeAttribute(filter, value[i], document);
                 }
             }
 
@@ -4909,16 +4909,16 @@ export class Database {
     * @return any
     * @throws DatabaseException
     */
-    protected encodeAttribute(name: string, value: any, document: Document): any {
+    protected async encodeAttribute(name: string, value: any, document: Document): Promise<any> {
         if (!(name in Database.filters) && !(name in this.instanceFilters)) {
             throw new DatabaseException(`Filter: ${name} not found`);
         }
 
         try {
             if (name in this.instanceFilters) {
-                value = this.instanceFilters[name].encode(value, document, this);
+                value = await this.instanceFilters[name].encode(value, document, this);
             } else {
-                value = Database.filters[name].encode(value, document, this);
+                value = await Database.filters[name].encode(value, document, this);
             }
         } catch (error: any) {
             throw new DatabaseException(error.message, error.code, error);
@@ -4940,7 +4940,7 @@ export class Database {
      * @return any
      * @throws DatabaseException
      */
-    protected decodeAttribute(name: string, value: any, document: Document): any {
+    protected async decodeAttribute(name: string, value: any, document: Document): Promise<any> {
         if (!this.filter) {
             return value;
         }
@@ -4950,9 +4950,9 @@ export class Database {
         }
 
         if (name in this.instanceFilters) {
-            value = this.instanceFilters[name].decode(value, document, this);
+            value = await this.instanceFilters[name].decode(value, document, this);
         } else {
-            value = Database.filters[name].decode(value, document, this);
+            value = await Database.filters[name].decode(value, document, this);
         }
 
         return value;

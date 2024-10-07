@@ -68,7 +68,7 @@ export function createRedisInstance(dsnHost: string, dsnPort: number, dsnPass?: 
         socket: {
             host: dsnHost,
             port: dsnPort,
- 
+
         },
         password: dsnPass || undefined,
     });
@@ -304,12 +304,12 @@ Config.load('storage-outputs', __dirname + '/config/storage/outputs');
  */
 Database.addFilter(
     'casting',
-    (value: any) => {
+    async (value: any) => {
         return JSON.stringify({ value: value }, (key, value) =>
             typeof value === 'number' && !Number.isInteger(value) ? value.toFixed(2) : value
         );
     },
-    (value: any) => {
+    async (value: any) => {
         if (value === null) {
             return;
         }
@@ -319,13 +319,13 @@ Database.addFilter(
 
 Database.addFilter(
     'enum',
-    (value: any, attribute: Document) => {
+    async (value: any, attribute: Document) => {
         if (attribute.has('elements')) {
             attribute.removeAttribute('elements');
         }
         return value;
     },
-    (value: any, attribute: Document) => {
+    async (value: any, attribute: Document) => {
         const formatOptions = JSON.parse(attribute.getAttribute('formatOptions', '[]'));
         if (formatOptions.elements) {
             attribute.setAttribute('elements', formatOptions.elements);
@@ -336,7 +336,7 @@ Database.addFilter(
 
 Database.addFilter(
     'range',
-    (value: any, attribute: Document) => {
+    async (value: any, attribute: Document) => {
         if (attribute.has('min')) {
             attribute.removeAttribute('min');
         }
@@ -345,7 +345,7 @@ Database.addFilter(
         }
         return value;
     },
-    (value: any, attribute: Document) => {
+    async (value: any, attribute: Document) => {
         const formatOptions = JSON.parse(attribute.getAttribute('formatOptions', '[]'));
         if (formatOptions.min || formatOptions.max) {
             attribute
@@ -358,7 +358,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryAttributes',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -384,7 +384,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryIndexes',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -398,7 +398,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryPlatforms',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -411,7 +411,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryKeys',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -424,7 +424,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryWebhooks',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -437,7 +437,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQuerySessions',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -450,7 +450,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryTokens',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -463,7 +463,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryChallenges',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -476,7 +476,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryAuthenticators',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -489,7 +489,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryMemberships',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -506,7 +506,7 @@ Database.addFilter(
  */
 Database.addFilter(
     'subQueryVariables',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -520,12 +520,12 @@ Database.addFilter(
 
 Database.addFilter(
     'encrypt',
-    (value: any) => {
-        
+    async (value: any) => {
+
         const key: string = process.env._APP_OPENSSL_KEY_V1 as any;
-        let iv ;
+        let iv;
         try {
-         iv = OpenSSL.randomPseudoBytes(OpenSSL.cipherIVLength( OpenSSL.CIPHER_AES_128_GCM, value));
+            iv = OpenSSL.randomPseudoBytes(OpenSSL.cipherIVLength(OpenSSL.CIPHER_AES_128_GCM, value));
         }
         catch (error) {
             console.log(error);
@@ -542,21 +542,21 @@ Database.addFilter(
             version: '1',
         });
     },
-    (value: any) => {
+    async (value: any) => {
         if (value === null) {
             return;
         }
         value = JSON.parse(value);
         const key = process.env['_APP_OPENSSL_KEY_V' + value.version] as string;
         const buffer = Buffer.from(key, 'utf-8');
-        return OpenSSL.decrypt(value.data, value.method, buffer, 0, 
+        return OpenSSL.decrypt(value.data, value.method, buffer, 0,
             Buffer.from(value.iv, 'hex'), null);
     }
 );
 
 Database.addFilter(
     'subQueryProjectVariables',
-    (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -569,7 +569,7 @@ Database.addFilter(
 
 Database.addFilter(
     'userSearch',
-    (value: any, user: Document) => {
+    async (value: any, user: Document) => {
         const searchValues = [
             user.getId(),
             user.getAttribute('email', ''),
@@ -583,18 +583,18 @@ Database.addFilter(
 
         return searchValues.filter(Boolean).join(' ');
     },
-    (value: any) => {
+    async (value: any) => {
         return value;
     }
 );
 
 Database.addFilter(
     'subQueryTargets',
-    (value: any) => {
+   async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
-        return await Authorization.skip(() => database.find('targets', [
+        return await Authorization.skip(async () => await database.find('targets', [
             Query.equal('userInternalId', [document.getInternalId()]),
             Query.limit(APP_LIMIT_SUBQUERY)
         ]));
@@ -603,7 +603,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryTopicTargets',
-    (value: any) => {
+   async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -623,7 +623,7 @@ Database.addFilter(
 
 Database.addFilter(
     'providerSearch',
-    (value: any, provider: Document) => {
+    async (value: any, provider: Document) => {
         const searchValues = [
             provider.getId(),
             provider.getAttribute('name', ''),
@@ -633,14 +633,14 @@ Database.addFilter(
 
         return searchValues.filter(Boolean).join(' ');
     },
-    (value: any) => {
+    async (value: any) => {
         return value;
     }
 );
 
 Database.addFilter(
     'topicSearch',
-    (value: any, topic: Document) => {
+   async (value: any, topic: Document) => {
         const searchValues = [
             topic.getId(),
             topic.getAttribute('name', ''),
@@ -649,14 +649,14 @@ Database.addFilter(
 
         return searchValues.filter(Boolean).join(' ');
     },
-    (value: any) => {
+    async (value: any) => {
         return value;
     }
 );
 
 Database.addFilter(
     'messageSearch',
-    (value: any, message: Document) => {
+    async (value: any, message: Document) => {
         const searchValues = [
             message.getId(),
             message.getAttribute('description', ''),
@@ -676,7 +676,7 @@ Database.addFilter(
 
         return searchValues.filter(Boolean).join(' ');
     },
-    (value: any) => {
+    async (value: any) => {
         return value;
     }
 );
