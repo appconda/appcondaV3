@@ -449,7 +449,7 @@ export class Response extends TuvalResponse {
         this.setModel(new Mock());
 
         // Call parent constructor
-       
+
     }
 
     /**
@@ -509,7 +509,8 @@ export class Response extends TuvalResponse {
      * @param model Model type
      */
     public dynamic(document: Document, model: string): void {
-        const output = document.getArrayCopy();// this.output({ ...(document.getArrayCopy()) }, model);
+        const arrayCopy = document.getArrayCopy();
+        const output = this.output(arrayCopy, model);
         const filteredOutput = this.applyFilters(output, model);
 
         switch (this.getContentType()) {

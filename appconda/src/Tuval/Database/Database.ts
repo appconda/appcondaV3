@@ -298,7 +298,7 @@ export class Database {
 
         Database.addFilter(
             'json',
-           async (value: any) => {
+            async (value: any) => {
                 value = (value instanceof Document) ? value.getArrayCopy() : value;
 
                 if (Array.isArray(value) && value.length > 0 && value[0] instanceof Document) {
@@ -319,7 +319,7 @@ export class Database {
 
                 if ('$id' in value) {
                     return new Document(value);
-                } else if (Array.isArray(value)){
+                } else if (Array.isArray(value)) {
                     value = value.map((item: any) => {
                         if (typeof item === 'object' && '$id' in item) {
                             return new Document(item);
@@ -334,7 +334,7 @@ export class Database {
 
         Database.addFilter(
             'datetime',
-           async (value: string | null) => {
+            async (value: string | null) => {
                 if (value === null) {
                     return null;
                 }
@@ -343,13 +343,13 @@ export class Database {
                     const pad = (num: number) => (num < 10 ? '0' : '') + num;
 
                     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
-                           `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-                    
+                        `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
                 } catch (error) {
                     return value;
                 }
             },
-           async (value: string | null) => {
+            async (value: string | null) => {
                 return value;
             }
         );
@@ -1241,18 +1241,35 @@ export class Database {
          * @throws DatabaseException
          */
     public async updateAttribute(
-        collection: string,
-        id: string,
-        type: string | null = null,
-        size: number,
-        required: boolean | null = null,
-        defaultValue: any = null,
-        signed: boolean,
-        array: boolean,
-        format: string | null = null,
-        formatOptions: { [key: string]: any } | null = null,
-        filters: string[],
-        newKey: string
+        {
+            collection,
+            id,
+            type = null,
+            size = null,
+            required = null,
+            defaultValue = null,
+            signed = null,
+            array = null,
+            format = null,
+            formatOptions = null,
+            filters = null,
+            newKey = null
+        }:
+            {
+                collection: string,
+                id: string,
+                type?: string,
+                size?: number,
+                required?: boolean,
+                defaultValue?: any,
+                signed?: boolean,
+                array?: boolean,
+                format?: string,
+                formatOptions?: { [key: string]: any } | null,
+                filters?: string[],
+                newKey?: string
+            }
+
     ): Promise<Document> {
         return await this.updateAttributeMeta(collection, id, async (attribute: Document, collectionDoc: Document, attributeIndex: number | string) => {
             const altering = type !== null || size !== null || signed !== null || array !== null || newKey !== null;
@@ -1745,10 +1762,10 @@ export class Database {
     public async updateRelationship(
         collection: string,
         id: string,
-        newKey: string,
-        newTwoWayKey: string,
-        twoWay: boolean,
-        onDelete: string
+        newKey: string = null,
+        newTwoWayKey: string = null,
+        twoWay: boolean = null,
+        onDelete: string = null
     ): Promise<boolean> {
         if (this.adapter.getSharedTables() && !this.adapter.getTenant()) {
             throw new DatabaseException('Missing tenant. Tenant must be set when table sharing is enabled.');
