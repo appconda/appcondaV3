@@ -1,13 +1,13 @@
 import { AppcondaException as Exception } from "../../../Appconda/Extend/Exception";
-import { ArrayList, Authorization, Boolean, Document, FloatValidator, ID, Integer, IP, Nullable, Permission, Range, Text, URLValidator, WhiteList } from "../../../Tuval/Core";
-import { Database, Datetime, Duplicate, Key, Limit, LimitException, Offset, Queries, Query, QueryException, Structure, UID } from "../../../Tuval/Database";
+import { ArrayList, Authorization, Boolean, Document, FloatValidator, ID, Integer, IP, JSONValidator, Nullable, Permission, Range, Role, Text, URLValidator, WhiteList } from "../../../Tuval/Core";
+import { AuthorizationException, Database, Datetime, Duplicate, Index, Key, Limit, LimitException, Offset, Queries, Query, QueryException, Structure, StructureException, UID } from "../../../Tuval/Database";
 
 import { Database as EventDatabase, } from "../../../Appconda/Event/Database";
 import { Event } from "../../../Appconda/Event/Event";
 import { Response } from "../../../Appconda/Tuval/Response";
 import { Request } from "../../../Appconda/Tuval/Request";
 import { App } from "../../../Tuval/Http";
-import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_KEY, APP_DATABASE_ATTRIBUTE_EMAIL, APP_DATABASE_ATTRIBUTE_ENUM, APP_DATABASE_ATTRIBUTE_FLOAT_RANGE, APP_DATABASE_ATTRIBUTE_INT_RANGE, APP_DATABASE_ATTRIBUTE_IP, APP_DATABASE_ATTRIBUTE_STRING_MAX_LENGTH, APP_DATABASE_ATTRIBUTE_URL, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, DATABASE_TYPE_DELETE_COLLECTION, DATABASE_TYPE_DELETE_DATABASE } from "../../init";
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_SESSION, APP_DATABASE_ATTRIBUTE_EMAIL, APP_DATABASE_ATTRIBUTE_ENUM, APP_DATABASE_ATTRIBUTE_FLOAT_RANGE, APP_DATABASE_ATTRIBUTE_INT_RANGE, APP_DATABASE_ATTRIBUTE_IP, APP_DATABASE_ATTRIBUTE_STRING_MAX_LENGTH, APP_DATABASE_ATTRIBUTE_URL, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, APP_LIMIT_WRITE_RATE_DEFAULT, APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT, DATABASE_TYPE_CREATE_INDEX, DATABASE_TYPE_DELETE_ATTRIBUTE, DATABASE_TYPE_DELETE_COLLECTION, DATABASE_TYPE_DELETE_DATABASE, DATABASE_TYPE_DELETE_INDEX, DELETE_TYPE_AUDIT, METRIC_COLLECTIONS, METRIC_DATABASE_ID_COLLECTION_ID_DOCUMENTS, METRIC_DATABASE_ID_COLLECTIONS, METRIC_DATABASE_ID_DOCUMENTS, METRIC_DATABASES, METRIC_DOCUMENTS } from "../../init";
 import { CustomId } from "../../../Appconda/Tuval/Database/Validators/CustomId";
 import { Config } from "../../../Tuval/Config";
 import { Databases } from "../../../Appconda/Database/Validators/Queries/Databases";
@@ -18,6 +18,9 @@ import { Permissions } from "../../../Tuval/Database/Validators/Permissions";
 import { Collections } from "../../../Appconda/Database/Validators/Queries/Collections";
 import { Email } from "../../../Appconda/Network/Validators/Email";
 import { Attributes } from "../../../Appconda/Database/Validators/Queries/Attributes";
+import { Indexes } from "../../../Appconda/Database/Validators/Queries/Indexes";
+import { Auth } from "../../../Tuval/Auth";
+import { Delete } from "../../../Appconda/Event/Delete";
 
 /**
  * Create attribute of varying type
@@ -2101,4 +2104,1616 @@ App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/boolea
             .dynamic(attribute, Response.MODEL_ATTRIBUTE_BOOLEAN);
     });
 
-    
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/datetime/:key')
+    .desc('Update dateTime attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateDatetimeAttribute')
+    .label('sdk.description', '/docs/references/databases/update-datetime-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_DATETIME)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Nullable(new Datetime()), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_DATETIME,
+            defaultValue: defaultValue,
+            required: required
+        });
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_DATETIME);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/:key/relationship')
+    .desc('Update relationship attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateRelationshipAttribute')
+    .label('sdk.description', '/docs/references/databases/update-relationship-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_RELATIONSHIP)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('onDelete', null, new WhiteList([Database.RELATION_MUTATE_CASCADE, Database.RELATION_MUTATE_RESTRICT, Database.RELATION_MUTATE_SET_NULL], true), 'Constraints option', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, onDelete, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, onDelete: string | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_RELATIONSHIP,
+            required: false,
+            options: {
+                onDelete: onDelete
+            }
+        });
+
+        const options = attribute.getAttribute('options', {});
+
+        for (const [key, option] of Object.entries(options)) {
+            attribute.setAttribute(key, option);
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_RELATIONSHIP);
+    });
+
+App.delete('/v1/databases/:databaseId/collections/:collectionId/attributes/:key')
+    //.alias('/v1/database/collections/:collectionId/attributes/:key', { databaseId: 'default' })
+    .desc('Delete attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.delete')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'deleteAttribute')
+    .label('sdk.description', '/docs/references/databases/delete-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        const db = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (db.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument('database_' + db.getInternalId(), collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const attribute = await dbForProject.getDocument('attributes', db.getInternalId() + '_' + collection.getInternalId() + '_' + key);
+
+        if (attribute.isEmpty()) {
+            throw new Exception(Exception.ATTRIBUTE_NOT_FOUND);
+        }
+
+        if (attribute.getAttribute('status') === 'available') {
+            await dbForProject.updateDocument('attributes', attribute.getId(), attribute.setAttribute('status', 'deleting'));
+        }
+
+        await dbForProject.purgeCachedDocument('database_' + db.getInternalId(), collectionId);
+        await dbForProject.purgeCachedCollection('database_' + db.getInternalId() + '_collection_' + collection.getInternalId());
+
+        if (attribute.getAttribute('type') === Database.VAR_RELATIONSHIP) {
+            const options = attribute.getAttribute('options');
+            if (options['twoWay']) {
+                const relatedCollection = await dbForProject.getDocument('database_' + db.getInternalId(), options['relatedCollection']);
+
+                if (relatedCollection.isEmpty()) {
+                    throw new Exception(Exception.COLLECTION_NOT_FOUND);
+                }
+
+                const relatedAttribute = await dbForProject.getDocument('attributes', db.getInternalId() + '_' + relatedCollection.getInternalId() + '_' + options['twoWayKey']);
+
+                if (relatedAttribute.isEmpty()) {
+                    throw new Exception(Exception.ATTRIBUTE_NOT_FOUND);
+                }
+
+                if (relatedAttribute.getAttribute('status') === 'available') {
+                    await dbForProject.updateDocument('attributes', relatedAttribute.getId(), relatedAttribute.setAttribute('status', 'deleting'));
+                }
+
+                await dbForProject.purgeCachedDocument('database_' + db.getInternalId(), options['relatedCollection']);
+                await dbForProject.purgeCachedCollection('database_' + db.getInternalId() + '_collection_' + relatedCollection.getInternalId());
+            }
+        }
+
+        queueForDatabase
+            .setType(DATABASE_TYPE_DELETE_ATTRIBUTE)
+            .setCollection(collection)
+            .setDatabase(db)
+            .setDocument(attribute);
+
+        const type = attribute.getAttribute('type');
+        const format = attribute.getAttribute('format');
+
+        const model = (() => {
+            switch (type) {
+                case Database.VAR_BOOLEAN:
+                    return Response.MODEL_ATTRIBUTE_BOOLEAN;
+                case Database.VAR_INTEGER:
+                    return Response.MODEL_ATTRIBUTE_INTEGER;
+                case Database.VAR_FLOAT:
+                    return Response.MODEL_ATTRIBUTE_FLOAT;
+                case Database.VAR_DATETIME:
+                    return Response.MODEL_ATTRIBUTE_DATETIME;
+                case Database.VAR_RELATIONSHIP:
+                    return Response.MODEL_ATTRIBUTE_RELATIONSHIP;
+                case Database.VAR_STRING:
+                    switch (format) {
+                        case APP_DATABASE_ATTRIBUTE_EMAIL:
+                            return Response.MODEL_ATTRIBUTE_EMAIL;
+                        case APP_DATABASE_ATTRIBUTE_ENUM:
+                            return Response.MODEL_ATTRIBUTE_ENUM;
+                        case APP_DATABASE_ATTRIBUTE_IP:
+                            return Response.MODEL_ATTRIBUTE_IP;
+                        case APP_DATABASE_ATTRIBUTE_URL:
+                            return Response.MODEL_ATTRIBUTE_URL;
+                        default:
+                            return Response.MODEL_ATTRIBUTE_STRING;
+                    }
+                default:
+                    return Response.MODEL_ATTRIBUTE;
+            }
+        })();
+
+        queueForEvents
+            .setParam('databaseId', databaseId)
+            .setParam('collectionId', collection.getId())
+            .setParam('attributeId', attribute.getId())
+            .setContext('collection', collection)
+            .setContext('database', db)
+            .setPayload(response.output(attribute, model));
+
+        response.noContent();
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/indexes')
+    // .alias('/v1/database/collections/:collectionId/indexes', { databaseId: 'default' })
+    .desc('Create index')
+    .groups(['api', 'database'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].indexes.[indexId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'index.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'createIndex')
+    .label('sdk.description', '/docs/references/databases/create-index.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_INDEX)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', null, new Key(), 'Index Key.')
+    .param('type', null, new WhiteList([Database.INDEX_KEY, Database.INDEX_FULLTEXT, Database.INDEX_UNIQUE]), 'Index type.')
+    .param('attributes', null, new ArrayList(new Key(true), APP_LIMIT_ARRAY_PARAMS_SIZE), `Array of attributes to index. Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} attributes are allowed, each 32 characters long.`)
+    .param('orders', [], new ArrayList(new WhiteList(['ASC', 'DESC'], false, Database.VAR_STRING), APP_LIMIT_ARRAY_PARAMS_SIZE), `Array of index orders. Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} orders are allowed.`, true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, type, attributes, orders, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, type: string, attributes: string[], orders: string[], response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        const db = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (db.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument('database_' + db.getInternalId(), collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const count = await dbForProject.count('indexes', [
+            Query.equal('collectionInternalId', [collection.getInternalId()]),
+            Query.equal('databaseInternalId', [db.getInternalId()])
+        ], 61);
+
+        const limit = dbForProject.getLimitForIndexes();
+
+        if (count >= limit) {
+            throw new Exception(Exception.INDEX_LIMIT_EXCEEDED, 'Index limit exceeded');
+        }
+
+        const oldAttributes = collection.getAttribute('attributes').map((a: any) => a.getArrayCopy());
+
+        oldAttributes.push(
+            { key: '$id', type: Database.VAR_STRING, status: 'available', required: true, array: false, default: null, size: 36 },
+            { key: '$createdAt', type: Database.VAR_DATETIME, status: 'available', signed: false, required: false, array: false, default: null, size: 0 },
+            { key: '$updatedAt', type: Database.VAR_DATETIME, status: 'available', signed: false, required: false, array: false, default: null, size: 0 }
+        );
+
+        const lengths: (number | null)[] = [];
+
+        for (let i = 0; i < attributes.length; i++) {
+            const attribute = attributes[i];
+            const attributeIndex = oldAttributes.findIndex((attr: any) => attr.key === attribute);
+
+            if (attributeIndex === -1) {
+                throw new Exception(Exception.ATTRIBUTE_UNKNOWN, 'Unknown attribute: ' + attribute);
+            }
+
+            const { status, type, size, array } = oldAttributes[attributeIndex];
+
+            if (type === Database.VAR_RELATIONSHIP) {
+                throw new Exception(Exception.ATTRIBUTE_TYPE_INVALID, 'Cannot create an index for a relationship attribute: ' + oldAttributes[attributeIndex].key);
+            }
+
+            if (status !== 'available') {
+                throw new Exception(Exception.ATTRIBUTE_NOT_AVAILABLE, 'Attribute not available: ' + oldAttributes[attributeIndex].key);
+            }
+
+            lengths[i] = null;
+
+            if (type === Database.VAR_STRING) {
+                lengths[i] = size;
+            }
+
+            if (array === true) {
+                lengths[i] = Database.ARRAY_INDEX_LENGTH;
+                orders[i] = null;
+            }
+        }
+
+        const index = new Document({
+            $id: ID.custom(db.getInternalId() + '_' + collection.getInternalId() + '_' + key),
+            key: key,
+            status: 'processing',
+            databaseInternalId: db.getInternalId(),
+            databaseId: databaseId,
+            collectionInternalId: collection.getInternalId(),
+            collectionId: collectionId,
+            type: type,
+            attributes: attributes,
+            lengths: lengths,
+            orders: orders,
+        });
+
+        const validator = new Index(
+            collection.getAttribute('attributes'),
+            dbForProject.getAdapter().getMaxIndexLength()
+        );
+
+        if (!validator.isValid(index)) {
+            throw new Exception(Exception.INDEX_INVALID, validator.getDescription());
+        }
+
+        try {
+            await dbForProject.createDocument('indexes', index);
+        } catch (error) {
+            if (error instanceof Duplicate) {
+                throw new Exception(Exception.INDEX_ALREADY_EXISTS);
+            }
+            throw error;
+        }
+
+        await dbForProject.purgeCachedDocument('database_' + db.getInternalId(), collectionId);
+
+        queueForDatabase
+            .setType(DATABASE_TYPE_CREATE_INDEX)
+            .setDatabase(db)
+            .setCollection(collection)
+            .setDocument(index);
+
+        queueForEvents
+            .setParam('databaseId', databaseId)
+            .setParam('collectionId', collection.getId())
+            .setParam('indexId', index.getId())
+            .setContext('collection', collection)
+            .setContext('database', db);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(index, Response.MODEL_INDEX);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/indexes')
+    //.alias('/v1/database/collections/:collectionId/indexes', { databaseId: 'default' })
+    .desc('List indexes')
+    .groups(['api', 'database'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'listIndexes')
+    .label('sdk.description', '/docs/references/databases/list-indexes.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_INDEX_LIST)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('queries', [], new Indexes(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Indexes.ALLOWED_ATTRIBUTES.join(', ')}`, true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ databaseId, collectionId, queries, response, dbForProject }: { databaseId: string, collectionId: string, queries: any[], response: Response, dbForProject: Database }) => {
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument('database_' + database.getInternalId(), collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        try {
+            queries = Query.parseQueries(queries);
+        } catch (e) {
+            if (e instanceof QueryException) {
+                throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+            }
+            throw e;
+        }
+
+        queries.push(Query.equal('collectionId', [collectionId]), Query.equal('databaseId', [databaseId]));
+
+        let cursor: any = queries.filter(query => [Query.TYPE_CURSOR_AFTER, Query.TYPE_CURSOR_BEFORE].includes(query.getMethod()));
+        cursor = cursor.length ? cursor[0] : null;
+
+        if (cursor) {
+            const indexId = cursor.getValue();
+            const cursorDocument = await Authorization.skip(() => dbForProject.find('indexes', [
+                Query.equal('collectionInternalId', [collection.getInternalId()]),
+                Query.equal('databaseInternalId', [database.getInternalId()]),
+                Query.equal('key', [indexId]),
+                Query.limit(1)
+            ]));
+
+            if (!cursorDocument.length || cursorDocument[0].isEmpty()) {
+                throw new Exception(Exception.GENERAL_CURSOR_NOT_FOUND, `Index '${indexId}' for the 'cursor' value not found.`);
+            }
+
+            cursor.setValue(cursorDocument[0]);
+        }
+
+        const filterQueries = Query.groupByType(queries)['filters'];
+        response.dynamic(new Document({
+            total: await dbForProject.count('indexes', filterQueries, APP_LIMIT_COUNT),
+            indexes: await dbForProject.find('indexes', queries),
+        }), Response.MODEL_INDEX_LIST);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/indexes/:key')
+    //.alias('/v1/database/collections/:collectionId/indexes/:key', { databaseId: 'default' })
+    .desc('Get index')
+    .groups(['api', 'database'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'getIndex')
+    .label('sdk.description', '/docs/references/databases/get-index.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_INDEX)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', null, new Key(), 'Index Key.')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ databaseId, collectionId, key, response, dbForProject }: { databaseId: string, collectionId: string, key: string, response: Response, dbForProject: Database }) => {
+
+        const database = await Authorization.skip(async () => await dbForProject.getDocument('databases', databaseId));
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument('database_' + database.getInternalId(), collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const index = collection.find('key', key, 'indexes');
+        if (!index) {
+            throw new Exception(Exception.INDEX_NOT_FOUND);
+        }
+
+        response.dynamic(index, Response.MODEL_INDEX);
+    });
+
+App.delete('/v1/databases/:databaseId/collections/:collectionId/indexes/:key')
+    //.alias('/v1/database/collections/:collectionId/indexes/:key', { databaseId: 'default' })
+    .desc('Delete index')
+    .groups(['api', 'database'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].indexes.[indexId].update')
+    .label('audits.event', 'index.delete')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'deleteIndex')
+    .label('sdk.description', '/docs/references/databases/delete-index.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Index Key.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        const db = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (db.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument('database_' + db.getInternalId(), collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const index = await dbForProject.getDocument('indexes', db.getInternalId() + '_' + collection.getInternalId() + '_' + key);
+
+        if (!index.getId()) {
+            throw new Exception(Exception.INDEX_NOT_FOUND);
+        }
+
+        if (index.getAttribute('status') === 'available') {
+            await dbForProject.updateDocument('indexes', index.getId(), index.setAttribute('status', 'deleting'));
+        }
+
+        await dbForProject.purgeCachedDocument('database_' + db.getInternalId(), collectionId);
+
+        queueForDatabase
+            .setType(DATABASE_TYPE_DELETE_INDEX)
+            .setDatabase(db)
+            .setCollection(collection)
+            .setDocument(index);
+
+        queueForEvents
+            .setParam('databaseId', databaseId)
+            .setParam('collectionId', collection.getId())
+            .setParam('indexId', index.getId())
+            .setContext('collection', collection)
+            .setContext('database', db)
+            .setPayload(response.output(index, Response.MODEL_INDEX));
+
+        response.noContent();
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/documents')
+    //.alias('/v1/database/collections/:collectionId/documents', { databaseId: 'default' })
+    .desc('Create document')
+    .groups(['api', 'database'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].documents.[documentId].create')
+    .label('scope', 'documents.write')
+    .label('audits.event', 'document.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('abuse-key', 'ip:{ip},method:{method},url:{url},userId:{userId}')
+    .label('abuse-limit', APP_LIMIT_WRITE_RATE_DEFAULT * 2)
+    .label('abuse-time', APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT)
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'createDocument')
+    .label('sdk.description', '/docs/references/databases/create-document.md')
+    .label('sdk.response.code', Response.STATUS_CODE_CREATED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_DOCUMENT)
+    .label('sdk.offline.model', '/databases/{databaseId}/collections/{collectionId}/documents')
+    .label('sdk.offline.key', '{documentId}')
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('documentId', '', new CustomId(), 'Document ID. Choose a custom ID or generate a random ID with `ID.unique()`. Valid chars are a-z, A-Z, 0-9, period, hyphen, and underscore. Can\'t start with a special char. Max length is 36 chars.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection). Make sure to define attributes before creating documents.')
+    .param('data', [], new JSONValidator(), 'Document data as JSON object.')
+    .param('permissions', null, new Permissions(APP_LIMIT_ARRAY_PARAMS_SIZE, [Database.PERMISSION_READ, Database.PERMISSION_UPDATE, Database.PERMISSION_DELETE, Database.PERMISSION_WRITE]), 'An array of permissions strings. By default, only the current user is granted all permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('user')
+    .inject('queueForEvents')
+    .inject('mode')
+    .action(async ({ databaseId, documentId, collectionId, data, permissions, response, dbForProject, user, queueForEvents, mode }: { databaseId: string, documentId: string, collectionId: string, data: string | Record<string, any>, permissions: string[] | null, response: Response, dbForProject: Database, user: Document, queueForEvents: Event, mode: string }) => {
+
+        data = (typeof data === 'string') ? JSON.parse(data) : data;
+
+        if (Object.keys(data).length === 0) {
+            throw new Exception(Exception.DOCUMENT_MISSING_DATA);
+        }
+
+        if ('$id' in (data as any)) {
+            throw new Exception(Exception.DOCUMENT_INVALID_STRUCTURE, '$id is not allowed for creating new documents, try update instead');
+        }
+
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (database.isEmpty() || (!database.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), collectionId));
+
+        if (collection.isEmpty() || (!collection.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const allowedPermissions = [
+            Database.PERMISSION_READ,
+            Database.PERMISSION_UPDATE,
+            Database.PERMISSION_DELETE,
+        ];
+
+        permissions = Permission.aggregate(permissions, allowedPermissions);
+
+        if (permissions === null) {
+            permissions = [];
+            if (user.getId()) {
+                for (const permission of allowedPermissions) {
+                    permissions.push(new Permission(permission, 'user', user.getId()).toString());
+                }
+            }
+        }
+
+        if (!isAPIKey && !isPrivilegedUser) {
+            for (const type of Database.PERMISSIONS) {
+                for (const permission of permissions) {
+                    const parsedPermission = Permission.parse(permission);
+                    if (parsedPermission.getPermission() !== type) {
+                        continue;
+                    }
+                    const role = new Role(
+                        parsedPermission.getRole(),
+                        parsedPermission.getIdentifier(),
+                        parsedPermission.getDimension()
+                    ).toString();
+                    if (!Authorization.isRole(role)) {
+                        throw new Exception(Exception.USER_UNAUTHORIZED, 'Permissions must be one of: (' + Authorization.getRoles().join(', ') + ')');
+                    }
+                }
+            }
+        }
+
+        data['$collection'] = collection.getId();
+        data['$id'] = documentId === 'unique()' ? ID.unique() : documentId;
+        data['$permissions'] = permissions;
+        const document = new Document(data as any);
+
+        const checkPermissions = async (collection: Document, document: Document, permission: string) => {
+            const documentSecurity = collection.getAttribute('documentSecurity', false);
+            const validator = new Authorization(permission);
+
+            let valid = validator.isValid(collection.getPermissionsByType(permission));
+            if ((permission === Database.PERMISSION_UPDATE && !documentSecurity) || !valid) {
+                throw new Exception(Exception.USER_UNAUTHORIZED);
+            }
+
+            if (permission === Database.PERMISSION_UPDATE) {
+                valid = valid || validator.isValid(document.getUpdate());
+                if (documentSecurity && !valid) {
+                    throw new Exception(Exception.USER_UNAUTHORIZED);
+                }
+            }
+
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+
+                const isList = Array.isArray(related) && Array.isArray(related);
+
+                const relations = isList ? related : [related];
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (let relation of relations) {
+                    if (typeof relation === 'object' && !Array.isArray(relation) && !relation['$id']) {
+                        relation['$id'] = ID.unique();
+                        relation = new Document(relation);
+                    }
+                    if (relation instanceof Document) {
+                        const current = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + relatedCollection.getInternalId(), relation.getId()));
+
+                        let type;
+                        if (current.isEmpty()) {
+                            type = Database.PERMISSION_CREATE;
+
+                            if (relation['$id'] === 'unique()') {
+                                relation['$id'] = ID.unique();
+                            }
+                        } else {
+                            relation.removeAttribute('$collectionId');
+                            relation.removeAttribute('$databaseId');
+                            relation.setAttribute('$collection', relatedCollection.getId());
+                            type = Database.PERMISSION_UPDATE;
+                        }
+
+                        await checkPermissions(relatedCollection, relation, type);
+                    }
+                }
+
+                if (isList) {
+                    document.setAttribute(relationship.getAttribute('key'), relations);
+                } else {
+                    document.setAttribute(relationship.getAttribute('key'), relations[0]);
+                }
+            }
+        };
+
+        await checkPermissions(collection, document, Database.PERMISSION_CREATE);
+
+        try {
+            await dbForProject.createDocument('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), document);
+        } catch (exception) {
+            if (exception instanceof StructureException) {
+                throw new Exception(Exception.DOCUMENT_INVALID_STRUCTURE, exception.message);
+            } else if (exception instanceof Duplicate) {
+                throw new Exception(Exception.DOCUMENT_ALREADY_EXISTS);
+            }
+            throw exception;
+        }
+
+        const processDocument = async (collection: Document, document: Document) => {
+            document.setAttribute('$databaseId', database.getId());
+            document.setAttribute('$collectionId', collection.getId());
+
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+                if (!Array.isArray(related)) {
+                    related = [related];
+                }
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (const relation of related) {
+                    if (relation instanceof Document) {
+                        await processDocument(relatedCollection, relation);
+                    }
+                }
+            }
+        };
+
+        await processDocument(collection, document);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_CREATED)
+            .dynamic(document, Response.MODEL_DOCUMENT);
+
+        const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP).map((document: any) => document.getAttribute('key'));
+
+        queueForEvents
+            .setParam('databaseId', databaseId)
+            .setParam('collectionId', collection.getId())
+            .setParam('documentId', document.getId())
+            .setContext('collection', collection)
+            .setContext('database', database)
+            .setPayload(response.getPayload(), relationships);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/documents')
+    // .alias('/v1/database/collections/:collectionId/documents', { databaseId: 'default' })
+    .desc('List documents')
+    .groups(['api', 'database'])
+    .label('scope', 'documents.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'listDocuments')
+    .label('sdk.description', '/docs/references/databases/list-documents.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_DOCUMENT_LIST)
+    .label('sdk.offline.model', '/databases/{databaseId}/collections/{collectionId}/documents')
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('queries', [], new ArrayList(new Text(APP_LIMIT_ARRAY_ELEMENT_SIZE), APP_LIMIT_ARRAY_PARAMS_SIZE), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long.`, true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('mode')
+    .action(async (databaseId: string, collectionId: string, queries: any[], response: Response, dbForProject: Database, mode: string) => {
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (database.isEmpty() || (!database.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), collectionId));
+
+        if (collection.isEmpty() || (!collection.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        try {
+            queries = Query.parseQueries(queries);
+        } catch (e) {
+            if (e instanceof QueryException) {
+                throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+            }
+            throw e;
+        }
+
+        let cursor: any = queries.filter(query => [Query.TYPE_CURSOR_AFTER, Query.TYPE_CURSOR_BEFORE].includes(query.getMethod()));
+        cursor = cursor.length ? cursor[0] : null;
+
+        if (cursor) {
+            const documentId = cursor.getValue();
+            const cursorDocument = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), documentId));
+
+            if (cursorDocument.isEmpty()) {
+                throw new Exception(Exception.GENERAL_CURSOR_NOT_FOUND, `Document '${documentId}' for the 'cursor' value not found.`);
+            }
+
+            cursor.setValue(cursorDocument);
+        }
+
+        let documents, total;
+        try {
+            documents = await dbForProject.find('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), queries);
+            total = await dbForProject.count('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), queries, APP_LIMIT_COUNT);
+        } catch (e) {
+            if (e instanceof AuthorizationException) {
+                throw new Exception(Exception.USER_UNAUTHORIZED);
+            } else if (e instanceof QueryException) {
+                throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+            }
+            throw e;
+        }
+
+        const processDocument = async (collection: Document, document: Document): Promise<boolean> => {
+            if (document.isEmpty()) {
+                return false;
+            }
+
+            document.removeAttribute('$collection');
+            document.setAttribute('$databaseId', database.getId());
+            document.setAttribute('$collectionId', collection.getId());
+
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+                const relations = Array.isArray(related) ? related : [related];
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (let i = 0; i < relations.length; i++) {
+                    const doc = relations[i];
+                    if (doc instanceof Document) {
+                        if (!await processDocument(relatedCollection, doc)) {
+                            relations.splice(i, 1);
+                            i--;
+                        }
+                    }
+                }
+
+                if (Array.isArray(related)) {
+                    document.setAttribute(relationship.getAttribute('key'), relations);
+                } else if (relations.length === 0) {
+                    document.setAttribute(relationship.getAttribute('key'), null);
+                }
+            }
+
+            return true;
+        };
+
+        for (const document of documents) {
+            await processDocument(collection, document);
+        }
+
+        const select = queries.some(query => query.getMethod() === Query.TYPE_SELECT);
+
+        if (select) {
+            const hasDatabaseId = queries.some(query => query.getMethod() === Query.TYPE_SELECT && query.getValues().includes('$databaseId'));
+            const hasCollectionId = queries.some(query => query.getMethod() === Query.TYPE_SELECT && query.getValues().includes('$collectionId'));
+
+            for (const document of documents) {
+                if (!hasDatabaseId) {
+                    document.removeAttribute('$databaseId');
+                }
+                if (!hasCollectionId) {
+                    document.removeAttribute('$collectionId');
+                }
+            }
+        }
+
+        response.dynamic(new Document({
+            total: total,
+            documents: documents,
+        }), Response.MODEL_DOCUMENT_LIST);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/documents/:documentId')
+    //.alias('/v1/database/collections/:collectionId/documents/:documentId', { databaseId: 'default' })
+    .desc('Get document')
+    .groups(['api', 'database'])
+    .label('scope', 'documents.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'getDocument')
+    .label('sdk.description', '/docs/references/databases/get-document.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_DOCUMENT)
+    .label('sdk.offline.model', '/databases/{databaseId}/collections/{collectionId}/documents')
+    .label('sdk.offline.key', '{documentId}')
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('documentId', '', new UID(), 'Document ID.')
+    .param('queries', [], new ArrayList(new Text(APP_LIMIT_ARRAY_ELEMENT_SIZE), APP_LIMIT_ARRAY_PARAMS_SIZE), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long.`, true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('mode')
+    .action(async ({ databaseId, collectionId, documentId, queries, response, dbForProject, mode }: { databaseId: string, collectionId: string, documentId: string, queries: any[], response: Response, dbForProject: Database, mode: string }) => {
+        const database = await Authorization.skip(async () => await dbForProject.getDocument('databases', databaseId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (database.isEmpty() || (!database.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await Authorization.skip(async () => await dbForProject.getDocument('database_' + database.getInternalId(), collectionId));
+
+        if (collection.isEmpty() || (!collection.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        let document;
+        try {
+            queries = Query.parseQueries(queries);
+            document = await dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), documentId, queries);
+        } catch (e) {
+            if (e instanceof AuthorizationException) {
+                throw new Exception(Exception.USER_UNAUTHORIZED);
+            } else if (e instanceof QueryException) {
+                throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+            }
+            throw e;
+        }
+
+        if (document.isEmpty()) {
+            throw new Exception(Exception.DOCUMENT_NOT_FOUND);
+        }
+
+        const processDocument = async (collection: Document, document: Document) => {
+            if (document.isEmpty()) {
+                return;
+            }
+
+            document.setAttribute('$databaseId', database.getId());
+            document.setAttribute('$collectionId', collection.getId());
+
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+                if (!Array.isArray(related)) {
+                    related = [related];
+                }
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(async () => await dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (const relation of related) {
+                    if (relation instanceof Document) {
+                        await processDocument(relatedCollection, relation);
+                    }
+                }
+            }
+        };
+
+        await processDocument(collection, document);
+
+        response.dynamic(document, Response.MODEL_DOCUMENT);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/documents/:documentId/logs')
+    //.alias('/v1/database/collections/:collectionId/documents/:documentId/logs', { databaseId: 'default' })
+    .desc('List document logs')
+    .groups(['api', 'database'])
+    .label('scope', 'documents.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'listDocumentLogs')
+    .label('sdk.description', '/docs/references/databases/get-document-logs.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_LOG_LIST)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID.')
+    .param('documentId', '', new UID(), 'Document ID.')
+    .param('queries', [], new Queries([new Limit(), new Offset()]), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Only supported methods are limit and offset`, true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('geodb')
+    .action(async ({ databaseId, collectionId, documentId, queries, response, dbForProject, locale, geodb }: { databaseId: string, collectionId: string, documentId: string, queries: any[], response: Response, dbForProject: Database, locale: Locale, geodb: any }) => {
+
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument('database_' + database.getInternalId(), collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const document = await dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), documentId);
+
+        if (document.isEmpty()) {
+            throw new Exception(Exception.DOCUMENT_NOT_FOUND);
+        }
+
+        try {
+            queries = Query.parseQueries(queries);
+        } catch (e) {
+            if (e instanceof QueryException) {
+                throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+            }
+            throw e;
+        }
+
+        const grouped = Query.groupByType(queries);
+        const limit = grouped['limit'] ?? APP_LIMIT_COUNT;
+        const offset = grouped['offset'] ?? 0;
+
+        const audit = new Audit(dbForProject);
+        const resource = `database/${databaseId}/collection/${collectionId}/document/${document.getId()}`;
+        const logs = await audit.getLogsByResource(resource, limit, offset);
+
+        const output = [];
+
+        for (const log of logs) {
+            const userAgent = log['userAgent'] || 'UNKNOWN';
+
+            const detector = new Detector(userAgent);
+            detector.skipBotDetection();
+
+            const os = detector.getOS();
+            const client = detector.getClient();
+            const device = detector.getDevice();
+
+            const logDocument = new Document({
+                event: log['event'],
+                userId: log['data']['userId'],
+                userEmail: log['data']['userEmail'] || null,
+                userName: log['data']['userName'] || null,
+                mode: log['data']['mode'] || null,
+                ip: log['ip'],
+                time: log['time'],
+                osCode: os['osCode'],
+                osName: os['osName'],
+                osVersion: os['osVersion'],
+                clientType: client['clientType'],
+                clientCode: client['clientCode'],
+                clientName: client['clientName'],
+                clientVersion: client['clientVersion'],
+                clientEngine: client['clientEngine'],
+                clientEngineVersion: client['clientEngineVersion'],
+                deviceName: device['deviceName'],
+                deviceBrand: device['deviceBrand'],
+                deviceModel: device['deviceModel']
+            });
+
+            const record = geodb.get(log['ip']);
+
+            if (record) {
+                logDocument.setAttribute('countryCode', locale.getText('countries.' + record['country']['iso_code'].toLowerCase(), false) ? record['country']['iso_code'].toLowerCase() : '--');
+                logDocument.setAttribute('countryName', locale.getText('countries.' + record['country']['iso_code'].toLowerCase(), locale.getText('locale.country.unknown')));
+            } else {
+                logDocument.setAttribute('countryCode', '--');
+                logDocument.setAttribute('countryName', locale.getText('locale.country.unknown'));
+            }
+
+            output.push(logDocument);
+        }
+
+        response.dynamic(new Document({
+            total: audit.countLogsByResource(resource),
+            logs: output,
+        }), Response.MODEL_LOG_LIST);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/documents/:documentId')
+    //.alias('/v1/database/collections/:collectionId/documents/:documentId', { databaseId: 'default' })
+    .desc('Update document')
+    .groups(['api', 'database'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].documents.[documentId].update')
+    .label('scope', 'documents.write')
+    .label('audits.event', 'document.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}/document/{response.$id}')
+    .label('abuse-key', 'ip:{ip},method:{method},url:{url},userId:{userId}')
+    .label('abuse-limit', APP_LIMIT_WRITE_RATE_DEFAULT * 2)
+    .label('abuse-time', APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT)
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateDocument')
+    .label('sdk.description', '/docs/references/databases/update-document.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_DOCUMENT)
+    .label('sdk.offline.model', '/databases/{databaseId}/collections/{collectionId}/documents')
+    .label('sdk.offline.key', '{documentId}')
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID.')
+    .param('documentId', '', new UID(), 'Document ID.')
+    .param('data', [], new JSONValidator(), 'Document data as JSON object. Include only attribute and value pairs to be updated.', true)
+    .param('permissions', null, new Permissions(APP_LIMIT_ARRAY_PARAMS_SIZE, [Database.PERMISSION_READ, Database.PERMISSION_UPDATE, Database.PERMISSION_DELETE, Database.PERMISSION_WRITE]), 'An array of permissions strings. By default, the current permissions are inherited. [Learn more about permissions](https://appwrite.io/docs/permissions).', true)
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('mode')
+    .action(async ({ databaseId, collectionId, documentId, data, permissions, requestTimestamp, response, dbForProject, queueForEvents, mode }: { databaseId: string, collectionId: string, documentId: string, data: string | Record<string, any>, permissions: string[] | null, requestTimestamp: Date | null, response: Response, dbForProject: Database, queueForEvents: Event, mode: string }) => {
+
+        data = (typeof data === 'string') ? JSON.parse(data) : data;
+
+        if (Object.keys(data).length === 0 && permissions === null) {
+            throw new Exception(Exception.DOCUMENT_MISSING_PAYLOAD);
+        }
+
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (database.isEmpty() || (!database.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), collectionId));
+
+        if (collection.isEmpty() || (!collection.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const document = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), documentId));
+
+        if (document.isEmpty()) {
+            throw new Exception(Exception.DOCUMENT_NOT_FOUND);
+        }
+
+        permissions = Permission.aggregate(permissions, [
+            Database.PERMISSION_READ,
+            Database.PERMISSION_UPDATE,
+            Database.PERMISSION_DELETE,
+        ]);
+
+        const roles = Authorization.getRoles();
+        if (!isAPIKey && !isPrivilegedUser && permissions !== null) {
+            for (const type of Database.PERMISSIONS) {
+                for (const permission of permissions) {
+                    const parsedPermission = Permission.parse(permission);
+                    if (parsedPermission.getPermission() !== type) {
+                        continue;
+                    }
+                    const role = new Role(parsedPermission.getRole(), parsedPermission.getIdentifier(), parsedPermission.getDimension()).toString();
+                    if (!Authorization.isRole(role)) {
+                        throw new Exception(Exception.USER_UNAUTHORIZED, `Permissions must be one of: (${roles.join(', ')})`);
+                    }
+                }
+            }
+        }
+
+        if (permissions === null) {
+            permissions = document.getPermissions() ?? [];
+        }
+
+        data['$id'] = documentId;
+        data['$permissions'] = permissions;
+        const newDocument = new Document(data as Record<string, any>);
+
+        const setCollection = async (collection: Document, document: Document) => {
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+
+                const isList = Array.isArray(related) && Array.isArray(related);
+
+                const relations = isList ? related : [related];
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (let relation of relations) {
+                    if (Array.isArray(relation) && !relation['$id']) {
+                        relation['$id'] = ID.unique();
+                        relation = new Document(relation);
+                    }
+                    if (relation instanceof Document) {
+                        const oldDocument = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + relatedCollection.getInternalId(), relation.getId()));
+                        relation.removeAttribute('$collectionId');
+                        relation.removeAttribute('$databaseId');
+                        relation.setAttribute('$collection', 'database_' + database.getInternalId() + '_collection_' + relatedCollection.getInternalId());
+
+                        if (oldDocument.isEmpty()) {
+                            if (relation['$id'] === 'unique()') {
+                                relation['$id'] = ID.unique();
+                            }
+                        }
+                        await setCollection(relatedCollection, relation);
+                    }
+                }
+
+                if (isList) {
+                    document.setAttribute(relationship.getAttribute('key'), relations);
+                } else {
+                    document.setAttribute(relationship.getAttribute('key'), relations[0]);
+                }
+            }
+        };
+
+        await setCollection(collection, newDocument);
+
+        try {
+            const updatedDocument = await dbForProject.withRequestTimestamp(
+                requestTimestamp,
+                () => dbForProject.updateDocument(
+                    'database_' + database.getInternalId() + '_collection_' + collection.getInternalId(),
+                    document.getId(),
+                    newDocument
+                )
+            );
+        } catch (e) {
+            if (e instanceof AuthorizationException) {
+                throw new Exception(Exception.USER_UNAUTHORIZED);
+            } else if (e instanceof Duplicate) {
+                throw new Exception(Exception.DOCUMENT_ALREADY_EXISTS);
+            } else if (e instanceof StructureException) {
+                throw new Exception(Exception.DOCUMENT_INVALID_STRUCTURE, e.message);
+            }
+            throw e;
+        }
+
+        const processDocument = async (collection: Document, document: Document) => {
+            document.setAttribute('$databaseId', database.getId());
+            document.setAttribute('$collectionId', collection.getId());
+
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+                if (!Array.isArray(related)) {
+                    related = [related];
+                }
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (const relation of related) {
+                    if (relation instanceof Document) {
+                        await processDocument(relatedCollection, relation);
+                    }
+                }
+            }
+        };
+
+        await processDocument(collection, document);
+
+        response.dynamic(document, Response.MODEL_DOCUMENT);
+
+        const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP).map((document: any) => document.getAttribute('key'));
+
+        queueForEvents
+            .setParam('databaseId', databaseId)
+            .setParam('collectionId', collection.getId())
+            .setParam('documentId', document.getId())
+            .setContext('collection', collection)
+            .setContext('database', database)
+            .setPayload(response.getPayload(), relationships);
+    });
+
+App.delete('/v1/databases/:databaseId/collections/:collectionId/documents/:documentId')
+    // .alias('/v1/database/collections/:collectionId/documents/:documentId', { databaseId: 'default' })
+    .desc('Delete document')
+    .groups(['api', 'database'])
+    .label('scope', 'documents.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].documents.[documentId].delete')
+    .label('audits.event', 'document.delete')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}/document/{request.documentId}')
+    .label('abuse-key', 'ip:{ip},method:{method},url:{url},userId:{userId}')
+    .label('abuse-limit', APP_LIMIT_WRITE_RATE_DEFAULT)
+    .label('abuse-time', APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT)
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'deleteDocument')
+    .label('sdk.description', '/docs/references/databases/delete-document.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .label('sdk.offline.model', '/databases/{databaseId}/collections/{collectionId}/documents')
+    .label('sdk.offline.key', '{documentId}')
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('documentId', '', new UID(), 'Document ID.')
+    .inject('requestTimestamp')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDeletes')
+    .inject('queueForEvents')
+    .inject('mode')
+    .action(async ({ databaseId, collectionId, documentId, requestTimestamp, response, dbForProject, queueForDeletes, queueForEvents, mode }: { databaseId: string, collectionId: string, documentId: string, requestTimestamp: Date | null, response: Response, dbForProject: Database, queueForDeletes: Delete, queueForEvents: Event, mode: string }) => {
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (database.isEmpty() || (!database.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), collectionId));
+
+        if (collection.isEmpty() || (!collection.getAttribute('enabled', false) && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const document = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId() + '_collection_' + collection.getInternalId(), documentId));
+
+        if (document.isEmpty()) {
+            throw new Exception(Exception.DOCUMENT_NOT_FOUND);
+        }
+
+        await dbForProject.withRequestTimestamp(requestTimestamp, async () => {
+            await dbForProject.deleteDocument(
+                'database_' + database.getInternalId() + '_collection_' + collection.getInternalId(),
+                documentId
+            );
+        });
+
+        const processDocument = async (collection: Document, document: Document) => {
+            document.setAttribute('$databaseId', database.getId());
+            document.setAttribute('$collectionId', collection.getId());
+
+            const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP);
+
+            for (const relationship of relationships) {
+                let related = document.getAttribute(relationship.getAttribute('key'));
+
+                if (!related) {
+                    continue;
+                }
+                if (!Array.isArray(related)) {
+                    related = [related];
+                }
+
+                const relatedCollectionId = relationship.getAttribute('relatedCollection');
+                const relatedCollection = await Authorization.skip(() => dbForProject.getDocument('database_' + database.getInternalId(), relatedCollectionId));
+
+                for (const relation of related) {
+                    if (relation instanceof Document) {
+                        await processDocument(relatedCollection, relation);
+                    }
+                }
+            }
+        };
+
+        await processDocument(collection, document);
+
+        const relationships = collection.getAttribute('attributes', []).filter((attribute: any) => attribute.getAttribute('type') === Database.VAR_RELATIONSHIP).map((document: any) => document.getAttribute('key'));
+
+        queueForDeletes
+            .setType(DELETE_TYPE_AUDIT)
+            .setDocument(document);
+
+        queueForEvents
+            .setParam('databaseId', databaseId)
+            .setParam('collectionId', collection.getId())
+            .setParam('documentId', document.getId())
+            .setContext('collection', collection)
+            .setContext('database', database)
+            .setPayload(response.output(document, Response.MODEL_DOCUMENT), relationships);
+
+        response.noContent();
+    });
+
+App.get('/v1/databases/usage')
+    .desc('Get databases usage stats')
+    .groups(['api', 'database', 'usage'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'getUsage')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USAGE_DATABASES)
+    .param('range', '30d', new WhiteList(['24h', '30d', '90d'], true), '`Date range.', true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ range, response, dbForProject }: { range: string, response: Response, dbForProject: Database }) => {
+
+        const periods = Config.getParam('usage', []);
+        const stats: Record<string, any> = {};
+        const usage: Record<string, any> = {};
+        const days = periods[range];
+        const metrics = [
+            METRIC_DATABASES,
+            METRIC_COLLECTIONS,
+            METRIC_DOCUMENTS,
+        ];
+
+        await Authorization.skip(async () => {
+            for (const metric of metrics) {
+                const result: Document = await dbForProject.findOne('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', ['inf'])
+                ]) as Document;
+
+                stats[metric] = { total: result?.getAttribute('value') ?? 0, data: {} };
+                const limit = days['limit'];
+                const period = days['period'];
+                const results = await dbForProject.find('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', [period]),
+                    Query.limit(limit),
+                    Query.orderDesc('time'),
+                ]);
+
+                for (const result of results) {
+                    stats[metric]['data'][result.getAttribute('time')] = {
+                        value: result.getAttribute('value'),
+                    };
+                }
+            }
+        });
+
+        const format = days['period'] === '1h' ? 'Y-m-d\\TH:00:00.000P' : 'Y-m-d\\T00:00:00.000P';
+
+        for (const metric of metrics) {
+            usage[metric] = { total: stats[metric]['total'], data: [] };
+            let leap = Date.now() - (days['limit'] * days['factor']);
+            while (leap < Date.now()) {
+                leap += days['factor'];
+                const formatDate = new Date(leap).toISOString().slice(0, -1);
+                usage[metric]['data'].push({
+                    value: stats[metric]['data'][formatDate]?.value ?? 0,
+                    date: formatDate,
+                });
+            }
+        }
+
+        response.dynamic(new Document({
+            range: range,
+            databasesTotal: usage[metrics[0]]['total'],
+            collectionsTotal: usage[metrics[1]]['total'],
+            documentsTotal: usage[metrics[2]]['total'],
+            databases: usage[metrics[0]]['data'],
+            collections: usage[metrics[1]]['data'],
+            documents: usage[metrics[2]]['data'],
+        }), Response.MODEL_USAGE_DATABASES);
+    });
+
+    App.get('/v1/databases/:databaseId/usage')
+    .desc('Get database usage stats')
+    .groups(['api', 'database', 'usage'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'getDatabaseUsage')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USAGE_DATABASE)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('range', '30d', new WhiteList(['24h', '30d', '90d'], true), '`Date range.', true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ databaseId, range, response, dbForProject }: { databaseId: string, range: string, response: Response, dbForProject: Database }) => {
+
+        const database = await dbForProject.getDocument('databases', databaseId);
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const periods = Config.getParam('usage', []);
+        const stats: Record<string, any> = {};
+        const usage: Record<string, any> = {};
+        const days = periods[range];
+        const metrics = [
+            METRIC_DATABASE_ID_COLLECTIONS.replace('{databaseInternalId}', database.getInternalId()),
+            METRIC_DATABASE_ID_DOCUMENTS.replace('{databaseInternalId}', database.getInternalId()),
+        ];
+
+        await Authorization.skip(async () => {
+            for (const metric of metrics) {
+                const result: Document = await dbForProject.findOne('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', ['inf'])
+                ]) as Document;
+
+                stats[metric] = { total: result?.getAttribute('value') ?? 0, data: {} };
+                const limit = days['limit'];
+                const period = days['period'];
+                const results = await dbForProject.find('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', [period]),
+                    Query.limit(limit),
+                    Query.orderDesc('time'),
+                ]);
+
+                for (const result of results) {
+                    stats[metric]['data'][result.getAttribute('time')] = {
+                        value: result.getAttribute('value'),
+                    };
+                }
+            }
+        });
+
+        const format = days['period'] === '1h' ? 'Y-m-d\\TH:00:00.000P' : 'Y-m-d\\T00:00:00.000P';
+
+        for (const metric of metrics) {
+            usage[metric] = { total: stats[metric]['total'], data: [] };
+            let leap = Date.now() - (days['limit'] * days['factor']);
+            while (leap < Date.now()) {
+                leap += days['factor'];
+                const formatDate = new Date(leap).toISOString().slice(0, -1);
+                usage[metric]['data'].push({
+                    value: stats[metric]['data'][formatDate]?.value ?? 0,
+                    date: formatDate,
+                });
+            }
+        }
+
+        response.dynamic(new Document({
+            range: range,
+            collectionsTotal: usage[metrics[0]]['total'],
+            documentsTotal: usage[metrics[1]]['total'],
+            collections: usage[metrics[0]]['data'],
+            documents: usage[metrics[1]]['data'],
+        }), Response.MODEL_USAGE_DATABASE);
+    });
+
+    App.get('/v1/databases/:databaseId/collections/:collectionId/usage')
+    //.alias('/v1/database/:collectionId/usage', { databaseId: 'default' })
+    .desc('Get collection usage stats')
+    .groups(['api', 'database', 'usage'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'getCollectionUsage')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USAGE_COLLECTION)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('range', '30d', new WhiteList(['24h', '30d', '90d'], true), 'Date range.', true)
+    .param('collectionId', '', new UID(), 'Collection ID.')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ databaseId, range, collectionId, response, dbForProject }: { databaseId: string, range: string, collectionId: string, response: Response, dbForProject: Database }) => {
+
+        const database = await dbForProject.getDocument('databases', databaseId);
+        const collectionDocument = await dbForProject.getDocument('database_' + database.getInternalId(), collectionId);
+        const collection = await dbForProject.getCollection('database_' + database.getInternalId() + '_collection_' + collectionDocument.getInternalId());
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const periods = Config.getParam('usage', []);
+        const stats: Record<string, any> = {};
+        const usage: Record<string, any> = {};
+        const days = periods[range];
+        const metrics = [
+            METRIC_DATABASE_ID_COLLECTION_ID_DOCUMENTS.replace('{databaseInternalId}', database.getInternalId()).replace('{collectionInternalId}', collectionDocument.getInternalId()),
+        ];
+
+        await Authorization.skip(async () => {
+            for (const metric of metrics) {
+                const result: Document = await dbForProject.findOne('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', ['inf'])
+                ]) as Document;
+
+                stats[metric] = { total: result?.getAttribute('value') ?? 0, data: {} };
+                const limit = days['limit'];
+                const period = days['period'];
+                const results = await dbForProject.find('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', [period]),
+                    Query.limit(limit),
+                    Query.orderDesc('time'),
+                ]);
+
+                for (const result of results) {
+                    stats[metric]['data'][result.getAttribute('time')] = {
+                        value: result.getAttribute('value'),
+                    };
+                }
+            }
+        });
+
+        const format = days['period'] === '1h' ? 'Y-m-d\\TH:00:00.000P' : 'Y-m-d\\T00:00:00.000P';
+
+        for (const metric of metrics) {
+            usage[metric] = { total: stats[metric]['total'], data: [] };
+            let leap = Date.now() - (days['limit'] * days['factor']);
+            while (leap < Date.now()) {
+                leap += days['factor'];
+                const formatDate = new Date(leap).toISOString().slice(0, -1);
+                usage[metric]['data'].push({
+                    value: stats[metric]['data'][formatDate]?.value ?? 0,
+                    date: formatDate,
+                });
+            }
+        }
+
+        response.dynamic(new Document({
+            range: range,
+            documentsTotal: usage[metrics[0]]['total'],
+            documents: usage[metrics[0]]['data'],
+        }), Response.MODEL_USAGE_COLLECTION);
+    });
