@@ -1,13 +1,13 @@
 import { AppcondaException as Exception } from "../../../Appconda/Extend/Exception";
-import { Authorization, Boolean, Document, ID, Permission, Range, Text } from "../../../Tuval/Core";
-import { Database, Duplicate, Limit, LimitException, Offset, Queries, Query, QueryException, Structure, UID } from "../../../Tuval/Database";
+import { ArrayList, Authorization, Boolean, Document, FloatValidator, ID, Integer, IP, Nullable, Permission, Range, Text, URLValidator, WhiteList } from "../../../Tuval/Core";
+import { Database, Datetime, Duplicate, Key, Limit, LimitException, Offset, Queries, Query, QueryException, Structure, UID } from "../../../Tuval/Database";
 
 import { Database as EventDatabase, } from "../../../Appconda/Event/Database";
 import { Event } from "../../../Appconda/Event/Event";
 import { Response } from "../../../Appconda/Tuval/Response";
 import { Request } from "../../../Appconda/Tuval/Request";
 import { App } from "../../../Tuval/Http";
-import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_KEY, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, DATABASE_TYPE_DELETE_COLLECTION, DATABASE_TYPE_DELETE_DATABASE } from "../../init";
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_KEY, APP_DATABASE_ATTRIBUTE_EMAIL, APP_DATABASE_ATTRIBUTE_ENUM, APP_DATABASE_ATTRIBUTE_FLOAT_RANGE, APP_DATABASE_ATTRIBUTE_INT_RANGE, APP_DATABASE_ATTRIBUTE_IP, APP_DATABASE_ATTRIBUTE_STRING_MAX_LENGTH, APP_DATABASE_ATTRIBUTE_URL, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, DATABASE_TYPE_DELETE_COLLECTION, DATABASE_TYPE_DELETE_DATABASE } from "../../init";
 import { CustomId } from "../../../Appconda/Tuval/Database/Validators/CustomId";
 import { Config } from "../../../Tuval/Config";
 import { Databases } from "../../../Appconda/Database/Validators/Queries/Databases";
@@ -16,6 +16,8 @@ import { Audit } from "../../../Tuval/Audit";
 import { Detector } from "../../../Appconda/Detector/Detector";
 import { Permissions } from "../../../Tuval/Database/Validators/Permissions";
 import { Collections } from "../../../Appconda/Database/Validators/Queries/Collections";
+import { Email } from "../../../Appconda/Network/Validators/Email";
+import { Attributes } from "../../../Appconda/Database/Validators/Queries/Attributes";
 
 /**
  * Create attribute of varying type
@@ -205,19 +207,36 @@ async function createAttribute(
  * @throws ConflictException
  */
 async function updateAttribute(
-    databaseId: string,
-    collectionId: string,
-    key: string,
-    dbForProject: Database,
-    queueForEvents: Event,
-    type: string,
-    filter: string | null = null,
-    defaultValue: string | boolean | number | null = null,
-    required: boolean | null = null,
-    min: number | null = null,
-    max: number | null = null,
-    elements: string[] | null = null,
-    options: Record<string, any> = {}
+
+    {
+        databaseId,
+        collectionId,
+        key,
+        dbForProject,
+        queueForEvents,
+        type,
+        filter = null,
+        defaultValue = null,
+        required = null,
+        min = null,
+        max = null,
+        elements = null,
+        options = {}
+    }: {
+        databaseId: string,
+        collectionId: string,
+        key: string,
+        dbForProject: Database,
+        queueForEvents: Event,
+        type: string,
+        filter?: string | null,
+        defaultValue?: string | boolean | number | null,
+        required?: boolean | null,
+        min?: number | null,
+        max?: number | null,
+        elements?: string[] | null,
+        options?: Record<string, any>
+    }
 ): Promise<Document> {
     const db = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
 
@@ -1090,3 +1109,996 @@ App.delete('/v1/databases/:databaseId/collections/:collectionId')
 
         response.noContent();
     });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/string')
+    // .alias('/v1/database/collections/:collectionId/attributes/string', { databaseId: 'default' })
+    .desc('Create string attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'createStringAttribute')
+    .label('sdk.description', '/docs/references/databases/create-string-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_STRING)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('size', null, new Range(1, APP_DATABASE_ATTRIBUTE_STRING_MAX_LENGTH, Range.TYPE_INTEGER), 'Attribute size for text attributes, in number of characters.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Text(0, 0), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .param('encrypt', false, new Boolean(), 'Toggle encryption for the attribute. Encryption enhances security by not storing any plain text values in the database. However, encrypted attributes cannot be queried.', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, size, required, defaultValue, array, encrypt, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, size: number | null, required: boolean | null, defaultValue: string | null, array: boolean, encrypt: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        // Ensure attribute default is within required size
+        const validator = new Text(size, 0);
+        if (defaultValue !== null && !validator.isValid(defaultValue)) {
+            throw new Exception(Exception.ATTRIBUTE_VALUE_INVALID, validator.getDescription());
+        }
+
+        const filters: string[] = [];
+
+        if (encrypt) {
+            filters.push('encrypt');
+        }
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_STRING,
+            size: size,
+            required: required,
+            default: defaultValue,
+            array: array,
+            filters: filters,
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_STRING);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/email')
+    //.alias('/v1/database/collections/:collectionId/attributes/email', { databaseId: 'default' })
+    .desc('Create email attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createEmailAttribute')
+    .label('sdk.description', '/docs/references/databases/create-email-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_EMAIL)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Email(), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, array, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_STRING,
+            size: 254,
+            required: required,
+            default: defaultValue,
+            array: array,
+            format: APP_DATABASE_ATTRIBUTE_EMAIL,
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_EMAIL);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/enum')
+    //.alias('/v1/database/collections/:collectionId/attributes/enum', { databaseId: 'default' })
+    .desc('Create enum attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createEnumAttribute')
+    .label('sdk.description', '/docs/references/databases/create-attribute-enum.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_ENUM)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('elements', [], new ArrayList(new Text(Database.LENGTH_KEY), APP_LIMIT_ARRAY_PARAMS_SIZE), `Array of elements in enumerated type. Uses length of longest element to determine size. Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} elements are allowed, each ${Database.LENGTH_KEY} characters long.`)
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Text(0), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, elements, required, defaultValue, array, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, elements: string[], required: boolean | null, defaultValue: string | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+        if (defaultValue !== null && !elements.includes(defaultValue)) {
+            throw new Exception(Exception.ATTRIBUTE_VALUE_INVALID, 'Default value not found in elements');
+        }
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_STRING,
+            size: Database.LENGTH_KEY,
+            required: required,
+            default: defaultValue,
+            array: array,
+            format: APP_DATABASE_ATTRIBUTE_ENUM,
+            formatOptions: { elements: elements },
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_ENUM);
+    });
+
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/ip')
+    //.alias('/v1/database/collections/:collectionId/attributes/ip', { databaseId: 'default' })
+    .desc('Create IP address attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createIpAttribute')
+    .label('sdk.description', '/docs/references/databases/create-ip-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_IP)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new IP(), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async (databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event) => {
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_STRING,
+            size: 39,
+            required: required,
+            default: defaultValue,
+            array: array,
+            format: APP_DATABASE_ATTRIBUTE_IP,
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_IP);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/url')
+    //.alias('/v1/database/collections/:collectionId/attributes/url', { databaseId: 'default' })
+    .desc('Create URL attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createUrlAttribute')
+    .label('sdk.description', '/docs/references/databases/create-url-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_URL)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new URLValidator(), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, array, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_STRING,
+            size: 2000,
+            required: required,
+            default: defaultValue,
+            array: array,
+            format: APP_DATABASE_ATTRIBUTE_URL,
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_URL);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/integer')
+    //.alias('/v1/database/collections/:collectionId/attributes/integer', { databaseId: 'default' })
+    .desc('Create integer attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createIntegerAttribute')
+    .label('sdk.description', '/docs/references/databases/create-integer-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_INTEGER)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('min', null, new Integer(), 'Minimum value to enforce on new documents', true)
+    .param('max', null, new Integer(), 'Maximum value to enforce on new documents', true)
+    .param('default', null, new Integer(), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, min, max, defaultValue, array, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, min: number | null, max: number | null, defaultValue: number | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        // Ensure attribute default is within range
+        min = (min === null) ? Number.MIN_SAFE_INTEGER : min;
+        max = (max === null) ? Number.MAX_SAFE_INTEGER : max;
+
+        if (min > max) {
+            throw new Exception(Exception.ATTRIBUTE_VALUE_INVALID, 'Minimum value must be lesser than maximum value');
+        }
+
+        const validator = new Range(min, max, Database.VAR_INTEGER);
+
+        if (defaultValue !== null && !validator.isValid(defaultValue)) {
+            throw new Exception(Exception.ATTRIBUTE_VALUE_INVALID, validator.getDescription());
+        }
+
+        const size = max > 2147483647 ? 8 : 4; // Automatically create BigInt depending on max value
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_INTEGER,
+            size: size,
+            required: required,
+            default: defaultValue,
+            array: array,
+            format: APP_DATABASE_ATTRIBUTE_INT_RANGE,
+            formatOptions: {
+                min: min,
+                max: max,
+            },
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        const formatOptions = attribute.getAttribute('formatOptions', {});
+
+        if (Object.keys(formatOptions).length > 0) {
+            attribute.setAttribute('min', formatOptions['min']);
+            attribute.setAttribute('max', formatOptions['max']);
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_INTEGER);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/float')
+    //.alias('/v1/database/collections/:collectionId/attributes/float', { databaseId: 'default' })
+    .desc('Create float attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createFloatAttribute')
+    .label('sdk.description', '/docs/references/databases/create-float-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_FLOAT)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('min', null, new FloatValidator(), 'Minimum value to enforce on new documents', true)
+    .param('max', null, new FloatValidator(), 'Maximum value to enforce on new documents', true)
+    .param('default', null, new FloatValidator(), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, min, max, defaultValue, array, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, min: number | null, max: number | null, defaultValue: number | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        // Ensure attribute default is within range
+        min = (min === null) ? -Number.MAX_VALUE : min;
+        max = (max === null) ? Number.MAX_VALUE : max;
+
+        if (min > max) {
+            throw new Exception(Exception.ATTRIBUTE_VALUE_INVALID, 'Minimum value must be lesser than maximum value');
+        }
+
+        // Ensure default value is a float
+        if (defaultValue !== null) {
+            defaultValue = parseFloat(defaultValue.toString());
+        }
+
+        const validator = new Range(min, max, Database.VAR_FLOAT);
+
+        if (defaultValue !== null && !validator.isValid(defaultValue)) {
+            throw new Exception(Exception.ATTRIBUTE_VALUE_INVALID, validator.getDescription());
+        }
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_FLOAT,
+            required: required,
+            size: 0,
+            default: defaultValue,
+            array: array,
+            format: APP_DATABASE_ATTRIBUTE_FLOAT_RANGE,
+            formatOptions: {
+                min: min,
+                max: max,
+            },
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        const formatOptions = attribute.getAttribute('formatOptions', {});
+
+        if (Object.keys(formatOptions).length > 0) {
+            attribute.setAttribute('min', parseFloat(formatOptions['min']));
+            attribute.setAttribute('max', parseFloat(formatOptions['max']));
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_FLOAT);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/boolean')
+    //.alias('/v1/database/collections/:collectionId/attributes/boolean', { databaseId: 'default' })
+    .desc('Create boolean attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createBooleanAttribute')
+    .label('sdk.description', '/docs/references/databases/create-boolean-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_BOOLEAN)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Boolean(), 'Default value for attribute when not provided. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, array, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: boolean | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_BOOLEAN,
+            size: 0,
+            required: required,
+            default: defaultValue,
+            array: array,
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_BOOLEAN);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/datetime')
+    //.alias('/v1/database/collections/:collectionId/attributes/datetime', { databaseId: 'default' })
+    .desc('Create datetime attribute')
+    .groups(['api', 'database'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createDatetimeAttribute')
+    .label('sdk.description', '/docs/references/databases/create-datetime-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_DATETIME)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Datetime(), 'Default value for the attribute in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Cannot be set when attribute is required.', true)
+    .param('array', false, new Boolean(), 'Is attribute an array?', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async (databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, array: boolean, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event) => {
+
+        const filters: string[] = ['datetime'];
+
+        const attribute = await createAttribute(databaseId, collectionId, new Document({
+            key: key,
+            type: Database.VAR_DATETIME,
+            size: 0,
+            required: required,
+            default: defaultValue,
+            array: array,
+            filters: filters,
+        }), response, dbForProject, queueForDatabase, queueForEvents);
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_DATETIME);
+    });
+
+App.post('/v1/databases/:databaseId/collections/:collectionId/attributes/relationship')
+    //.alias('/v1/database/collections/:collectionId/attributes/relationship', { databaseId: 'default' })
+    .desc('Create relationship attribute')
+    .groups(['api', 'database'])
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].create')
+    .label('scope', 'collections.write')
+    .label('audits.event', 'attribute.create')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.namespace', 'databases')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.method', 'createRelationshipAttribute')
+    .label('sdk.description', '/docs/references/databases/create-relationship-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_ACCEPTED)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_RELATIONSHIP)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('relatedCollectionId', '', new UID(), 'Related Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('type', '', new WhiteList([Database.RELATION_ONE_TO_ONE, Database.RELATION_MANY_TO_ONE, Database.RELATION_MANY_TO_MANY, Database.RELATION_ONE_TO_MANY], true), 'Relation type')
+    .param('twoWay', false, new Boolean(), 'Is Two Way?', true)
+    .param('key', null, new Key(), 'Attribute Key.', true)
+    .param('twoWayKey', null, new Key(), 'Two Way Attribute Key.', true)
+    .param('onDelete', Database.RELATION_MUTATE_RESTRICT, new WhiteList([Database.RELATION_MUTATE_CASCADE, Database.RELATION_MUTATE_RESTRICT, Database.RELATION_MUTATE_SET_NULL], true), 'Constraints option', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForDatabase')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, relatedCollectionId, type, twoWay, key, twoWayKey, onDelete, response, dbForProject, queueForDatabase, queueForEvents }: { databaseId: string, collectionId: string, relatedCollectionId: string, type: string, twoWay: boolean, key: string | null, twoWayKey: string | null, onDelete: string, response: Response, dbForProject: Database, queueForDatabase: EventDatabase, queueForEvents: Event }) => {
+        key = key ?? relatedCollectionId;
+        twoWayKey = twoWayKey ?? collectionId;
+
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument(`database_${database.getInternalId()}`, collectionId);
+        const collectionData = await dbForProject.getCollection(`database_${database.getInternalId()}_collection_${collection.getInternalId()}`);
+
+        if (collectionData.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const relatedCollectionDocument = await dbForProject.getDocument(`database_${database.getInternalId()}`, relatedCollectionId);
+        const relatedCollection = await dbForProject.getCollection(`database_${database.getInternalId()}_collection_${relatedCollectionDocument.getInternalId()}`);
+
+        if (relatedCollection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const attributes = collectionData.getAttribute('attributes', []);
+        for (const attribute of attributes) {
+            if (attribute.getAttribute('type') !== Database.VAR_RELATIONSHIP) {
+                continue;
+            }
+
+            if (attribute.getId().toLowerCase() === key.toLowerCase()) {
+                throw new Exception(Exception.ATTRIBUTE_ALREADY_EXISTS);
+            }
+
+            if (
+                attribute.getAttribute('options')['twoWayKey'].toLowerCase() === twoWayKey.toLowerCase() &&
+                attribute.getAttribute('options')['relatedCollection'] === relatedCollection.getId()
+            ) {
+                throw new Exception(Exception.ATTRIBUTE_ALREADY_EXISTS, 'Attribute with the requested key already exists. Attribute keys must be unique, try again with a different key.');
+            }
+
+            if (
+                type === Database.RELATION_MANY_TO_MANY &&
+                attribute.getAttribute('options')['relationType'] === Database.RELATION_MANY_TO_MANY &&
+                attribute.getAttribute('options')['relatedCollection'] === relatedCollection.getId()
+            ) {
+                throw new Exception(Exception.ATTRIBUTE_ALREADY_EXISTS, 'Creating more than one "manyToMany" relationship on the same collection is currently not permitted.');
+            }
+        }
+
+        const attribute = await createAttribute(
+            databaseId,
+            collectionId,
+            new Document({
+                key: key,
+                type: Database.VAR_RELATIONSHIP,
+                size: 0,
+                required: false,
+                default: null,
+                array: false,
+                filters: [],
+                options: {
+                    relatedCollection: relatedCollectionId,
+                    relationType: type,
+                    twoWay: twoWay,
+                    twoWayKey: twoWayKey,
+                    onDelete: onDelete,
+                }
+            }),
+            response,
+            dbForProject,
+            queueForDatabase,
+            queueForEvents
+        );
+
+        const options = attribute.getAttribute('options', {});
+
+        for (const [key, option] of Object.entries(options)) {
+            attribute.setAttribute(key, option);
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_ACCEPTED)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_RELATIONSHIP);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/attributes')
+    //.alias('/v1/database/collections/:collectionId/attributes', { databaseId: 'default' })
+    .desc('List attributes')
+    .groups(['api', 'database'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'listAttributes')
+    .label('sdk.description', '/docs/references/databases/list-attributes.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_LIST)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('queries', [], new Attributes(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Attributes.ALLOWED_ATTRIBUTES.join(', ')}`, true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ databaseId, collectionId, queries, response, dbForProject }: { databaseId: string, collectionId: string, queries: any[], response: Response, dbForProject: Database }) => {
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument(`database_${database.getInternalId()}`, collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        try {
+            queries = Query.parseQueries(queries);
+        } catch (e) {
+            if (e instanceof QueryException) {
+                throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+            }
+            throw e;
+        }
+
+        queries.push(
+            Query.equal('collectionInternalId', [collection.getInternalId()]),
+            Query.equal('databaseInternalId', [database.getInternalId()])
+        );
+
+        const cursor = queries.find(query => [Query.TYPE_CURSOR_AFTER, Query.TYPE_CURSOR_BEFORE].includes(query.getMethod()));
+
+        if (cursor) {
+            const attributeId = cursor.getValue();
+            const cursorDocument = await Authorization.skip(() => dbForProject.find('attributes', [
+                Query.equal('collectionInternalId', [collection.getInternalId()]),
+                Query.equal('databaseInternalId', [database.getInternalId()]),
+                Query.equal('key', [attributeId]),
+                Query.limit(1),
+            ]));
+
+            if (!cursorDocument || cursorDocument[0].isEmpty()) {
+                throw new Exception(Exception.GENERAL_CURSOR_NOT_FOUND, `Attribute '${attributeId}' for the 'cursor' value not found.`);
+            }
+
+            cursor.setValue(cursorDocument[0]);
+        }
+
+        const filters = Query.groupByType(queries)['filters'];
+
+        const attributes = await dbForProject.find('attributes', queries);
+        const total = await dbForProject.count('attributes', filters, APP_LIMIT_COUNT);
+
+        response.dynamic(new Document({
+            attributes: attributes,
+            total: total,
+        }), Response.MODEL_ATTRIBUTE_LIST);
+    });
+
+App.get('/v1/databases/:databaseId/collections/:collectionId/attributes/:key')
+    //.alias('/v1/database/collections/:collectionId/attributes/:key', { databaseId: 'default' })
+    .desc('Get attribute')
+    .groups(['api', 'database'])
+    .label('scope', 'collections.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'getAttribute')
+    .label('sdk.description', '/docs/references/databases/get-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', [
+        Response.MODEL_ATTRIBUTE_BOOLEAN,
+        Response.MODEL_ATTRIBUTE_INTEGER,
+        Response.MODEL_ATTRIBUTE_FLOAT,
+        Response.MODEL_ATTRIBUTE_EMAIL,
+        Response.MODEL_ATTRIBUTE_ENUM,
+        Response.MODEL_ATTRIBUTE_URL,
+        Response.MODEL_ATTRIBUTE_IP,
+        Response.MODEL_ATTRIBUTE_DATETIME,
+        Response.MODEL_ATTRIBUTE_RELATIONSHIP,
+        Response.MODEL_ATTRIBUTE_STRING
+    ])
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ databaseId, collectionId, key, response, dbForProject }: { databaseId: string, collectionId: string, key: string, response: Response, dbForProject: Database }) => {
+
+        const database = await Authorization.skip(() => dbForProject.getDocument('databases', databaseId));
+
+        if (database.isEmpty()) {
+            throw new Exception(Exception.DATABASE_NOT_FOUND);
+        }
+
+        const collection = await dbForProject.getDocument(`database_${database.getInternalId()}`, collectionId);
+
+        if (collection.isEmpty()) {
+            throw new Exception(Exception.COLLECTION_NOT_FOUND);
+        }
+
+        const attribute = await dbForProject.getDocument('attributes', `${database.getInternalId()}_${collection.getInternalId()}_${key}`);
+
+        if (attribute.isEmpty()) {
+            throw new Exception(Exception.ATTRIBUTE_NOT_FOUND);
+        }
+
+        // Select response model based on type and format
+        const type = attribute.getAttribute('type');
+        const format = attribute.getAttribute('format');
+        const options = attribute.getAttribute('options', {});
+
+        for (const [key, option] of Object.entries(options)) {
+            attribute.setAttribute(key, option);
+        }
+
+        const model = (() => {
+            switch (type) {
+                case Database.VAR_BOOLEAN:
+                    return Response.MODEL_ATTRIBUTE_BOOLEAN;
+                case Database.VAR_INTEGER:
+                    return Response.MODEL_ATTRIBUTE_INTEGER;
+                case Database.VAR_FLOAT:
+                    return Response.MODEL_ATTRIBUTE_FLOAT;
+                case Database.VAR_DATETIME:
+                    return Response.MODEL_ATTRIBUTE_DATETIME;
+                case Database.VAR_RELATIONSHIP:
+                    return Response.MODEL_ATTRIBUTE_RELATIONSHIP;
+                case Database.VAR_STRING:
+                    switch (format) {
+                        case APP_DATABASE_ATTRIBUTE_EMAIL:
+                            return Response.MODEL_ATTRIBUTE_EMAIL;
+                        case APP_DATABASE_ATTRIBUTE_ENUM:
+                            return Response.MODEL_ATTRIBUTE_ENUM;
+                        case APP_DATABASE_ATTRIBUTE_IP:
+                            return Response.MODEL_ATTRIBUTE_IP;
+                        case APP_DATABASE_ATTRIBUTE_URL:
+                            return Response.MODEL_ATTRIBUTE_URL;
+                        default:
+                            return Response.MODEL_ATTRIBUTE_STRING;
+                    }
+                default:
+                    return Response.MODEL_ATTRIBUTE;
+            }
+        })();
+
+        response.dynamic(attribute, model);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/string/:key')
+    .desc('Update string attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateStringAttribute')
+    .label('sdk.description', '/docs/references/databases/update-string-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_STRING)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Nullable(new Text(0, 0)), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_STRING,
+            defaultValue: defaultValue,
+            required: required
+        });
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_STRING);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/enum/:key')
+    .desc('Update enum attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateEnumAttribute')
+    .label('sdk.description', '/docs/references/databases/update-enum-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_ENUM)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('elements', null, new ArrayList(new Text(Database.LENGTH_KEY), APP_LIMIT_ARRAY_PARAMS_SIZE), `Array of elements in enumerated type. Uses length of longest element to determine size. Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} elements are allowed, each ${Database.LENGTH_KEY} characters long.`)
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Nullable(new Text(0)), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, elements, required, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, elements: string[] | null, required: boolean | null, defaultValue: string | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_STRING,
+            filter: APP_DATABASE_ATTRIBUTE_ENUM,
+            defaultValue: defaultValue,
+            required: required,
+            elements: elements
+        });
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_ENUM);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/url/:key')
+    .desc('Update URL attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateUrlAttribute')
+    .label('sdk.description', '/docs/references/databases/update-url-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_URL)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Nullable(new URLValidator()), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: string | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_STRING,
+            filter: APP_DATABASE_ATTRIBUTE_URL,
+            defaultValue: defaultValue,
+            required: required
+        });
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_URL);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/integer/:key')
+    .desc('Update integer attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateIntegerAttribute')
+    .label('sdk.description', '/docs/references/databases/update-integer-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_INTEGER)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('min', null, new Integer(), 'Minimum value to enforce on new documents')
+    .param('max', null, new Integer(), 'Maximum value to enforce on new documents')
+    .param('default', null, new Nullable(new Integer()), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, min, max, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, min: number | null, max: number | null, defaultValue: number | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_INTEGER,
+            defaultValue: defaultValue,
+            required: required,
+            min: min,
+            max: max
+        });
+
+        const formatOptions = attribute.getAttribute('formatOptions', {});
+
+        if (Object.keys(formatOptions).length > 0) {
+            attribute.setAttribute('min', parseInt(formatOptions['min']));
+            attribute.setAttribute('max', parseInt(formatOptions['max']));
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_INTEGER);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/float/:key')
+    .desc('Update float attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateFloatAttribute')
+    .label('sdk.description', '/docs/references/databases/update-float-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_FLOAT)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('min', null, new FloatValidator(), 'Minimum value to enforce on new documents')
+    .param('max', null, new FloatValidator(), 'Maximum value to enforce on new documents')
+    .param('default', null, new Nullable(new FloatValidator()), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, min, max, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, min: number | null, max: number | null, defaultValue: number | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_FLOAT,
+            defaultValue: defaultValue,
+            required: required,
+            min: min,
+            max: max
+        });
+
+        const formatOptions = attribute.getAttribute('formatOptions', {});
+
+        if (Object.keys(formatOptions).length > 0) {
+            attribute.setAttribute('min', parseFloat(formatOptions['min']));
+            attribute.setAttribute('max', parseFloat(formatOptions['max']));
+        }
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_FLOAT);
+    });
+
+App.patch('/v1/databases/:databaseId/collections/:collectionId/attributes/boolean/:key')
+    .desc('Update boolean attribute')
+    .groups(['api', 'database', 'schema'])
+    .label('scope', 'collections.write')
+    .label('event', 'databases.[databaseId].collections.[collectionId].attributes.[attributeId].update')
+    .label('audits.event', 'attribute.update')
+    .label('audits.resource', 'database/{request.databaseId}/collection/{request.collectionId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_KEY])
+    .label('sdk.namespace', 'databases')
+    .label('sdk.method', 'updateBooleanAttribute')
+    .label('sdk.description', '/docs/references/databases/update-boolean-attribute.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.model', Response.MODEL_ATTRIBUTE_BOOLEAN)
+    .param('databaseId', '', new UID(), 'Database ID.')
+    .param('collectionId', '', new UID(), 'Collection ID. You can create a new collection using the Database service [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection).')
+    .param('key', '', new Key(), 'Attribute Key.')
+    .param('required', null, new Boolean(), 'Is attribute required?')
+    .param('default', null, new Nullable(new Boolean()), 'Default value for attribute when not provided. Cannot be set when attribute is required.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ databaseId, collectionId, key, required, defaultValue, response, dbForProject, queueForEvents }: { databaseId: string, collectionId: string, key: string, required: boolean | null, defaultValue: boolean | null, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const attribute = await updateAttribute({
+            databaseId: databaseId,
+            collectionId: collectionId,
+            key: key,
+            dbForProject: dbForProject,
+            queueForEvents: queueForEvents,
+            type: Database.VAR_BOOLEAN,
+            defaultValue: defaultValue,
+            required: required
+        });
+
+        response
+            .setStatusCode(Response.STATUS_CODE_OK)
+            .dynamic(attribute, Response.MODEL_ATTRIBUTE_BOOLEAN);
+    });
+
+    
