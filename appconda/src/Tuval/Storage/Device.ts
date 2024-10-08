@@ -28,7 +28,7 @@ export abstract class Device {
 
     abstract abort(path: string, extra: string ): Promise<boolean>;
 
-    abstract read(path: string, offset: number , length?: number): Promise<Buffer>;
+    abstract read(path: string, offset?: number  , length?: number): Promise<Buffer>;
     abstract readString(path: string, offset: number , length?: number): Promise<string>;
 
     abstract transfer(path: string, destination: string, device: Device): Promise<boolean>;

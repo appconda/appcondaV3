@@ -160,7 +160,7 @@ App.post('/v1/projects')
         try {
             dsn = new DSN(dsn);
         } catch (e) {
-            if (e instanceof InvalidArgumentException) {
+            if (e instanceof Error) {
                 dsn = new DSN(`mysql://${dsn}`);
             } else {
                 throw e;
@@ -227,7 +227,7 @@ App.get('/v1/projects')
     .label('sdk.response.code', Response.STATUS_CODE_OK)
     .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
     .label('sdk.response.model', Response.MODEL_PROJECT_LIST)
-    .param('queries', [], new Projects(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Projects.ALLOWED_ATTRIBUTES.join(', ')}`, true)
+    .param('queries', [], new Projects(), `Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appconda.io/docs/queries). Maximum of ${APP_LIMIT_ARRAY_PARAMS_SIZE} queries are allowed, each ${APP_LIMIT_ARRAY_ELEMENT_SIZE} characters long. You may filter on the following attributes: ${Projects.ALLOWED_ATTRIBUTES.join(', ')}`, true)
     .param('search', '', new Text(256), 'Search term to filter your list results. Max length: 256 chars.', true)
     .inject('response')
     .inject('dbForConsole')
@@ -1697,7 +1697,7 @@ App.get('/v1/projects/:projectId/templates/sms/:type/:locale')
         response.dynamic(new Document(template), Response.MODEL_SMS_TEMPLATE);
     });
 
-    App.get('/v1/projects/:projectId/templates/email/:type/:locale')
+App.get('/v1/projects/:projectId/templates/email/:type/:locale')
     .desc('Get custom email template')
     .groups(['api', 'projects'])
     .label('scope', 'projects.write')
@@ -1729,7 +1729,7 @@ App.get('/v1/projects/:projectId/templates/sms/:type/:locale')
             messageTemplate
                 .setParam('{{hello}}', localeObj.getText(`emails.${type}.hello`))
                 .setParam('{{footer}}', localeObj.getText(`emails.${type}.footer`))
-                .setParam('{{body}}', localeObj.getText(`emails.${type}.body`),  false )
+                .setParam('{{body}}', localeObj.getText(`emails.${type}.body`), false)
                 .setParam('{{thanks}}', localeObj.getText(`emails.${type}.thanks`))
                 .setParam('{{signature}}', localeObj.getText(`emails.${type}.signature`))
                 .setParam('{{direction}}', localeObj.getText('settings.direction'));
@@ -1747,4 +1747,184 @@ App.get('/v1/projects/:projectId/templates/sms/:type/:locale')
         template['locale'] = locale;
 
         response.dynamic(new Document(template), Response.MODEL_EMAIL_TEMPLATE);
+    });
+
+App.patch('/v1/projects/:projectId/templates/sms/:type/:locale')
+    .desc('Update custom SMS template')
+    .groups(['api', 'projects'])
+    .label('scope', 'projects.write')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'projects')
+    .label('sdk.method', 'updateSmsTemplate')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SMS_TEMPLATE)
+    .param('projectId', '', new UID(), 'Project unique ID.')
+    .param('type', '', new WhiteList(Config.getParam('locale-templates')?.sms ?? []), 'Template type')
+    .param('locale', '', (localeCodes: string[]) => new WhiteList(localeCodes), 'Template locale', false, ['localeCodes'])
+    .param('message', '', new Text(0), 'Template message')
+    .inject('response')
+    .inject('dbForConsole')
+    .action(async ({ projectId, type, locale, message, response, dbForConsole }: { projectId: string, type: string, locale: string, message: string, response: Response, dbForConsole: Database }) => {
+
+        throw new Exception(Exception.GENERAL_NOT_IMPLEMENTED);
+
+        const project = await dbForConsole.getDocument('projects', projectId);
+
+        if (project.isEmpty()) {
+            throw new Exception(Exception.PROJECT_NOT_FOUND);
+        }
+
+        const templates = project.getAttribute('templates', {});
+        templates[`sms.${type}-${locale}`] = {
+            message: message
+        };
+
+        const updatedProject = await dbForConsole.updateDocument('projects', project.getId(), project.setAttribute('templates', templates));
+
+        response.dynamic(new Document({
+            message: message,
+            type: type,
+            locale: locale,
+        }), Response.MODEL_SMS_TEMPLATE);
+    });
+
+App.patch('/v1/projects/:projectId/templates/email/:type/:locale')
+    .desc('Update custom email templates')
+    .groups(['api', 'projects'])
+    .label('scope', 'projects.write')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'projects')
+    .label('sdk.method', 'updateEmailTemplate')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_PROJECT)
+    .param('projectId', '', new UID(), 'Project unique ID.')
+    .param('type', '', new WhiteList(Config.getParam('locale-templates')?.email ?? []), 'Template type')
+    .param('locale', '', (localeCodes: string[]) => new WhiteList(localeCodes), 'Template locale', false, ['localeCodes'])
+    .param('subject', '', new Text(255), 'Email Subject')
+    .param('message', '', new Text(0), 'Template message')
+    .param('senderName', '', new Text(255, 0), 'Name of the email sender', true)
+    .param('senderEmail', '', new Email(), 'Email of the sender', true)
+    .param('replyTo', '', new Email(), 'Reply to email', true)
+    .inject('response')
+    .inject('dbForConsole')
+    .action(async ({ projectId, type, locale, subject, message, senderName, senderEmail, replyTo, response, dbForConsole }: { projectId: string, type: string, locale: string, subject: string, message: string, senderName: string, senderEmail: string, replyTo: string, response: Response, dbForConsole: Database }) => {
+
+        const project = await dbForConsole.getDocument('projects', projectId);
+
+        if (project.isEmpty()) {
+            throw new Exception(Exception.PROJECT_NOT_FOUND);
+        }
+
+        const templates = project.getAttribute('templates', {});
+        templates[`email.${type}-${locale}`] = {
+            senderName: senderName,
+            senderEmail: senderEmail,
+            subject: subject,
+            replyTo: replyTo,
+            message: message
+        };
+
+        const updatedProject = await dbForConsole.updateDocument('projects', project.getId(), project.setAttribute('templates', templates));
+
+        response.dynamic(new Document({
+            type: type,
+            locale: locale,
+            senderName: senderName,
+            senderEmail: senderEmail,
+            subject: subject,
+            replyTo: replyTo,
+            message: message
+        }), Response.MODEL_EMAIL_TEMPLATE);
+    });
+
+App.delete('/v1/projects/:projectId/templates/sms/:type/:locale')
+    .desc('Reset custom SMS template')
+    .groups(['api', 'projects'])
+    .label('scope', 'projects.write')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'projects')
+    .label('sdk.method', 'deleteSmsTemplate')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_SMS_TEMPLATE)
+    .param('projectId', '', new UID(), 'Project unique ID.')
+    .param('type', '', new WhiteList(Config.getParam('locale-templates')?.sms ?? []), 'Template type')
+    .param('locale', '', (localeCodes: string[]) => new WhiteList(localeCodes), 'Template locale', false, ['localeCodes'])
+    .inject('response')
+    .inject('dbForConsole')
+    .action(async ({ projectId, type, locale, response, dbForConsole }: { projectId: string, type: string, locale: string, response: Response, dbForConsole: Database }) => {
+
+        throw new Exception(Exception.GENERAL_NOT_IMPLEMENTED);
+
+        const project = await dbForConsole.getDocument('projects', projectId);
+
+        if (project.isEmpty()) {
+            throw new Exception(Exception.PROJECT_NOT_FOUND);
+        }
+
+        const templates = project.getAttribute('templates', {});
+        const templateKey = `sms.${type}-${locale}`;
+        const template = templates[templateKey] || null;
+
+        if (template === null) {
+            throw new Exception(Exception.PROJECT_TEMPLATE_DEFAULT_DELETION);
+        }
+
+        delete templates[templateKey];
+
+        const updatedProject = await dbForConsole.updateDocument('projects', project.getId(), project.setAttribute('templates', templates));
+
+        response.dynamic(new Document({
+            type: type,
+            locale: locale,
+            message: template.message
+        }), Response.MODEL_SMS_TEMPLATE);
+    });
+
+App.delete('/v1/projects/:projectId/templates/email/:type/:locale')
+    .desc('Reset custom email template')
+    .groups(['api', 'projects'])
+    .label('scope', 'projects.write')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'projects')
+    .label('sdk.method', 'deleteEmailTemplate')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_EMAIL_TEMPLATE)
+    .param('projectId', '', new UID(), 'Project unique ID.')
+    .param('type', '', new WhiteList(Config.getParam('locale-templates')?.email ?? []), 'Template type')
+    .param('locale', '', (localeCodes: string[]) => new WhiteList(localeCodes), 'Template locale', false, ['localeCodes'])
+    .inject('response')
+    .inject('dbForConsole')
+    .action(async ({ projectId, type, locale, response, dbForConsole }: { projectId: string, type: string, locale: string, response: Response, dbForConsole: Database }) => {
+
+        const project = await dbForConsole.getDocument('projects', projectId);
+
+        if (project.isEmpty()) {
+            throw new Exception(Exception.PROJECT_NOT_FOUND);
+        }
+
+        const templates = project.getAttribute('templates', {});
+        const templateKey = `email.${type}-${locale}`;
+        const template = templates[templateKey] || null;
+
+        if (template === null) {
+            throw new Exception(Exception.PROJECT_TEMPLATE_DEFAULT_DELETION);
+        }
+
+        delete templates[templateKey];
+
+        const updatedProject = await dbForConsole.updateDocument('projects', project.getId(), project.setAttribute('templates', templates));
+
+        response.dynamic(new Document({
+            type: type,
+            locale: locale,
+            senderName: template.senderName,
+            senderEmail: template.senderEmail,
+            subject: template.subject,
+            replyTo: template.replyTo,
+            message: template.message
+        }), Response.MODEL_EMAIL_TEMPLATE);
     });

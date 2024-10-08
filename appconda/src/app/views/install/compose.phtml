@@ -14,14 +14,14 @@ $image = $this->getParam('image', '');
 ?>services:
   traefik:
     image: traefik:2.11
-    container_name: appwrite-traefik
+    container_name: appconda-traefik
     <<: *x-logging
     command:
       - --providers.file.directory=/storage/config
       - --providers.file.watch=true
       - --providers.docker=true
       - --providers.docker.exposedByDefault=false
-      - --providers.docker.constraints=Label(`traefik.constraint-label-stack`,`appwrite`)
+      - --providers.docker.constraints=Label(`traefik.constraint-label-stack`,`appconda`)
       - --entrypoints.appwrite_web.address=:80
       - --entrypoints.appwrite_websecure.address=:443
     restart: unless-stopped
@@ -30,25 +30,25 @@ $image = $this->getParam('image', '');
       - <?php echo $httpsPort; ?>:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - appwrite-config:/storage/config:ro
-      - appwrite-certificates:/storage/certificates:ro
+      - appconda-config:/storage/config:ro
+      - appconda-certificates:/storage/certificates:ro
     depends_on:
-      - appwrite
+      - appconda
     networks:
       - gateway
-      - appwrite
+      - appconda
 
-  appwrite:
+  appconda:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
-    container_name: appwrite
+    container_name: appconda
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     labels:
       - traefik.enable=true
-      - traefik.constraint-label-stack=appwrite
-      - traefik.docker.network=appwrite
+      - traefik.constraint-label-stack=appconda
+      - traefik.docker.network=appconda
       - traefik.http.services.appwrite_api.loadbalancer.server.port=80
       #http
       - traefik.http.routers.appwrite_api_http.entrypoints=appwrite_web
@@ -60,11 +60,11 @@ $image = $this->getParam('image', '');
       - traefik.http.routers.appwrite_api_https.service=appwrite_api
       - traefik.http.routers.appwrite_api_https.tls=true
     volumes:
-      - appwrite-uploads:/storage/uploads:rw
-      - appwrite-cache:/storage/cache:rw
-      - appwrite-config:/storage/config:rw
-      - appwrite-certificates:/storage/certificates:rw
-      - appwrite-functions:/storage/functions:rw
+      - appconda-uploads:/storage/uploads:rw
+      - appconda-cache:/storage/cache:rw
+      - appconda-config:/storage/config:rw
+      - appconda-certificates:/storage/certificates:rw
+      - appconda-functions:/storage/functions:rw
     depends_on:
       - mariadb
       - redis
@@ -163,17 +163,17 @@ $image = $this->getParam('image', '');
       - _APP_MIGRATIONS_FIREBASE_CLIENT_SECRET
       - _APP_ASSISTANT_OPENAI_API_KEY
 
-  appwrite-console:
+  appconda-console:
     <<: *x-logging
-    container_name: appwrite-console
+    container_name: appconda-console
     image: <?php echo $organization; ?>/console:5.0.12
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     labels:
       - "traefik.enable=true"
-      - "traefik.constraint-label-stack=appwrite"
-      - "traefik.docker.network=appwrite"
+      - "traefik.constraint-label-stack=appconda"
+      - "traefik.docker.network=appconda"
       - "traefik.http.services.appwrite_console.loadbalancer.server.port=80"
       #ws
       - traefik.http.routers.appwrite_console_http.entrypoints=appwrite_web
@@ -185,16 +185,16 @@ $image = $this->getParam('image', '');
       - traefik.http.routers.appwrite_console_https.service=appwrite_console
       - traefik.http.routers.appwrite_console_https.tls=true
 
-  appwrite-realtime:
+  appconda-realtime:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: realtime
-    container_name: appwrite-realtime
+    container_name: appconda-realtime
     <<: *x-logging
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.constraint-label-stack=appwrite"
-      - "traefik.docker.network=appwrite"
+      - "traefik.constraint-label-stack=appconda"
+      - "traefik.docker.network=appconda"
       - "traefik.http.services.appwrite_realtime.loadbalancer.server.port=80"
       #ws
       - traefik.http.routers.appwrite_realtime_ws.entrypoints=appwrite_web
@@ -206,7 +206,7 @@ $image = $this->getParam('image', '');
       - traefik.http.routers.appwrite_realtime_wss.service=appwrite_realtime
       - traefik.http.routers.appwrite_realtime_wss.tls=true
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - mariadb
       - redis
@@ -228,14 +228,14 @@ $image = $this->getParam('image', '');
       - _APP_USAGE_STATS
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-audits:
+  appconda-worker-audits:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-audits
     <<: *x-logging
-    container_name: appwrite-worker-audits
+    container_name: appconda-worker-audits
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
@@ -254,14 +254,14 @@ $image = $this->getParam('image', '');
       - _APP_DB_PASS
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-webhooks:
+  appconda-worker-webhooks:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-webhooks
     <<: *x-logging
-    container_name: appwrite-worker-webhooks
+    container_name: appconda-worker-webhooks
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
@@ -282,23 +282,23 @@ $image = $this->getParam('image', '');
       - _APP_REDIS_PASS
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-deletes:
+  appconda-worker-deletes:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-deletes
     <<: *x-logging
-    container_name: appwrite-worker-deletes
+    container_name: appconda-worker-deletes
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
     volumes:
-      - appwrite-uploads:/storage/uploads:rw
-      - appwrite-cache:/storage/cache:rw
-      - appwrite-functions:/storage/functions:rw
-      - appwrite-builds:/storage/builds:rw
-      - appwrite-certificates:/storage/certificates:rw
+      - appconda-uploads:/storage/uploads:rw
+      - appconda-cache:/storage/cache:rw
+      - appconda-functions:/storage/functions:rw
+      - appconda-builds:/storage/builds:rw
+      - appconda-certificates:/storage/certificates:rw
     environment:
       - _APP_ENV
       - _APP_WORKER_PER_CORE
@@ -340,14 +340,14 @@ $image = $this->getParam('image', '');
       - _APP_MAINTENANCE_RETENTION_AUDIT
       - _APP_MAINTENANCE_RETENTION_EXECUTION
 
-  appwrite-worker-databases:
+  appconda-worker-databases:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-databases
     <<: *x-logging
-    container_name: appwrite-worker-databases
+    container_name: appconda-worker-databases
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
@@ -366,20 +366,20 @@ $image = $this->getParam('image', '');
       - _APP_DB_PASS
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-builds:
+  appconda-worker-builds:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-builds
     <<: *x-logging
-    container_name: appwrite-worker-builds
+    container_name: appconda-worker-builds
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
     volumes:
-      - appwrite-functions:/storage/functions:rw
-      - appwrite-builds:/storage/builds:rw
+      - appconda-functions:/storage/functions:rw
+      - appconda-builds:/storage/builds:rw
     environment:
       - _APP_ENV
       - _APP_WORKER_PER_CORE
@@ -429,20 +429,20 @@ $image = $this->getParam('image', '');
       - _APP_STORAGE_WASABI_REGION
       - _APP_STORAGE_WASABI_BUCKET
 
-  appwrite-worker-certificates:
+  appconda-worker-certificates:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-certificates
     <<: *x-logging
-    container_name: appwrite-worker-certificates
+    container_name: appconda-worker-certificates
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
     volumes:
-      - appwrite-config:/storage/config:rw
-      - appwrite-certificates:/storage/certificates:rw
+      - appconda-config:/storage/config:rw
+      - appconda-certificates:/storage/certificates:rw
     environment:
       - _APP_ENV
       - _APP_WORKER_PER_CORE
@@ -462,14 +462,14 @@ $image = $this->getParam('image', '');
       - _APP_DB_PASS
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-functions:
+  appconda-worker-functions:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-functions
     <<: *x-logging
-    container_name: appwrite-worker-functions
+    container_name: appconda-worker-functions
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
@@ -500,14 +500,14 @@ $image = $this->getParam('image', '');
       - _APP_DOCKER_HUB_PASSWORD
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-mails:
+  appconda-worker-mails:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-mails
     <<: *x-logging
-    container_name: appwrite-worker-mails
+    container_name: appconda-worker-mails
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
     environment:
@@ -532,16 +532,16 @@ $image = $this->getParam('image', '');
       - _APP_SMTP_PASSWORD
       - _APP_LOGGING_CONFIG
 
-  appwrite-worker-messaging:
+  appconda-worker-messaging:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-messaging
     <<: *x-logging
-    container_name: appwrite-worker-messaging
+    container_name: appconda-worker-messaging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     volumes:
-      - appwrite-uploads:/storage/uploads:rw
+      - appconda-uploads:/storage/uploads:rw
     depends_on:
       - redis
     environment:
@@ -582,14 +582,14 @@ $image = $this->getParam('image', '');
       - _APP_STORAGE_WASABI_REGION
       - _APP_STORAGE_WASABI_BUCKET
 
-  appwrite-worker-migrations:
+  appconda-worker-migrations:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-migrations
     <<: *x-logging
-    container_name: appwrite-worker-migrations
+    container_name: appconda-worker-migrations
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - mariadb
     environment:
@@ -612,14 +612,14 @@ $image = $this->getParam('image', '');
       - _APP_MIGRATIONS_FIREBASE_CLIENT_ID
       - _APP_MIGRATIONS_FIREBASE_CLIENT_SECRET
 
-  appwrite-task-maintenance:
+  appconda-task-maintenance:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: maintenance
     <<: *x-logging
-    container_name: appwrite-task-maintenance
+    container_name: appconda-task-maintenance
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
     environment:
@@ -646,14 +646,14 @@ $image = $this->getParam('image', '');
       - _APP_MAINTENANCE_RETENTION_USAGE_HOURLY
       - _APP_MAINTENANCE_RETENTION_SCHEDULES
 
-  appwrite-worker-usage:
+  appconda-worker-usage:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-usage
-    container_name: appwrite-worker-usage
+    container_name: appconda-worker-usage
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
@@ -674,13 +674,13 @@ $image = $this->getParam('image', '');
       - _APP_LOGGING_CONFIG
       - _APP_USAGE_AGGREGATION_INTERVAL
 
-  appwrite-worker-usage-dump:
+  appconda-worker-usage-dump:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: worker-usage-dump
     <<: *x-logging
-    container_name: appwrite-worker-usage-dump
+    container_name: appconda-worker-usage-dump
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - redis
       - mariadb
@@ -701,14 +701,14 @@ $image = $this->getParam('image', '');
       - _APP_LOGGING_CONFIG
       - _APP_USAGE_AGGREGATION_INTERVAL
 
-  appwrite-task-scheduler-functions:
+  appconda-task-scheduler-functions:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: schedule-functions
-    container_name: appwrite-task-scheduler-functions
+    container_name: appconda-task-scheduler-functions
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - mariadb
       - redis
@@ -726,14 +726,14 @@ $image = $this->getParam('image', '');
       - _APP_DB_USER
       - _APP_DB_PASS
 
-  appwrite-task-scheduler-executions:
+  appconda-task-scheduler-executions:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: schedule-executions
-    container_name: appwrite-task-scheduler-executions
+    container_name: appconda-task-scheduler-executions
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - mariadb
       - redis
@@ -751,14 +751,14 @@ $image = $this->getParam('image', '');
       - _APP_DB_USER
       - _APP_DB_PASS
 
-  appwrite-task-scheduler-messages:
+  appconda-task-scheduler-messages:
     image: <?php echo $organization; ?>/<?php echo $image; ?>:<?php echo $version."\n"; ?>
     entrypoint: schedule-messages
-    container_name: appwrite-task-scheduler-messages
+    container_name: appconda-task-scheduler-messages
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     depends_on:
       - mariadb
       - redis
@@ -776,13 +776,13 @@ $image = $this->getParam('image', '');
       - _APP_DB_USER
       - _APP_DB_PASS
 
-  appwrite-assistant:
-    image: appwrite/assistant:0.4.0
-    container_name: appwrite-assistant
+  appconda-assistant:
+    image: appconda/assistant:0.4.0
+    container_name: appconda-assistant
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     environment:
       - _APP_ASSISTANT_OPENAI_API_KEY
 
@@ -794,12 +794,12 @@ $image = $this->getParam('image', '');
     stop_signal: SIGINT
     image: openruntimes/executor:0.6.11
     networks:
-      - appwrite
+      - appconda
       - runtimes
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - appwrite-builds:/storage/builds:rw
-      - appwrite-functions:/storage/functions:rw
+      - appconda-builds:/storage/builds:rw
+      - appconda-functions:/storage/functions:rw
       # Host mount nessessary to share files between executor and runtimes.
       # It's not possible to share mount file between 2 containers without host mount (copying is too slow)
       - /tmp:/tmp:rw
@@ -837,13 +837,13 @@ $image = $this->getParam('image', '');
 
   mariadb:
     image: mariadb:10.11 # fix issues when upgrading using: mysql_upgrade -u root -p
-    container_name: appwrite-mariadb
+    container_name: appconda-mariadb
     <<: *x-logging
     restart: unless-stopped
     networks:
-      - appwrite
+      - appconda
     volumes:
-      - appwrite-mariadb:/var/lib/mysql:rw
+      - appconda-mariadb:/var/lib/mysql:rw
     environment:
       - MYSQL_ROOT_PASSWORD=${_APP_DB_ROOT_PASS}
       - MYSQL_DATABASE=${_APP_DB_SCHEMA}
@@ -854,7 +854,7 @@ $image = $this->getParam('image', '');
 
   redis:
     image: redis:7.2.4-alpine
-    container_name: appwrite-redis
+    container_name: appconda-redis
     <<: *x-logging
     restart: unless-stopped
     command: >
@@ -863,33 +863,33 @@ $image = $this->getParam('image', '');
       --maxmemory-policy     allkeys-lru
       --maxmemory-samples    5
     networks:
-      - appwrite
+      - appconda
     volumes:
-      - appwrite-redis:/data:rw
+      - appconda-redis:/data:rw
 
   # clamav:
-  #   image: appwrite/clamav:1.2.0
-  #   container_name: appwrite-clamav
+  #   image: appconda/clamav:1.2.0
+  #   container_name: appconda-clamav
   #   restart: unless-stopped
   #   networks:
-  #     - appwrite
+  #     - appconda
   #   volumes:
-  #     - appwrite-uploads:/storage/uploads
+  #     - appconda-uploads:/storage/uploads
 
 networks:
   gateway:
     name: gateway
-  appwrite:
-    name: appwrite
+  appconda:
+    name: appconda
   runtimes:
     name: runtimes
 
 volumes:
-  appwrite-mariadb:
-  appwrite-redis:
-  appwrite-cache:
-  appwrite-uploads:
-  appwrite-certificates:
-  appwrite-functions:
-  appwrite-builds:
-  appwrite-config:
+  appconda-mariadb:
+  appconda-redis:
+  appconda-cache:
+  appconda-uploads:
+  appconda-certificates:
+  appconda-functions:
+  appconda-builds:
+  appconda-config:

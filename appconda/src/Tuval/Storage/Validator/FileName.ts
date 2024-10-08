@@ -1,22 +1,34 @@
-
 import { Validator } from "../../Core";
 
 
-
-export class File extends Validator {
+export class FileName extends Validator {
+    /**
+     * Get Description
+     */
     getDescription(): string {
-        return 'File is not valid';
+        return 'Filename is not valid';
     }
 
     /**
-     * NOT MUCH RIGHT NOW.
+     * The file name can only contain "a-z", "A-Z", "0-9" and "-" and not empty.
      *
-     * TODO think what to do here, currently only used for parameter to be present in SDKs
-     *
-     * @param  name  any
+     * @param name
      * @return boolean
      */
     isValid(name: any): boolean {
+        if (!name) {
+            return false;
+        }
+
+        if (typeof name !== 'string') {
+            return false;
+        }
+
+        const regex = /^[a-zA-Z0-9.]+$/;
+        if (!regex.test(name)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -39,6 +51,6 @@ export class File extends Validator {
      * @return string
      */
     getType(): string {
-        return Validator.TYPE_STRING;
+        return 'string';
     }
 }
