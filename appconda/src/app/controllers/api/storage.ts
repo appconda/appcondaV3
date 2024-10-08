@@ -4,7 +4,7 @@ import {
 } from "../../../Tuval/Core";
 import { App } from "../../../Tuval/Http";
 import { AppcondaException as Exception } from "../../../Appconda/Extend/Exception";
-import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_SESSION, APP_EMAIL_TEAM, APP_LIMIT_ANTIVIRUS, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, APP_LIMIT_USER_PASSWORD_HISTORY, APP_LIMIT_USER_SESSIONS_DEFAULT, APP_LIMIT_USER_SESSIONS_MAX, APP_LIMIT_USERS, APP_LIMIT_WRITE_RATE_DEFAULT, APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT, APP_NAME, APP_STORAGE_READ_BUFFER, APP_VERSION_STABLE, DELETE_TYPE_DOCUMENT, MAX_OUTPUT_CHUNK_SIZE } from "../../init";
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_SESSION, APP_EMAIL_TEAM, APP_LIMIT_ANTIVIRUS, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, APP_LIMIT_USER_PASSWORD_HISTORY, APP_LIMIT_USER_SESSIONS_DEFAULT, APP_LIMIT_USER_SESSIONS_MAX, APP_LIMIT_USERS, APP_LIMIT_WRITE_RATE_DEFAULT, APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT, APP_NAME, APP_STORAGE_READ_BUFFER, APP_VERSION_STABLE, DELETE_TYPE_CACHE_BY_RESOURCE, DELETE_TYPE_DOCUMENT, MAX_OUTPUT_CHUNK_SIZE, METRIC_FILES, METRIC_BUCKETS, METRIC_FILES_STORAGE, METRIC_BUCKET_ID_FILES, METRIC_BUCKET_ID_FILES_STORAGE } from "../../init";
 import { Response } from "../../../Appconda/Tuval/Response";
 import { ProjectId } from "../../../Appconda/Database/Validators/ProjectId";
 import { Database, Datetime, Duplicate, Query, QueryException, UID } from "../../../Tuval/Database";
@@ -41,6 +41,8 @@ import { Zstd } from "../../../Tuval/Storage/Compression/Algorithms/Zstd";
 import GZIP from "../../../Tuval/Storage/Compression/Algorithms/GZIP";
 import { OpenSSL } from "../../../Appconda/OpenSSL/OpenSSL";
 import { Files } from "../../../Appconda/Database/Validators/Queries/Files";
+import { Image } from "../../../Tuval/Image/Image";
+import { JWT } from "../../../Appconda/JWT/JWT";
 
 function empty(value: any): boolean {
     // Falsy değerleri kontrol et: null, undefined, 0, boş string, false
@@ -1130,4 +1132,652 @@ App.get('/v1/storage/buckets/:bucketId/files/:fileId/download')
         }
     });
 
-    
+
+App.get('/v1/storage/buckets/:bucketId/files/:fileId/view')
+    //.alias('/v1/storage/files/:fileId/view', { bucketId: 'default' })
+    .desc('Get file for view')
+    .groups(['api', 'storage'])
+    .label('scope', 'files.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'storage')
+    .label('sdk.method', 'getFileView')
+    .label('sdk.description', '/docs/references/storage/get-file-view.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', '*/*')
+    .label('sdk.methodType', 'location')
+    .param('bucketId', '', new UID(), 'Storage bucket unique ID. You can create a new storage bucket using the Storage service [server integration](https://appwrite.io/docs/server/storage#createBucket).')
+    .param('fileId', '', new UID(), 'File ID.')
+    .inject('response')
+    .inject('request')
+    .inject('dbForProject')
+    .inject('mode')
+    .inject('deviceForFiles')
+    .action(async ({ bucketId, fileId, response, request, dbForProject, mode, deviceForFiles }: { bucketId: string, fileId: string, response: Response, request: Request, dbForProject: Database, mode: string, deviceForFiles: Device }) => {
+        const bucket = await Authorization.skip(() => dbForProject.getDocument('buckets', bucketId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (bucket.isEmpty() || (!bucket.getAttribute('enabled') && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.STORAGE_BUCKET_NOT_FOUND);
+        }
+
+        const fileSecurity = bucket.getAttribute('fileSecurity', false);
+        const validator = new Authorization(Database.PERMISSION_READ);
+        const valid = validator.isValid(bucket.getRead());
+        if (!fileSecurity && !valid) {
+            throw new Exception(Exception.USER_UNAUTHORIZED);
+        }
+
+        const file = fileSecurity && !valid
+            ? await dbForProject.getDocument('bucket_' + bucket.getInternalId(), fileId)
+            : await Authorization.skip(() => dbForProject.getDocument('bucket_' + bucket.getInternalId(), fileId));
+
+        if (file.isEmpty()) {
+            throw new Exception(Exception.STORAGE_FILE_NOT_FOUND);
+        }
+
+        const mimes = Config.getParam('storage-mimes');
+        const path = file.getAttribute('path', '');
+
+        if (!deviceForFiles.exists(path)) {
+            throw new Exception(Exception.STORAGE_FILE_NOT_FOUND, 'File not found in ' + path);
+        }
+
+        let contentType = 'text/plain';
+        if (mimes.includes(file.getAttribute('mimeType'))) {
+            contentType = file.getAttribute('mimeType');
+        }
+
+        response
+            .setContentType(contentType)
+            .addHeader('Content-Security-Policy', 'script-src none;')
+            .addHeader('X-Content-Type-Options', 'nosniff')
+            .addHeader('Content-Disposition', `inline; filename="${file.getAttribute('name', '')}"`)
+            .addHeader('Expires', new Date(Date.now() + 60 * 60 * 24 * 45 * 1000).toUTCString()) // 45 days cache
+            .addHeader('X-Peak', process.memoryUsage().heapUsed.toString());
+
+        const size = file.getAttribute('sizeOriginal', 0);
+        const rangeHeader = request.getHeader('range');
+        let start, end;
+        if (rangeHeader) {
+            start = request.getRangeStart();
+            end = request.getRangeEnd();
+            const unit = request.getRangeUnit();
+
+            if (end === null) {
+                end = Math.min(start + 2000000 - 1, size - 1);
+            }
+
+            if (unit !== 'bytes' || start >= end || end >= size) {
+                throw new Exception(Exception.STORAGE_INVALID_RANGE);
+            }
+
+            response
+                .addHeader('Accept-Ranges', 'bytes')
+                .addHeader('Content-Range', `bytes ${start}-${end}/${size}`)
+                .addHeader('Content-Length', (end - start + 1).toString())
+                .setStatusCode(Response.STATUS_CODE_PARTIALCONTENT);
+        }
+
+        let source: any = '';
+        /*   if (file.getAttribute('openSSLCipher')) { // Decrypt
+              source = deviceForFiles.read(path);
+              source = OpenSSL.decrypt(
+                  source,
+                  file.getAttribute('openSSLCipher'),
+                  process.env._APP_OPENSSL_KEY_V as any + file.getAttribute('openSSLVersion'),
+                  0,
+                  Buffer.from(file.getAttribute('openSSLIV'), 'hex'),
+                  Buffer.from(file.getAttribute('openSSLTag'), 'hex')
+              );
+          } */
+
+        switch (file.getAttribute('algorithm', Compression.NONE)) {
+            case Compression.ZSTD:
+                if (!source) {
+                    source = deviceForFiles.read(path);
+                }
+                const zstd = new Zstd();
+                source = zstd.decompress(source);
+                break;
+            case Compression.GZIP:
+                if (!source) {
+                    source = deviceForFiles.read(path);
+                }
+                const gzip = new GZIP();
+                source = gzip.decompress(source);
+                break;
+        }
+
+        if (source) {
+            if (rangeHeader) {
+                response.send(source.slice(start, end + 1));
+            } else {
+                response.send(source);
+            }
+            return;
+        }
+
+        if (rangeHeader) {
+            const resp = await deviceForFiles.read(path, start, end - start + 1);
+            response.send(resp.toString('utf-8'));
+            return;
+        }
+
+        const fileSize = await deviceForFiles.getFileSize(path);
+        if (fileSize > APP_STORAGE_READ_BUFFER) {
+            for (let i = 0; i < Math.ceil(fileSize / MAX_OUTPUT_CHUNK_SIZE); i++) {
+                const resp = await deviceForFiles.read(
+                    path,
+                    i * MAX_OUTPUT_CHUNK_SIZE,
+                    Math.min(MAX_OUTPUT_CHUNK_SIZE, fileSize - i * MAX_OUTPUT_CHUNK_SIZE)
+                )
+                response.chunk(
+                    resp.toString('utf-8'),
+                    (i + 1) * MAX_OUTPUT_CHUNK_SIZE >= fileSize
+                );
+            }
+        } else {
+            const resp = await deviceForFiles.read(path);
+            response.send(resp.toString('utf-8'));
+        }
+    });
+
+App.get('/v1/storage/buckets/:bucketId/files/:fileId/push')
+    .desc('Get file for push notification')
+    .groups(['api', 'storage'])
+    .label('scope', 'public')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', '*/*')
+    .label('sdk.methodType', 'location')
+    .param('bucketId', '', new UID(), 'Storage bucket unique ID. You can create a new storage bucket using the Storage service [server integration](https://appwrite.io/docs/server/storage#createBucket).')
+    .param('fileId', '', new UID(), 'File ID.')
+    .param('jwt', '', new Text(2048, 0), 'JSON Web Token to validate', true)
+    .inject('response')
+    .inject('request')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('mode')
+    .inject('deviceForFiles')
+    .action(async ({ bucketId, fileId, jwt, response, request, dbForProject, project, mode, deviceForFiles }: { bucketId: string, fileId: string, jwt: string, response: Response, request: Request, dbForProject: Database, project: Document, mode: string, deviceForFiles: Device }) => {
+        const bucket = await Authorization.skip(() => dbForProject.getDocument('buckets', bucketId));
+
+        const decoder = new JWT(process.env._APP_OPENSSL_KEY_V1 as any);
+
+        let decoded;
+        try {
+            decoded = decoder.decode(jwt);
+        } catch (error) {
+            throw new Exception(Exception.USER_UNAUTHORIZED);
+        }
+
+        if (
+            decoded['projectId'] !== project.getId() ||
+            decoded['bucketId'] !== bucketId ||
+            decoded['fileId'] !== fileId ||
+            decoded['exp'] < Date.now() / 1000
+        ) {
+            throw new Exception(Exception.USER_UNAUTHORIZED);
+        }
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (bucket.isEmpty() || (!bucket.getAttribute('enabled') && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.STORAGE_BUCKET_NOT_FOUND);
+        }
+
+        const file = await Authorization.skip(() => dbForProject.getDocument('bucket_' + bucket.getInternalId(), fileId));
+
+        if (file.isEmpty()) {
+            throw new Exception(Exception.STORAGE_FILE_NOT_FOUND);
+        }
+
+        const mimes = Config.getParam('storage-mimes');
+        const path = file.getAttribute('path', '');
+
+        if (!deviceForFiles.exists(path)) {
+            throw new Exception(Exception.STORAGE_FILE_NOT_FOUND, 'File not found in ' + path);
+        }
+
+        let contentType = 'text/plain';
+        if (mimes.includes(file.getAttribute('mimeType'))) {
+            contentType = file.getAttribute('mimeType');
+        }
+
+        response
+            .setContentType(contentType)
+            .addHeader('Content-Security-Policy', 'script-src none;')
+            .addHeader('X-Content-Type-Options', 'nosniff')
+            .addHeader('Content-Disposition', `inline; filename="${file.getAttribute('name', '')}"`)
+            .addHeader('Expires', new Date(Date.now() + 60 * 60 * 24 * 45 * 1000).toUTCString()) // 45 days cache
+            .addHeader('X-Peak', process.memoryUsage().heapUsed.toString());
+
+        const size = file.getAttribute('sizeOriginal', 0);
+        const rangeHeader = request.getHeader('range');
+        let start, end;
+        if (rangeHeader) {
+            start = request.getRangeStart();
+            end = request.getRangeEnd();
+            const unit = request.getRangeUnit();
+
+            if (end === null) {
+                end = Math.min(start + 2000000 - 1, size - 1);
+            }
+
+            if (unit !== 'bytes' || start >= end || end >= size) {
+                throw new Exception(Exception.STORAGE_INVALID_RANGE);
+            }
+
+            response
+                .addHeader('Accept-Ranges', 'bytes')
+                .addHeader('Content-Range', `bytes ${start}-${end}/${size}`)
+                .addHeader('Content-Length', (end - start + 1).toString())
+                .setStatusCode(Response.STATUS_CODE_PARTIALCONTENT);
+        }
+
+        let source: any = '';
+        /*   if (file.getAttribute('openSSLCipher')) { // Decrypt
+              source = deviceForFiles.read(path);
+              source = OpenSSL.decrypt(
+                  source,
+                  file.getAttribute('openSSLCipher'),
+                  System.getEnv('_APP_OPENSSL_KEY_V' + file.getAttribute('openSSLVersion')),
+                  0,
+                  Buffer.from(file.getAttribute('openSSLIV'), 'hex'),
+                  Buffer.from(file.getAttribute('openSSLTag'), 'hex')
+              );
+          } */
+
+        switch (file.getAttribute('algorithm', Compression.NONE)) {
+            case Compression.ZSTD:
+                if (!source) {
+                    source = deviceForFiles.read(path);
+                }
+                const zstd = new Zstd();
+                source = zstd.decompress(source);
+                break;
+            case Compression.GZIP:
+                if (!source) {
+                    source = deviceForFiles.read(path);
+                }
+                const gzip = new GZIP();
+                source = gzip.decompress(source);
+                break;
+        }
+
+        if (source) {
+            if (rangeHeader) {
+                response.send(source.slice(start, end + 1));
+            } else {
+                response.send(source);
+            }
+            return;
+        }
+
+        if (rangeHeader) {
+            const resp = await deviceForFiles.read(path, start, end - start + 1);
+            response.send(resp.toString('utf-8'));
+            return;
+        }
+
+        const fileSize = await deviceForFiles.getFileSize(path);
+        if (fileSize > APP_STORAGE_READ_BUFFER) {
+            for (let i = 0; i < Math.ceil(fileSize / MAX_OUTPUT_CHUNK_SIZE); i++) {
+                const resp = await deviceForFiles.read(
+                    path,
+                    i * MAX_OUTPUT_CHUNK_SIZE,
+                    Math.min(MAX_OUTPUT_CHUNK_SIZE, fileSize - i * MAX_OUTPUT_CHUNK_SIZE)
+                );
+                response.chunk(
+                    resp.toString('utf-8'),
+                    (i + 1) * MAX_OUTPUT_CHUNK_SIZE >= fileSize
+                );
+            }
+        } else {
+            const resp = await deviceForFiles.read(path);
+            response.send(resp.toString('utf-8'));
+        }
+    });
+
+App.put('/v1/storage/buckets/:bucketId/files/:fileId')
+    //.alias('/v1/storage/files/:fileId', { bucketId: 'default' })
+    .desc('Update file')
+    .groups(['api', 'storage'])
+    .label('scope', 'files.write')
+    .label('event', 'buckets.[bucketId].files.[fileId].update')
+    .label('audits.event', 'file.update')
+    .label('audits.resource', 'file/{response.$id}')
+    .label('abuse-key', 'ip:{ip},method:{method},url:{url},userId:{userId}')
+    .label('abuse-limit', APP_LIMIT_WRITE_RATE_DEFAULT)
+    .label('abuse-time', APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT)
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'storage')
+    .label('sdk.method', 'updateFile')
+    .label('sdk.description', '/docs/references/storage/update-file.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_FILE)
+    .param('bucketId', '', new UID(), 'Storage bucket unique ID. You can create a new storage bucket using the Storage service [server integration](https://appwrite.io/docs/server/storage#createBucket).')
+    .param('fileId', '', new UID(), 'File unique ID.')
+    .param('name', null, new Text(255), 'Name of the file', true)
+    .param('permissions', null, new Permissions(APP_LIMIT_ARRAY_PARAMS_SIZE, [Database.PERMISSION_READ, Database.PERMISSION_UPDATE, Database.PERMISSION_DELETE, Database.PERMISSION_WRITE]), 'An array of permission string. By default, the current permissions are inherited. [Learn more about permissions](https://appwrite.io/docs/permissions).', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('user')
+    .inject('mode')
+    .inject('queueForEvents')
+    .action(async ({ bucketId, fileId, name, permissions, response, dbForProject, user, mode, queueForEvents }: { bucketId: string, fileId: string, name: string | null, permissions: string[] | null, response: Response, dbForProject: Database, user: Document, mode: string, queueForEvents: Event }) => {
+        const bucket = await Authorization.skip(() => dbForProject.getDocument('buckets', bucketId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (bucket.isEmpty() || (!bucket.getAttribute('enabled') && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.STORAGE_BUCKET_NOT_FOUND);
+        }
+
+        const fileSecurity = bucket.getAttribute('fileSecurity', false);
+        const validator = new Authorization(Database.PERMISSION_UPDATE);
+        const valid = validator.isValid(bucket.getUpdate());
+        if (!fileSecurity && !valid) {
+            throw new Exception(Exception.USER_UNAUTHORIZED);
+        }
+
+        const file = await Authorization.skip(() => dbForProject.getDocument('bucket_' + bucket.getInternalId(), fileId));
+
+        if (file.isEmpty()) {
+            throw new Exception(Exception.STORAGE_FILE_NOT_FOUND);
+        }
+
+        permissions = Permission.aggregate(permissions, [
+            Database.PERMISSION_READ,
+            Database.PERMISSION_UPDATE,
+            Database.PERMISSION_DELETE,
+        ]);
+
+        const roles = Authorization.getRoles();
+        if (!Auth.isAppUser(roles) && !Auth.isPrivilegedUser(roles) && permissions !== null) {
+            for (const type of Database.PERMISSIONS) {
+                for (const permission of permissions) {
+                    const parsedPermission = Permission.parse(permission);
+                    if (parsedPermission.getPermission() !== type) {
+                        continue;
+                    }
+                    const role = new Role(
+                        parsedPermission.getRole(),
+                        parsedPermission.getIdentifier(),
+                        parsedPermission.getDimension()
+                    ).toString();
+                    if (!Authorization.isRole(role)) {
+                        throw new Exception(Exception.USER_UNAUTHORIZED, `Permissions must be one of: (${roles.join(', ')})`);
+                    }
+                }
+            }
+        }
+
+        if (permissions === null) {
+            permissions = file.getPermissions() || [];
+        }
+
+        file.setAttribute('$permissions', permissions);
+
+        if (name !== null) {
+            file.setAttribute('name', name);
+        }
+
+        if (fileSecurity && !valid) {
+            await dbForProject.updateDocument('bucket_' + bucket.getInternalId(), fileId, file);
+        } else {
+            await Authorization.skip(() => dbForProject.updateDocument('bucket_' + bucket.getInternalId(), fileId, file));
+        }
+
+        queueForEvents
+            .setParam('bucketId', bucket.getId())
+            .setParam('fileId', file.getId())
+            .setContext('bucket', bucket);
+
+        response.dynamic(file, Response.MODEL_FILE);
+    });
+
+App.delete('/v1/storage/buckets/:bucketId/files/:fileId')
+    .desc('Delete File')
+    .groups(['api', 'storage'])
+    .label('scope', 'files.write')
+    .label('event', 'buckets.[bucketId].files.[fileId].delete')
+    .label('audits.event', 'file.delete')
+    .label('audits.resource', 'file/{request.fileId}')
+    .label('abuse-key', 'ip:{ip},method:{method},url:{url},userId:{userId}')
+    .label('abuse-limit', APP_LIMIT_WRITE_RATE_DEFAULT)
+    .label('abuse-time', APP_LIMIT_WRITE_RATE_PERIOD_DEFAULT)
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'storage')
+    .label('sdk.method', 'deleteFile')
+    .label('sdk.description', '/docs/references/storage/delete-file.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .param('bucketId', '', new UID(), 'Storage bucket unique ID. You can create a new storage bucket using the Storage service [server integration](https://appwrite.io/docs/server/storage#createBucket).')
+    .param('fileId', '', new UID(), 'File ID.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .inject('mode')
+    .inject('deviceForFiles')
+    .inject('queueForDeletes')
+    .action(async ({ bucketId, fileId, response, dbForProject, queueForEvents, mode, deviceForFiles, queueForDeletes }: { bucketId: string, fileId: string, response: Response, dbForProject: Database, queueForEvents: Event, mode: string, deviceForFiles: Device, queueForDeletes: Delete }) => {
+        const bucket = await Authorization.skip(() => dbForProject.getDocument('buckets', bucketId));
+
+        const isAPIKey = Auth.isAppUser(Authorization.getRoles());
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+
+        if (bucket.isEmpty() || (!bucket.getAttribute('enabled') && !isAPIKey && !isPrivilegedUser)) {
+            throw new Exception(Exception.STORAGE_BUCKET_NOT_FOUND);
+        }
+
+        const fileSecurity = bucket.getAttribute('fileSecurity', false);
+        const validator = new Authorization(Database.PERMISSION_DELETE);
+        const valid = validator.isValid(bucket.getDelete());
+        if (!fileSecurity && !valid) {
+            throw new Exception(Exception.USER_UNAUTHORIZED);
+        }
+
+        const file = await Authorization.skip(() => dbForProject.getDocument('bucket_' + bucket.getInternalId(), fileId));
+
+        if (file.isEmpty()) {
+            throw new Exception(Exception.STORAGE_FILE_NOT_FOUND);
+        }
+
+        if (fileSecurity && !valid && !validator.isValid(file.getDelete())) {
+            throw new Exception(Exception.USER_UNAUTHORIZED);
+        }
+
+        let deviceDeleted = false;
+        if (file.getAttribute('chunksTotal') !== file.getAttribute('chunksUploaded')) {
+            deviceDeleted = await deviceForFiles.abort(
+                file.getAttribute('path'),
+                file.getAttribute('metadata', {})['uploadId'] || ''
+            );
+        } else {
+            deviceDeleted = await deviceForFiles.delete(file.getAttribute('path'));
+        }
+
+        if (deviceDeleted) {
+            queueForDeletes
+                .setType(DELETE_TYPE_CACHE_BY_RESOURCE)
+                .setResourceType('bucket/' + bucket.getId())
+                .setResource('file/' + fileId);
+
+            const deleted = fileSecurity && !valid
+                ? await dbForProject.deleteDocument('bucket_' + bucket.getInternalId(), fileId)
+                : await Authorization.skip(async () => await dbForProject.deleteDocument('bucket_' + bucket.getInternalId(), fileId));
+
+            if (!deleted) {
+                throw new Exception(Exception.GENERAL_SERVER_ERROR, 'Failed to remove file from DB');
+            }
+        } else {
+            throw new Exception(Exception.GENERAL_SERVER_ERROR, 'Failed to delete file from device');
+        }
+
+        queueForEvents
+            .setParam('bucketId', bucket.getId())
+            .setParam('fileId', file.getId())
+            .setContext('bucket', bucket)
+            .setPayload(response.output(file, Response.MODEL_FILE));
+
+        response.noContent();
+    });
+
+App.get('/v1/storage/usage')
+    .desc('Get storage usage stats')
+    .groups(['api', 'storage'])
+    .label('scope', 'files.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'storage')
+    .label('sdk.method', 'getUsage')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USAGE_STORAGE)
+    .param('range', '30d', new WhiteList(['24h', '30d', '90d'], true), 'Date range.', true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ range, response, dbForProject }: { range: string, response: Response, dbForProject: Database }) => {
+        const periods = Config.getParam('usage', {});
+        const stats: Record<string, any> = {};
+        const usage: Record<string, any> = {};
+        const days = periods[range];
+        const metrics = [
+            METRIC_BUCKETS,
+            METRIC_FILES,
+            METRIC_FILES_STORAGE,
+        ];
+
+        await Authorization.skip(async () => {
+            for (const metric of metrics) {
+                const result: any = await dbForProject.findOne('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', ['inf'])
+                ]);
+
+                stats[metric] = { total: result?.value || 0, data: {} };
+                const limit = days.limit;
+                const period = days.period;
+                const results = await dbForProject.find('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', [period]),
+                    Query.limit(limit),
+                    Query.orderDesc('time'),
+                ]);
+
+                for (const result of results) {
+                    stats[metric].data[result.getAttribute('time')] = {
+                        value: result.getAttribute('value'),
+                    };
+                }
+            }
+        });
+
+        const format = days.period === '1h' ? 'Y-m-d\\TH:00:00.000P' : 'Y-m-d\\T00:00:00.000P';
+
+        for (const metric of metrics) {
+            usage[metric] = { total: stats[metric].total, data: [] };
+            let leap = Date.now() / 1000 - (days.limit * days.factor);
+            while (leap < Date.now() / 1000) {
+                leap += days.factor;
+                const formatDate = new Date(leap * 1000).toISOString().split('.')[0] + 'P';
+                usage[metric].data.push({
+                    value: stats[metric].data[formatDate]?.value || 0,
+                    date: formatDate,
+                });
+            }
+        }
+
+        response.dynamic(new Document({
+            range: range,
+            bucketsTotal: usage[metrics[0]].total,
+            filesTotal: usage[metrics[1]].total,
+            filesStorageTotal: usage[metrics[2]].total,
+            buckets: usage[metrics[0]].data,
+            files: usage[metrics[1]].data,
+            storage: usage[metrics[2]].data,
+        }), Response.MODEL_USAGE_STORAGE);
+    });
+
+App.get('/v1/storage/:bucketId/usage')
+    .desc('Get bucket usage stats')
+    .groups(['api', 'storage'])
+    .label('scope', 'files.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'storage')
+    .label('sdk.method', 'getBucketUsage')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_USAGE_BUCKETS)
+    .param('bucketId', '', new UID(), 'Bucket ID.')
+    .param('range', '30d', new WhiteList(['24h', '30d', '90d'], true), 'Date range.', true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ bucketId, range, response, dbForProject }: { bucketId: string, range: string, response: Response, dbForProject: Database }) => {
+        const bucket = await dbForProject.getDocument('buckets', bucketId);
+
+        if (bucket.isEmpty()) {
+            throw new Exception(Exception.STORAGE_BUCKET_NOT_FOUND);
+        }
+
+        const periods = Config.getParam('usage', {});
+        const stats: Record<string, any> = {};
+        const usage: Record<string, any> = {};
+        const days = periods[range];
+        const metrics = [
+            METRIC_BUCKET_ID_FILES.replace('{bucketInternalId}', bucket.getInternalId()),
+            METRIC_BUCKET_ID_FILES_STORAGE.replace('{bucketInternalId}', bucket.getInternalId()),
+        ];
+
+        await Authorization.skip(async () => {
+            for (const metric of metrics) {
+                const result: any = await dbForProject.findOne('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', ['inf'])
+                ]);
+
+                stats[metric] = { total: result?.value || 0, data: {} };
+                const limit = days.limit;
+                const period = days.period;
+                const results = await dbForProject.find('stats', [
+                    Query.equal('metric', [metric]),
+                    Query.equal('period', [period]),
+                    Query.limit(limit),
+                    Query.orderDesc('time'),
+                ]);
+
+                for (const result of results) {
+                    stats[metric].data[result.getAttribute('time')] = {
+                        value: result.getAttribute('value'),
+                    };
+                }
+            }
+        });
+
+        const format = days.period === '1h' ? 'Y-m-d\\TH:00:00.000P' : 'Y-m-d\\T00:00:00.000P';
+
+        for (const metric of metrics) {
+            usage[metric] = { total: stats[metric].total, data: [] };
+            let leap = Date.now() / 1000 - (days.limit * days.factor);
+            while (leap < Date.now() / 1000) {
+                leap += days.factor;
+                const formatDate = new Date(leap * 1000).toISOString().split('.')[0] + 'P';
+                usage[metric].data.push({
+                    value: stats[metric].data[formatDate]?.value || 0,
+                    date: formatDate,
+                });
+            }
+        }
+
+        response.dynamic(new Document({
+            range: range,
+            filesTotal: usage[metrics[0]].total,
+            filesStorageTotal: usage[metrics[1]].total,
+            files: usage[metrics[0]].data,
+            storage: usage[metrics[1]].data,
+        }), Response.MODEL_USAGE_BUCKETS);
+    });
