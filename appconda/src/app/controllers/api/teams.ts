@@ -1,5 +1,7 @@
 import { CustomId } from "../../../Appconda/Database/Validators/CustomId";
+import { Memberships } from "../../../Appconda/Database/Validators/Queries/Memberships";
 import { Teams } from "../../../Appconda/Database/Validators/Queries/Teams";
+import { Detector } from "../../../Appconda/Detector/Detector";
 import { Delete } from "../../../Appconda/Event/Delete";
 import { Event } from "../../../Appconda/Event/Event";
 import { Mail } from "../../../Appconda/Event/Mail";
@@ -7,13 +9,16 @@ import { Messaging } from "../../../Appconda/Event/Messaging";
 import { AppcondaException as Exception } from "../../../Appconda/Extend/Exception";
 import { Email } from "../../../Appconda/Network/Validators/Email";
 import { Template } from "../../../Appconda/Template/Template";
+import { Request } from "../../../Appconda/Tuval/Request";
 import { Response } from "../../../Appconda/Tuval/Response";
-import { Auth, Phone } from "../../../Tuval/Auth";
+import { Audit } from "../../../Tuval/Audit";
+import { Auth, Phone, TOTP } from "../../../Tuval/Auth";
+import { Config } from "../../../Tuval/Config";
 import { ArrayList, Assoc, Authorization, Document, Host, ID, Key, Permission, Role, Text } from "../../../Tuval/Core";
-import { Database, Duplicate, Query, UID } from "../../../Tuval/Database";
+import { AuthorizationException, Database, Duplicate, Limit, Offset, Queries, Query, UID } from "../../../Tuval/Database";
 import { App } from "../../../Tuval/Http";
 import { Locale } from "../../../Tuval/Locale";
-import { APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_KEY, APP_EMAIL_TEAM, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, APP_LIMIT_USERS, APP_NAME, DELETE_TYPE_DOCUMENT, MESSAGE_SEND_TYPE_INTERNAL } from "../../init";
+import { APP_AUTH_TYPE_ADMIN, APP_AUTH_TYPE_JWT, APP_AUTH_TYPE_KEY, APP_EMAIL_TEAM, APP_LIMIT_ARRAY_ELEMENT_SIZE, APP_LIMIT_ARRAY_PARAMS_SIZE, APP_LIMIT_COUNT, APP_LIMIT_USERS, APP_NAME, DELETE_TYPE_DOCUMENT, MESSAGE_SEND_TYPE_INTERNAL } from "../../init";
 import { APP_AUTH_TYPE_SESSION } from "../../init";
 
 App.post('/v1/teams')
@@ -329,7 +334,7 @@ App.delete('/v1/teams/:teamId')
         response.noContent();
     });
 
-    App.post('/v1/teams/:teamId/memberships')
+App.post('/v1/teams/:teamId/memberships')
     .desc('Create team membership')
     .groups(['api', 'teams', 'auth'])
     .label('event', 'teams.[teamId].memberships.[membershipId].create')
@@ -371,7 +376,7 @@ App.delete('/v1/teams/:teamId')
                 return `&#${i.charCodeAt(0)};`;
             });
         }
-        
+
         url = htmlentities(url);
         if (!url) {
             if (!isAPIKey && !isPrivilegedUser) {
@@ -642,4 +647,506 @@ App.delete('/v1/teams/:teamId')
                     .setAttribute('userEmail', invitee.getAttribute('email')),
                 Response.MODEL_MEMBERSHIP
             );
+    });
+
+App.get('/v1/teams/:teamId/memberships')
+    .desc('List team memberships')
+    .groups(['api', 'teams'])
+    .label('scope', 'teams.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'teams')
+    .label('sdk.method', 'listMemberships')
+    .label('sdk.description', '/docs/references/teams/list-team-members.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MEMBERSHIP_LIST)
+    .label('sdk.offline.model', '/teams/{teamId}/memberships')
+    .param('teamId', '', new UID(), 'Team ID.')
+    .param('queries', [], new Memberships(), 'Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Maximum of ' + APP_LIMIT_ARRAY_PARAMS_SIZE + ' queries are allowed, each ' + APP_LIMIT_ARRAY_ELEMENT_SIZE + ' characters long. You may filter on the following attributes: ' + Memberships.ALLOWED_ATTRIBUTES.join(', '), true)
+    .param('search', '', new Text(256), 'Search term to filter your list results. Max length: 256 chars.', true)
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ teamId, queries: _queries, search, response, dbForProject }: { teamId: string, queries: string[], search: string, response: Response, dbForProject: Database }) => {
+        const team = await dbForProject.getDocument('teams', teamId);
+
+        let queries: Query[] = [];
+
+        if (team.isEmpty()) {
+            throw new Exception(Exception.TEAM_NOT_FOUND);
+        }
+
+        try {
+            queries = Query.parseQueries(_queries);
+        } catch (e) {
+            throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+        }
+
+        if (search) {
+            queries.push(Query.search('search', search));
+        }
+
+        // Set internal queries
+        queries.push(Query.equal('teamInternalId', [team.getInternalId()]));
+
+        const cursor = queries.find(query => [Query.TYPE_CURSOR_AFTER, Query.TYPE_CURSOR_BEFORE].includes(query.getMethod()));
+        if (cursor) {
+            const membershipId = cursor.getValue();
+            const cursorDocument = await dbForProject.getDocument('memberships', membershipId);
+
+            if (cursorDocument.isEmpty()) {
+                throw new Exception(Exception.GENERAL_CURSOR_NOT_FOUND, `Membership '${membershipId}' for the 'cursor' value not found.`);
+            }
+
+            cursor.setValue(cursorDocument);
+        }
+
+        const filterQueries = Query.groupByType(queries)['filters'];
+
+        let memberships = await dbForProject.find('memberships', queries);
+        const total = await dbForProject.count('memberships', filterQueries, APP_LIMIT_COUNT);
+
+        memberships = memberships.filter((membership: Document) => membership.getAttribute('userId'));
+
+        memberships = await Promise.all(memberships.map(async (membership: Document) => {
+            const user = await dbForProject.getDocument('users', membership.getAttribute('userId'));
+
+            let mfa = user.getAttribute('mfa', false);
+            if (mfa) {
+                const totp = TOTP.getAuthenticatorFromUser(user);
+                const totpEnabled = totp && totp.getAttribute('verified', false);
+                const emailEnabled = user.getAttribute('email', false) && user.getAttribute('emailVerification', false);
+                const phoneEnabled = user.getAttribute('phone', false) && user.getAttribute('phoneVerification', false);
+
+                if (!totpEnabled && !emailEnabled && !phoneEnabled) {
+                    mfa = false;
+                }
+            }
+
+            membership
+                .setAttribute('mfa', mfa)
+                .setAttribute('teamName', team.getAttribute('name'))
+                .setAttribute('userName', user.getAttribute('name'))
+                .setAttribute('userEmail', user.getAttribute('email'));
+
+            return membership;
+        }));
+
+        response.dynamic(new Document({
+            memberships: memberships,
+            total: total,
+        }), Response.MODEL_MEMBERSHIP_LIST);
+    });
+
+App.get('/v1/teams/:teamId/memberships/:membershipId')
+    .desc('Get team membership')
+    .groups(['api', 'teams'])
+    .label('scope', 'teams.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'teams')
+    .label('sdk.method', 'getMembership')
+    .label('sdk.description', '/docs/references/teams/get-team-member.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MEMBERSHIP)
+    .label('sdk.offline.model', '/teams/{teamId}/memberships')
+    .label('sdk.offline.key', '{membershipId}')
+    .param('teamId', '', new UID(), 'Team ID.')
+    .param('membershipId', '', new UID(), 'Membership ID.')
+    .inject('response')
+    .inject('dbForProject')
+    .action(async ({ teamId, membershipId, response, dbForProject }: { teamId: string, membershipId: string, response: Response, dbForProject: Database }) => {
+        const team = await dbForProject.getDocument('teams', teamId);
+
+        if (team.isEmpty()) {
+            throw new Exception(Exception.TEAM_NOT_FOUND);
+        }
+
+        const membership = await dbForProject.getDocument('memberships', membershipId);
+
+        if (membership.isEmpty() || !membership.getAttribute('userId')) {
+            throw new Exception(Exception.MEMBERSHIP_NOT_FOUND);
+        }
+
+        const user = await dbForProject.getDocument('users', membership.getAttribute('userId'));
+
+        let mfa = user.getAttribute('mfa', false);
+
+        if (mfa) {
+            const totp = TOTP.getAuthenticatorFromUser(user);
+            const totpEnabled = totp && totp.getAttribute('verified', false);
+            const emailEnabled = user.getAttribute('email', false) && user.getAttribute('emailVerification', false);
+            const phoneEnabled = user.getAttribute('phone', false) && user.getAttribute('phoneVerification', false);
+
+            if (!totpEnabled && !emailEnabled && !phoneEnabled) {
+                mfa = false;
+            }
+        }
+
+        membership
+            .setAttribute('mfa', mfa)
+            .setAttribute('teamName', team.getAttribute('name'))
+            .setAttribute('userName', user.getAttribute('name'))
+            .setAttribute('userEmail', user.getAttribute('email'));
+
+        response.dynamic(membership, Response.MODEL_MEMBERSHIP);
+    });
+
+App.patch('/v1/teams/:teamId/memberships/:membershipId')
+    .desc('Update membership')
+    .groups(['api', 'teams'])
+    .label('event', 'teams.[teamId].memberships.[membershipId].update')
+    .label('scope', 'teams.write')
+    .label('audits.event', 'membership.update')
+    .label('audits.resource', 'team/{request.teamId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'teams')
+    .label('sdk.method', 'updateMembership')
+    .label('sdk.description', '/docs/references/teams/update-team-membership.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MEMBERSHIP)
+    .param('teamId', '', new UID(), 'Team ID.')
+    .param('membershipId', '', new UID(), 'Membership ID.')
+    .param('roles', [], new ArrayList(new Key(), APP_LIMIT_ARRAY_PARAMS_SIZE), 'An array of strings. Use this param to set the user\'s roles in the team. A role can be any string. Learn more about [roles and permissions](https://appwrite.io/docs/permissions). Maximum of ' + APP_LIMIT_ARRAY_PARAMS_SIZE + ' roles are allowed, each 32 characters long.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ teamId, membershipId, roles, request, response, user, dbForProject, queueForEvents }: { teamId: string, membershipId: string, roles: string[], request: Request, response: Response, user: Document, dbForProject: Database, queueForEvents: Event }) => {
+        const team = await dbForProject.getDocument('teams', teamId);
+        if (team.isEmpty()) {
+            throw new Exception(Exception.TEAM_NOT_FOUND);
+        }
+
+        const membership = await dbForProject.getDocument('memberships', membershipId);
+        if (membership.isEmpty()) {
+            throw new Exception(Exception.MEMBERSHIP_NOT_FOUND);
+        }
+
+        const profile = await dbForProject.getDocument('users', membership.getAttribute('userId'));
+        if (profile.isEmpty()) {
+            throw new Exception(Exception.USER_NOT_FOUND);
+        }
+
+        const isPrivilegedUser = Auth.isPrivilegedUser(Authorization.getRoles());
+        const isAppUser = Auth.isAppUser(Authorization.getRoles());
+        const isOwner = Authorization.isRole(`team:${team.getId()}/owner`);
+
+        if (!isOwner && !isPrivilegedUser && !isAppUser) {
+            throw new Exception(Exception.USER_UNAUTHORIZED, 'User is not allowed to modify roles');
+        }
+
+        // Update the roles
+        membership.setAttribute('roles', roles);
+        const updatedMembership = await dbForProject.updateDocument('memberships', membership.getId(), membership);
+
+        // Replace membership on profile
+        await dbForProject.purgeCachedDocument('users', profile.getId());
+
+        queueForEvents
+            .setParam('userId', profile.getId())
+            .setParam('teamId', team.getId())
+            .setParam('membershipId', updatedMembership.getId());
+
+        response.dynamic(
+            updatedMembership
+                .setAttribute('teamName', team.getAttribute('name'))
+                .setAttribute('userName', profile.getAttribute('name'))
+                .setAttribute('userEmail', profile.getAttribute('email')),
+            Response.MODEL_MEMBERSHIP
+        );
+    });
+
+App.patch('/v1/teams/:teamId/memberships/:membershipId/status')
+    .desc('Update team membership status')
+    .groups(['api', 'teams'])
+    .label('event', 'teams.[teamId].memberships.[membershipId].update.status')
+    .label('scope', 'public')
+    .label('audits.event', 'membership.update')
+    .label('audits.resource', 'team/{request.teamId}')
+    .label('audits.userId', '{request.userId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'teams')
+    .label('sdk.method', 'updateMembershipStatus')
+    .label('sdk.description', '/docs/references/teams/update-team-membership-status.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_MEMBERSHIP)
+    .param('teamId', '', new UID(), 'Team ID.')
+    .param('membershipId', '', new UID(), 'Membership ID.')
+    .param('userId', '', new UID(), 'User ID.')
+    .param('secret', '', new Text(256), 'Secret key.')
+    .inject('request')
+    .inject('response')
+    .inject('user')
+    .inject('dbForProject')
+    .inject('project')
+    .inject('geodb')
+    .inject('queueForEvents')
+    .action(async ({ teamId, membershipId, userId, secret, request, response, user, dbForProject, project, geodb, queueForEvents }: { teamId: string, membershipId: string, userId: string, secret: string, request: Request, response: Response, user: Document, dbForProject: Database, project: Document, geodb: any, queueForEvents: Event }) => {
+        const protocol = request.getProtocol();
+
+        const membership = await dbForProject.getDocument('memberships', membershipId);
+
+        if (membership.isEmpty()) {
+            throw new Exception(Exception.MEMBERSHIP_NOT_FOUND);
+        }
+
+        const team = await Authorization.skip(() => dbForProject.getDocument('teams', teamId));
+
+        if (team.isEmpty()) {
+            throw new Exception(Exception.TEAM_NOT_FOUND);
+        }
+
+        if (membership.getAttribute('teamInternalId') !== team.getInternalId()) {
+            throw new Exception(Exception.TEAM_MEMBERSHIP_MISMATCH);
+        }
+
+        if (Auth.hash(secret) !== membership.getAttribute('secret')) {
+            throw new Exception(Exception.TEAM_INVALID_SECRET);
+        }
+
+        if (userId !== membership.getAttribute('userId')) {
+            throw new Exception(Exception.TEAM_INVITE_MISMATCH, `Invite does not belong to current user (${user.getAttribute('email')})`);
+        }
+
+        if (user.isEmpty()) {
+            user.setAttributes((await dbForProject.getDocument('users', userId)).getArrayCopy());
+        }
+
+        if (membership.getAttribute('userInternalId') !== user.getInternalId()) {
+            throw new Exception(Exception.TEAM_INVITE_MISMATCH, `Invite does not belong to current user (${user.getAttribute('email')})`);
+        }
+
+        if (membership.getAttribute('confirm') === true) {
+            throw new Exception(Exception.MEMBERSHIP_ALREADY_CONFIRMED);
+        }
+
+        membership
+            .setAttribute('joined', new Date())
+            .setAttribute('confirm', true);
+
+        await Authorization.skip(() => dbForProject.updateDocument('users', user.getId(), user.setAttribute('emailVerification', true)));
+
+        // Log user in
+        Authorization.setRole(Role.user(user.getId()).toString());
+
+        const detector = new Detector(request.getUserAgent('UNKNOWN'));
+        const record = geodb.get(request.getIP());
+        const authDuration = project.getAttribute('auths', [])['duration'] || Auth.TOKEN_EXPIRATION_LOGIN_LONG;
+        const expire = new Date(Date.now() + authDuration * 1000);
+        const sessionSecret = Auth.tokenGenerator();
+        const session = new Document({
+            '$id': ID.unique(),
+            'userId': user.getId(),
+            'userInternalId': user.getInternalId(),
+            'provider': Auth.SESSION_PROVIDER_EMAIL,
+            'providerUid': user.getAttribute('email'),
+            'secret': Auth.hash(sessionSecret),
+            'userAgent': request.getUserAgent('UNKNOWN'),
+            'ip': request.getIP(),
+            'factors': ['email'],
+            'countryCode': record ? record['country']['iso_code'].toLowerCase() : '--',
+            'expire': expire,
+            ...detector.getOS(),
+            ...detector.getClient(),
+            ...detector.getDevice()
+        });
+
+        await dbForProject.createDocument('sessions', session.setAttribute('$permissions', [
+            Permission.read(Role.user(user.getId())),
+            Permission.update(Role.user(user.getId())),
+            Permission.delete(Role.user(user.getId())),
+        ]));
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        Authorization.setRole(Role.user(userId).toString());
+
+        const updatedMembership = await dbForProject.updateDocument('memberships', membership.getId(), membership);
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        await Authorization.skip(() => dbForProject.increaseDocumentAttribute('teams', team.getId(), 'total', 1));
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('teamId', team.getId())
+            .setParam('membershipId', updatedMembership.getId());
+
+        if (!Config.getParam('domainVerification')) {
+            response.addHeader('X-Fallback-Cookies', JSON.stringify({ [Auth.cookieName]: Auth.encodeSession(user.getId(), sessionSecret) }));
+        }
+
+        response
+            .addCookie(`${Auth.cookieName}_legacy`, Auth.encodeSession(user.getId(), sessionSecret), expire.getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, null)
+            .addCookie(Auth.cookieName, Auth.encodeSession(user.getId(), sessionSecret), expire.getTime(), '/', Config.getParam('cookieDomain'), protocol === 'https', true, Config.getParam('cookieSamesite'));
+
+        response.dynamic(
+            updatedMembership
+                .setAttribute('teamName', team.getAttribute('name'))
+                .setAttribute('userName', user.getAttribute('name'))
+                .setAttribute('userEmail', user.getAttribute('email')),
+            Response.MODEL_MEMBERSHIP
+        );
+    });
+App.delete('/v1/teams/:teamId/memberships/:membershipId')
+    .desc('Delete team membership')
+    .groups(['api', 'teams'])
+    .label('event', 'teams.[teamId].memberships.[membershipId].delete')
+    .label('scope', 'teams.write')
+    .label('audits.event', 'membership.delete')
+    .label('audits.resource', 'team/{request.teamId}')
+    .label('sdk.auth', [APP_AUTH_TYPE_SESSION, APP_AUTH_TYPE_KEY, APP_AUTH_TYPE_JWT])
+    .label('sdk.namespace', 'teams')
+    .label('sdk.method', 'deleteMembership')
+    .label('sdk.description', '/docs/references/teams/delete-team-membership.md')
+    .label('sdk.response.code', Response.STATUS_CODE_NOCONTENT)
+    .label('sdk.response.model', Response.MODEL_NONE)
+    .param('teamId', '', new UID(), 'Team ID.')
+    .param('membershipId', '', new UID(), 'Membership ID.')
+    .inject('response')
+    .inject('dbForProject')
+    .inject('queueForEvents')
+    .action(async ({ teamId, membershipId, response, dbForProject, queueForEvents }: { teamId: string, membershipId: string, response: Response, dbForProject: Database, queueForEvents: Event }) => {
+        const membership = await dbForProject.getDocument('memberships', membershipId);
+
+        if (membership.isEmpty()) {
+            throw new Exception(Exception.TEAM_INVITE_NOT_FOUND);
+        }
+
+        const user = await dbForProject.getDocument('users', membership.getAttribute('userId'));
+
+        if (user.isEmpty()) {
+            throw new Exception(Exception.USER_NOT_FOUND);
+        }
+
+        const team = await dbForProject.getDocument('teams', teamId);
+
+        if (team.isEmpty()) {
+            throw new Exception(Exception.TEAM_NOT_FOUND);
+        }
+
+        if (membership.getAttribute('teamInternalId') !== team.getInternalId()) {
+            throw new Exception(Exception.TEAM_MEMBERSHIP_MISMATCH);
+        }
+
+        try {
+            await dbForProject.deleteDocument('memberships', membership.getId());
+        } catch (error) {
+            if (error instanceof AuthorizationException) { 
+                throw new Exception(Exception.USER_UNAUTHORIZED);
+               
+            }
+            throw new Exception(Exception.GENERAL_SERVER_ERROR, 'Failed to remove membership from DB');
+
+           
+        }/*  catch (error) {
+            throw new Exception(Exception.GENERAL_SERVER_ERROR, 'Failed to remove membership from DB');
+        } */
+
+        await dbForProject.purgeCachedDocument('users', user.getId());
+
+        if (membership.getAttribute('confirm')) { // Count only confirmed members
+            await Authorization.skip(() => dbForProject.decreaseDocumentAttribute('teams', team.getId(), 'total', 1, 0));
+        }
+
+        queueForEvents
+            .setParam('userId', user.getId())
+            .setParam('teamId', team.getId())
+            .setParam('membershipId', membership.getId())
+            .setPayload(response.output(membership, Response.MODEL_MEMBERSHIP));
+
+        response.noContent();
+    });
+
+    App.get('/v1/teams/:teamId/logs')
+    .desc('List team logs')
+    .groups(['api', 'teams'])
+    .label('scope', 'teams.read')
+    .label('sdk.auth', [APP_AUTH_TYPE_ADMIN])
+    .label('sdk.namespace', 'teams')
+    .label('sdk.method', 'listLogs')
+    .label('sdk.description', '/docs/references/teams/get-team-logs.md')
+    .label('sdk.response.code', Response.STATUS_CODE_OK)
+    .label('sdk.response.type', Response.CONTENT_TYPE_JSON)
+    .label('sdk.response.model', Response.MODEL_LOG_LIST)
+    .param('teamId', '', new UID(), 'Team ID.')
+    .param('queries', [], new Queries([new Limit(), new Offset()]), 'Array of query strings generated using the Query class provided by the SDK. [Learn more about queries](https://appwrite.io/docs/queries). Only supported methods are limit and offset', true)
+    .inject('response')
+    .inject('dbForProject')
+    .inject('locale')
+    .inject('geodb')
+    .action(async ({ teamId, queries: _queries, response, dbForProject, locale, geodb }: { teamId: string, queries: string[], response: Response, dbForProject: Database, locale: Locale, geodb: any }) => {
+        const team = await dbForProject.getDocument('teams', teamId);
+        
+        let queries: Query[] = [];
+
+        if (team.isEmpty()) {
+            throw new Exception(Exception.TEAM_NOT_FOUND);
+        }
+
+        try {
+            queries = Query.parseQueries(_queries);
+        } catch (e) {
+            throw new Exception(Exception.GENERAL_QUERY_INVALID, e.message);
+        }
+
+        const grouped = Query.groupByType(queries);
+        const limit = grouped['limit'] ?? APP_LIMIT_COUNT;
+        const offset = grouped['offset'] ?? 0;
+
+        const audit = new Audit(dbForProject);
+        const resource = `team/${team.getId()}`;
+        const logs = await audit.getLogsByResource(resource, limit, offset);
+
+        const output = await Promise.all(logs.map(async (log: any, i: number) => {
+            const userAgent = log['userAgent'] || 'UNKNOWN';
+            const detector = new Detector(userAgent);
+            detector.skipBotDetection();
+
+            const os = detector.getOS();
+            const client = detector.getClient();
+            const device = detector.getDevice();
+
+            const logDocument = new Document({
+                event: log['event'],
+                userId: log['data']['userId'],
+                userEmail: log['data']['userEmail'] || null,
+                userName: log['data']['userName'] || null,
+                mode: log['data']['mode'] || null,
+                ip: log['ip'],
+                time: log['time'],
+                osCode: os['osCode'],
+                osName: os['osName'],
+                osVersion: os['osVersion'],
+                clientType: client['clientType'],
+                clientCode: client['clientCode'],
+                clientName: client['clientName'],
+                clientVersion: client['clientVersion'],
+                clientEngine: client['clientEngine'],
+                clientEngineVersion: client['clientEngineVersion'],
+                deviceName: device['deviceName'],
+                deviceBrand: device['deviceBrand'],
+                deviceModel: device['deviceModel']
+            });
+
+            const record = geodb.get(log['ip']);
+
+            if (record) {
+                logDocument.setAttribute('countryCode', locale.getText(`countries.${record['country']['iso_code'].toLowerCase()}`, false) ? record['country']['iso_code'].toLowerCase() : '--');
+                logDocument.setAttribute('countryName', locale.getText(`countries.${record['country']['iso_code'].toLowerCase()}`, locale.getText('locale.country.unknown')));
+            } else {
+                logDocument.setAttribute('countryCode', '--');
+                logDocument.setAttribute('countryName', locale.getText('locale.country.unknown'));
+            }
+
+            return logDocument;
+        }));
+
+        response.dynamic(new Document({
+            total: await audit.countLogsByResource(resource),
+            logs: output,
+        }), Response.MODEL_LOG_LIST);
     });
