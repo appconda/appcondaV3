@@ -1,8 +1,4 @@
 
-const manifest = require('./src/manifest');
-const appName = manifest.application.name;
-const libraryName = manifest.application.libraryName;
-const container_name = manifest.application.docker_container_name;
 
 var shell = require('shelljs');
 
