@@ -18,6 +18,5 @@ export * from './Validators/Query/Order'
 export * from './Validators/Query/Select'
 
 
-export * from './Validators/Authorization'
 
 export * from './Exceptions'

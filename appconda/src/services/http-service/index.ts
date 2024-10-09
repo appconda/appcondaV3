@@ -198,6 +198,7 @@ export default class WebServerService extends BaseService {
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             origin: true
         }));
+        app.use(cookieParser());
         /*  app.use(cors({
            allowedHeaders: ['x-github-username', 'x-github-repo', ['x-github-token']]
          })) */
@@ -220,7 +221,7 @@ export default class WebServerService extends BaseService {
         const _path = path.resolve('./src/app/controllers/general');
         console.log(register)
 
-        app.use(cookieParser());
+        
 
         app.use(async (req, res, next) => {
             const request = new Request(req);

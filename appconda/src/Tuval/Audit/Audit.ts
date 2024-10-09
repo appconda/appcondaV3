@@ -1,6 +1,6 @@
-import { DateTime, Exception, Document } from '../../Tuval/Core';
+import { DateTime, Exception, Document, Authorization } from '../../Tuval/Core';
 import { Database, AuthorizationException, Duplicate as DuplicateException,
-     Structure as StructureException, Query, Authorization } from '../../Tuval/Database';
+     Structure as StructureException, Query } from '../../Tuval/Database';
 
 export class Audit {
     public static readonly COLLECTION = 'audit';

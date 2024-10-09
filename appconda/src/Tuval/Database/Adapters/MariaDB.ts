@@ -4,10 +4,9 @@ import { Database } from '../Database';
 import { Exception as DatabaseException } from '../Exception';
 import { Duplicate as DuplicateException } from '../Exceptions/Duplicate';
 import { Query } from '../Query';
-import { Authorization } from '../Validators/Authorization';
 import { Truncate as TruncateException } from '../Exceptions/Truncate';
 import { Timeout as TimeoutException } from '../Exceptions/Timeout';
-import { Document } from '../../Core';
+import { Authorization, Document } from '../../Core';
 
 function formatDateToMySQL(date: Date): string {
     const pad = (num: number) => (num < 10 ? '0' : '') + num;

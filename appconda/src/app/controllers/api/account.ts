@@ -87,7 +87,12 @@ let geoReader: maxmind.Reader<maxmind.CityResponse> | null = null;
 
 const initializeGeoReader = async () => {
     if (!geoReader) {
-        geoReader = await maxmind.open<maxmind.CityResponse>(path.resolve(__dirname, 'assets/dbip/dbip-country-lite-2024-02.mmdb'));
+        try{
+            const filePath = path.resolve(__dirname, '../../assets/dbip/dbip-country-lite-2024-02.mmdb');
+            geoReader = await maxmind.open<maxmind.CityResponse>(filePath);
+        }catch(error){
+            console.log('Geo Reader Error', error);
+        }
     }
 };
 

@@ -403,7 +403,7 @@ export class App {
         const groups = route.getGroups();
         const pathValues = route.getPathValues(request);
 
-        try {
+       // try {
             if (route.getHook()) {
                 for (const hook of App._init) { // Global init hooks
                     if (hook.getGroups().includes('*')) {
@@ -458,12 +458,12 @@ export class App {
                     }
                 }
             }
-        } catch (e) {
+        /* } catch (e) {
           
              App.setResource('error', async () => e);
 
             for (const group of groups) {
-                for (const errorHook of App.errors) { // Group error hooks
+                for (const errorHook of App.errors) { 
                     if (errorHook.getGroups().includes(group)) {
                         try {
                             const args = await this.getArguments(errorHook, pathValues, request.getParams());
@@ -495,7 +495,7 @@ export class App {
             }
 
             throw new Error(e); 
-        }
+        } */
 
         return this;
     }

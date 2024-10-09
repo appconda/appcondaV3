@@ -441,10 +441,12 @@ Database.addFilter(
         return;
     },
     async (value: any, document: Document, database: Database) => {
-        return await Authorization.skip(() => database.find('sessions', [
+        const sessions =  await Authorization.skip(async () => await database.find('sessions', [
             Query.equal('userInternalId', [document.getInternalId()]),
             Query.limit(APP_LIMIT_SUBQUERY),
         ]));
+
+        return sessions;
     }
 );
 
@@ -890,9 +892,9 @@ register.set('pools', () => {
                         adapter = (() => {
                             switch (dsnScheme) {
                                 case 'redis':
-                                    const redis = new Redis(Number.parseInt(dsnPort), dsnHost, {});
-                                    return redis;
-                                // return new RedisConnection(dsnHost, dsnPort as any);
+                                   /*  const redis = new Redis(Number.parseInt(dsnPort), dsnHost, {});
+                                    return redis; */
+                                 return new RedisConnection(dsnHost, dsnPort as any);
                                 default:
                                     return null;
                             }
@@ -1122,12 +1124,14 @@ App.setResource('clients', async ({ request, console, project }: { request: Requ
 App.setResource('user', async ({ mode, project, console, request, response, dbForProject, dbForConsole }: { mode: string, project: Document, console: Document, request: Request, response: Response, dbForProject: Database, dbForConsole: Database }) => {
     Authorization.setDefaultStatus(true);
 
-    Auth.setCookieName('a_session_' + project.getAttribute('id', ''));
+    Auth.setCookieName('a_session_' + project.getAttribute('$id', ''));
 
     if (APP_MODE_ADMIN === mode) {
-        Auth.setCookieName('a_session_' + console.getAttribute('id', ''));
+        Auth.setCookieName('a_session_' + console.getAttribute('$id', ''));
     }
 
+    const a =  request.getCookie(Auth.cookieName);
+    const aa =  request.getCookie('a_session_');
     let session = Auth.decodeSession(
         request.getCookie(Auth.cookieName) || request.getCookie(Auth.cookieName + '_legacy') || ''
     );
@@ -1159,7 +1163,7 @@ App.setResource('user', async ({ mode, project, console, request, response, dbFo
         if (project.isEmpty()) {
             user = new Document({});
         } else {
-            if (project.getAttribute('id', '') === 'console') {
+            if (project.getAttribute('$id', '') === 'console') {
                 user = await dbForConsole.getDocument('users', Auth.unique);
             } else {
                 user = await dbForProject.getDocument('users', Auth.unique);
@@ -1203,8 +1207,8 @@ App.setResource('user', async ({ mode, project, console, request, response, dbFo
         }
     }
 
-    dbForProject.setMetadata('user', user.getAttribute('id', ''));
-    dbForConsole.setMetadata('user', user.getAttribute('id', ''));
+    dbForProject.setMetadata('user', user.getAttribute('$id', ''));
+    dbForConsole.setMetadata('user', user.getAttribute('$id', ''));
 
     return user;
 }, ['mode', 'project', 'console', 'request', 'response', 'dbForProject', 'dbForConsole']);

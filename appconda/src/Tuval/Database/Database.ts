@@ -24,10 +24,9 @@ import { AuthorizationException as AuthorizationException } from './Exceptions/A
 import { Index } from './Validators/Index';
 import { ID } from './Helpers/ID';
 import { Structure } from './Validators/Structure';
-import { Authorization } from './Validators/Authorization';
 import { DateTime } from './DateTime';
 import { Cache } from '../../Tuval/Cache';
-import { Document } from '../Core';
+import { Authorization, Document } from '../Core';
 
 
 export class Database {
@@ -390,12 +389,12 @@ export class Database {
         }
     }
 
-    public skipRelationships<T>(callback: () => T): T {
+    public async skipRelationships<T>(callback: () => Promise<T>): Promise<T> {
         const previous = this.resolveRelationships;
         this.resolveRelationships = false;
 
         try {
-            return callback();
+            return await callback();
         } finally {
             this.resolveRelationships = previous;
         }
@@ -3984,8 +3983,9 @@ export class Database {
 
         const collectionDoc = await this.silent(async () => await this.getCollection(collection));
 
+        let document;
         const deleted = await this.withTransaction(async () => {
-            let document = await Authorization.skip(async () => await this.silent(
+            document = await Authorization.skip(async () => await this.silent(
                 async () => await this.getDocument(collectionDoc.getId(), id, [], true)
             ));
 
@@ -4259,8 +4259,8 @@ export class Database {
                     break;
                 }
                 for (const relation of value) {
-                    Authorization.skip(() => {
-                        this.skipRelationships(() => this.updateDocument(
+                    await Authorization.skip(async () => {
+                        await this.skipRelationships(async () => await this.updateDocument(
                             relatedCollection.getId(),
                             relation.getId(),
                             new Document({
@@ -4285,8 +4285,8 @@ export class Database {
                 }
 
                 for (const relation of value) {
-                    Authorization.skip(() => {
-                        this.skipRelationships(() => this.updateDocument(
+                    await Authorization.skip(async () => {
+                        await this.skipRelationships(async () => await this.updateDocument(
                             relatedCollection.getId(),
                             relation.getId(),
                             new Document({
@@ -4567,22 +4567,26 @@ export class Database {
             }
         }
 
-        const getResults = () => this.adapter.find(
-            collectionDoc.getId(),
-            queries,
-            limit ?? 25,
-            offset ?? 0,
-            orderAttributes,
-            orderTypes,
-            cursorData,
-            cursorDirection ?? Database.CURSOR_AFTER
-        );
+        const getResults = async () => {
+
+            const results = await this.adapter.find(
+                collectionDoc.getId(),
+                queries,
+                limit ?? 25,
+                offset ?? 0,
+                orderAttributes,
+                orderTypes,
+                cursorData,
+                cursorDirection ?? Database.CURSOR_AFTER);
+
+            return results;
+        }
 
         const results = skipAuth ? await Authorization.skip(getResults) : await getResults();
 
         for (let node of results) {
             if (this.resolveRelationships && (selects.length === 0 || nestedSelections.length > 0)) {
-                node = this.silent(() => this.populateDocumentRelationships(collectionDoc, node, nestedSelections));
+                node = await this.silent(async () => await this.populateDocumentRelationships(collectionDoc, node, nestedSelections));
             }
             node = this.casting(collectionDoc, node);
             node = await this.decode(collectionDoc, node, selections);

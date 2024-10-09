@@ -1,8 +1,8 @@
 
 import { TimeLimit as TimeLimitAdapter } from "../TimeLimit";
-import { Database as AppcondaDB, Authorization, Duplicate, Query } from "../../../../Tuval/Database";
+import { Database as AppcondaDB, Duplicate, Query } from "../../../../Tuval/Database";
 import { DateTime } from 'luxon';
-import { Document } from "../../../../Tuval/Core";
+import { Authorization, Document } from "../../../../Tuval/Core";
 
 export class TimeLimit extends TimeLimitAdapter {
     public static COLLECTION = 'abuse';
@@ -90,7 +90,7 @@ export class TimeLimit extends TimeLimitAdapter {
         }
 
         const result = await Authorization.skip(async () => {
-            return this.db.find(TimeLimit.COLLECTION, [
+            return await this.db.find(TimeLimit.COLLECTION, [
                 Query.equal('key', [key]),
                 Query.equal('time', [datetime]),
             ]);
