@@ -9,11 +9,14 @@ import { Validator } from '../Validator';
  */
 export class Multiple extends Validator {
     protected rules: Validator[] = [];
-    protected type: string = Multiple.TYPE_MIXED;
+    
 
     public static readonly TYPE_MIXED: string = 'mixed';
     public static readonly TYPE_STRING: string = 'string';
     public static readonly TYPE_INTEGER: string = 'integer';
+
+    protected type: string = Multiple.TYPE_MIXED;
+    
     // Add other types as needed
 
     /**

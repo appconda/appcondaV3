@@ -1,20 +1,22 @@
 import e from "express";
 import { BaseComponent } from "./BaseComponent";
 import { Container } from "./Container";
-import CspService from "./Services/CSPService";
-import type DatabaseService from "./Services/database-service/service.ts";
-import EmailService from "./Services/EmailService";
-import EncryptionService from "./Services/EncryptionService";
-import JiraService from "./Services/JiraService";
-import KVService from "./Services/KVService";
-import type ScheduleService from "./Services/ScheduleService";
-import SchemaService from "./Services/SchemaService";
-import type WebServerService from "./Services/WebServerService";
+
 import express from "express";
 import { Services } from "./Services";
-import FlowService from "./Services/FlowService";
-import SmsService from "./Services/SMSService";
-import IDService from "./Services/id-service/service";
+import WebServerService from "./services/http-service";
+import DatabaseService from "./services/database-service/service.ts";
+import SchemaService from "./services/SchemaService";
+import CspService from "./services/CSPService";
+import EmailService from "./services/EmailService";
+import EncryptionService from "./services/EncryptionService";
+import FlowService from "./services/FlowService";
+import IDService from "./services/id-service/service";
+import JiraService from "./services/JiraService";
+import KVService from "./services/kv-service/KVService";
+import ScheduleService from "./services/ScheduleService";
+import SmsService from "./services/SMSService";
+
 const crypto = require('crypto');
 
 

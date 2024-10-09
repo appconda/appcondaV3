@@ -5,4 +5,10 @@ export default {
     extend: {},
   },
   plugins: [],
+  preprocessorOptions: {
+    scss: {
+      additionalData: '@import "@scss/shared.scss";'
+    }
+  }
+
 };

@@ -1096,6 +1096,7 @@ App.get('/v1/account/sessions/oauth2/:provider')
             const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
             const buffer = Buffer.from(key, 'utf-8');
             appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, buffer, 0, Buffer.from(appSecret.iv, 'hex'),
+            //@ts-ignore
                 Buffer.from(appSecret.tag, 'hex'));
         }
 
@@ -1287,6 +1288,7 @@ App.get('/v1/account/sessions/oauth2/:provider/redirect')
         if (appSecret && appSecret.version) {
             const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
             const bufferUtf8 = Buffer.from(key, "utf-8");
+            //@ts-ignore
             appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, bufferUtf8, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
         }
 
@@ -1656,6 +1658,7 @@ App.get('/v1/account/tokens/oauth2/:provider')
         if (appSecret && appSecret.version) {
             const key = process.env[`_APP_OPENSSL_KEY_V${appSecret.version}`] as string;
             const bufferUtf8 = Buffer.from(key, "utf-8");
+            //@ts-ignore
             appSecret = OpenSSL.decrypt(appSecret.data, appSecret.method, bufferUtf8, 0, Buffer.from(appSecret.iv, 'hex'), Buffer.from(appSecret.tag, 'hex'));
         }
 

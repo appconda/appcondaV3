@@ -17,7 +17,9 @@ function formatDateToMySQL(date: Date): string {
 
 export class MariaDB extends SQL {
     protected pool: Pool;
+    //@ts-ignore
     protected sharedTables: boolean;
+    //@ts-ignore
     protected tenant: number | null;
 
     constructor(config: any, sharedTables: boolean = false, tenant: number | null = null) {

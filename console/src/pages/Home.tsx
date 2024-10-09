@@ -22,9 +22,6 @@ export const Home = (): FunctionComponent => {
 	const onTranslateButtonClick = async (): Promise<void> => {
 
 
-
-
-
 		const promise = account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
 
 		promise.then(function (response) {

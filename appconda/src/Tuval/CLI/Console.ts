@@ -131,7 +131,7 @@ export class Console {
         this.log(question);
 
         const buffer = Buffer.alloc(1024);
-        const bytesRead = readSync(0, buffer, 0, buffer.length, null);
+        const bytesRead = readSync(0, buffer as any, 0, buffer.length, null);
         return buffer.toString('utf8', 0, bytesRead).trim();
     }
 

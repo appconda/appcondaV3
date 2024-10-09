@@ -5,6 +5,7 @@ import { Type } from '../Type';
 
 
 export class TOTP extends Type{
+    //@ts-ignore
     protected instance: any;
 
     constructor(secret?: string | null) {

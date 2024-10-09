@@ -67,6 +67,7 @@ export class Func extends Event {
     }
 
     public getData(): string {
+        //@ts-ignore
         return this.data ;
     }
 

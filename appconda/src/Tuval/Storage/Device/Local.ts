@@ -12,6 +12,7 @@ function readFileWithOffsetAndLength(filePath, offset = 0, length ) {
         const fd = fs.openSync(filePath, 'r'); // Open the file for reading
 
         try {
+            //@ts-ignore
             const bytesRead = fs.readSync(fd, buffer, 0, length || buffer.length, offset);
             const data = buffer.toString('utf-8', 0, bytesRead); // Convert buffer to string
             resolve(buffer);
@@ -28,7 +29,7 @@ function readFileWithOffsetAndLengthString(filePath, offset = 0, length ) {
         const fd = fs.openSync(filePath, 'r'); // Open the file for reading
 
         try {
-            const bytesRead = fs.readSync(fd, buffer, 0, length || buffer.length, offset);
+            const bytesRead = fs.readSync(fd, buffer as any, 0, length || buffer.length, offset);
             const data = buffer.toString('utf-8', 0, bytesRead); // Convert buffer to string
             resolve(data);
         } catch (error) {
@@ -110,6 +111,7 @@ export class Local extends Device {
 
         if (chunks === 1) {
             try {
+                //@ts-ignore
                 fs.writeFileSync(destination, data);
                 return chunks;
             } catch (error) {
@@ -130,6 +132,7 @@ export class Local extends Device {
         const chunksReceived = chunkLogs.length;
 
         try {
+            //@ts-ignore
             fs.writeFileSync(path.join(path.dirname(tmp), `${path.parse(destination).name}.part.${chunk}`), data);
         } catch (error) {
             throw new Error(`Failed to write chunk ${chunk}`);
@@ -152,6 +155,7 @@ export class Local extends Device {
                 throw new Error(`Failed to read chunk ${part}`);
             }
 
+            //@ts-ignore
             fs.appendFileSync(destination, data);
             fs.unlinkSync(part);
         }
@@ -227,6 +231,7 @@ export class Local extends Device {
         }
 
         try {
+            //@ts-ignore
             fs.writeFileSync(filePath, data);
             return true;
         } catch (error) {
@@ -306,6 +311,7 @@ export class Local extends Device {
     async getFileHash(filePath: string): Promise<string> {
         const hash = crypto.createHash('md5');
         const data = fs.readFileSync(filePath);
+        //@ts-ignore
         hash.update(data);
         return hash.digest('hex');
     }

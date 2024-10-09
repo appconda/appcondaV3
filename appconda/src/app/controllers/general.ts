@@ -81,6 +81,7 @@ async function router(
     ))[0] ?? null;
 
     if (route === null) {
+        //@ts-ignore
         if (host === process.env._APP_DOMAIN_FUNCTIONS ?? '') {
             throw new AppcondaException(AppcondaException.GENERAL_ACCESS_FORBIDDEN, 'This domain cannot be used for security reasons. Please use any subdomain instead.');
         }
@@ -446,6 +447,7 @@ App.init()
                 request.addFilter(new RequestV16());
             }
             if (versionCompare(requestFormat, '1.5.0', '<')) {
+                //@ts-ignore
                 request.addFilter(new RequestV17());
             }
         }
@@ -555,6 +557,7 @@ App.init()
         const responseFormat = request.getHeader('x-appconda-response-format', process.env._APP_SYSTEM_RESPONSE_FORMAT || '');
         if (responseFormat) {
             if (versionCompare(responseFormat, '1.4.0', '<')) {
+                //@ts-ignore
                 response.addFilter(new ResponseV16());
             }
             if (versionCompare(responseFormat, '1.5.0', '<')) {
@@ -715,7 +718,9 @@ App.error()
                 break;
         }
 
+        //@ts-ignore
         code = error.getCode?.() || code;
+        //@ts-ignore
         message = error.getMessage?.() || message;
 
         const publish = error instanceof AppcondaException ? error.isPublishable() : code === 0 || code >= 500;
@@ -738,6 +743,7 @@ App.error()
             try {
                 const user = await appconda.getResource('user');
                 if (user && !user.isEmpty()) {
+                    //@ts-ignore
                     log.setUser({ id: user.getId() });
                 }
             } catch {
@@ -759,7 +765,9 @@ App.error()
             log.setMessage(message);
             log.addTag('method', route?.getMethod() || 'unknown');
             log.addTag('url', route?.getPath() || 'unknown');
+            //@ts-ignore
             log.addTag('verboseType', className);
+            //@ts-ignore
             log.addTag('code', code);
             log.addTag('projectId', project.getId());
             log.addTag('hostname', request.getHostname());
@@ -991,9 +999,11 @@ App.get('/.well-known/acme-challenge/*')
     });
 
 const services = Config.getParam('services', []);
+
 for (const service of Object.keys(services)) {
     const controller = services[service].controller;
-    const controllerPath =path.resolve(__dirname + '/' + controller)
+    const controllerPath =path.resolve(__dirname + '/' + controller);
+    console.log('-------===================-------');
     console.log(controllerPath);
     try {
        const a =  require(controllerPath);

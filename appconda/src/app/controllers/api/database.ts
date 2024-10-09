@@ -85,7 +85,7 @@ async function createAttribute(
         throw new Exception(Exception.ATTRIBUTE_DEFAULT_UNSUPPORTED, 'Cannot set default value for array attributes');
     }
 
-    let relatedCollection: Document;
+    let relatedCollection: Document = null as any;
     if (type === Database.VAR_RELATIONSHIP) {
         options['side'] = Database.RELATION_SIDE_PARENT;
         relatedCollection = await dbForProject.getDocument('database_' + db.getInternalId(), options['relatedCollection'] || '');
@@ -221,8 +221,8 @@ async function updateAttribute(
         filter = null,
         defaultValue = null,
         required = null,
-        min = null,
-        max = null,
+        min = null ,
+        max = null ,
         elements = null,
         options = {}
     }: {

@@ -5,7 +5,9 @@ import { Roles } from './Roles';
 
 export class Permissions extends Roles {
     protected message: string = 'Permissions Error';
+    //@ts-ignore
     protected allowed: string[];
+    //@ts-ignore
     protected length: number;
 
     constructor(length: number = 0, allowed: string[] = [...Database.PERMISSIONS, Database.PERMISSION_WRITE]) {

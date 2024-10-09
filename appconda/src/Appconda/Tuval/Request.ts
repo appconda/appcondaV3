@@ -2,6 +2,7 @@ import { Filter } from './Request/Filter';
 import { Request as ExpressRequest } from 'express';
 import { Route, Request as TuvalRequest} from '../../Tuval/Http';
 
+//@ts-ignore
 export class Request extends TuvalRequest {
     protected filters: Filter[] = [];
     private static route: Route = null as any;

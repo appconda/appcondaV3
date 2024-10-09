@@ -49,6 +49,7 @@ export class Redis implements Adapter {
     }
 
     list(key: string): Promise<string[]> {
+        //@ts-ignore
         return this.redis.hkeys(key).then((keys) => keys || []);
     }
 
@@ -61,6 +62,7 @@ export class Redis implements Adapter {
     }
 
     flush(): Promise<boolean> {
+        //@ts-ignore
         return this.redis.flushall().then(() => true);
     }
 
@@ -69,6 +71,7 @@ export class Redis implements Adapter {
     }
 
     getSize(): Promise<number> {
+        //@ts-ignore
         return this.redis.dbsize();
     }
 }

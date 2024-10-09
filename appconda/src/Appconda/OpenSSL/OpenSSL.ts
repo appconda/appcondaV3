@@ -26,10 +26,12 @@ export class OpenSSL {
         aad: Buffer = Buffer.alloc(0),
         tagLength: number = 16
     ): string {
-         key = createHash('sha256').update(key).digest().slice(0, 16);
-
+        //@ts-ignore
+        key = createHash('sha256').update(key).digest().slice(0, 16);
+        //@ts-ignore
         const cipher = createCipheriv(method, key, iv, { authTagLength: tagLength });
         if (aad.length > 0) {
+            //@ts-ignore
             cipher.setAAD(aad);
         }
         let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -49,24 +51,29 @@ export class OpenSSL {
         aad: Buffer = Buffer.alloc(0),
         tagLength: number = 16
     ): string {
+        //@ts-ignore
         key = createHash('sha256').update(key).digest().slice(0, 16);
 
         const parts = encryptedData.split(':');
         const iv = Buffer.from(parts[0], 'hex');
         const tag = Buffer.from(parts[1], 'hex');
+        //@ts-ignore
         const encrypted = parts[2];
 
+        //@ts-ignore
         const decipher = createDecipheriv(method, key, iv, { authTagLength: tagLength });
         if (aad.length > 0) {
+            //@ts-ignore
             decipher.setAAD(aad);
         }
+        //@ts-ignore
         decipher.setAuthTag(tag);
         let decrypted = decipher.update(encrypted, 'hex', 'utf8');
         //decrypted += decipher.final('utf8');
         return decrypted;
     }
 
-   
+
     /**
      * Gets the Initialization Vector length for the specified cipher method.
      *
@@ -76,8 +83,8 @@ export class OpenSSL {
     public static cipherIVLength(method: CipherGCMTypes, value: string): number {
 
         const key = randomBytes(16); // 128-bit key
-    const iv = randomBytes(12);  // 96-bit IV for GCM
-
+        const iv = randomBytes(12);  // 96-bit IV for GCM
+        //@ts-ignore
         const cipher = createCipheriv('aes-128-gcm', key, iv);
 
         let encrypted = cipher.update(value, 'utf8', 'hex');
@@ -89,11 +96,11 @@ export class OpenSSL {
         console.log('Auth Tag:', authTag.toString('hex'));
 
 
-      /*   const key = randomBytes(16); // 128-bit key
-        const iv = randomBytes(12);  // 96-bit IV for GCM
-
-        const cipher = createCipheriv(method, key, iv);
-        const authTag = cipher.getAuthTag(); */
+        /*   const key = randomBytes(16); // 128-bit key
+          const iv = randomBytes(12);  // 96-bit IV for GCM
+  
+          const cipher = createCipheriv(method, key, iv);
+          const authTag = cipher.getAuthTag(); */
         return cipher.getAuthTag().length;
 
         // return createCipheriv(method, Buffer.alloc(16), Buffer.alloc(12)).getAuthTag().length;
