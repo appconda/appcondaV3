@@ -13,7 +13,7 @@ export class Messaging {
     /**
      * List messages
      *
-     * Get a list of all messages from the current Appwrite project.
+     * Get a list of all messages from the current Appconda project.
      *
      * @param {string[]} queries
      * @param {string} search
@@ -628,7 +628,7 @@ export class Messaging {
     /**
      * List providers
      *
-     * Get a list of all providers from the current Appwrite project.
+     * Get a list of all providers from the current Appconda project.
      *
      * @param {string[]} queries
      * @param {string} search
@@ -1941,7 +1941,7 @@ export class Messaging {
     /**
      * List topics
      *
-     * Get a list of all topics from the current Appwrite project.
+     * Get a list of all topics from the current Appconda project.
      *
      * @param {string[]} queries
      * @param {string} search
@@ -2147,7 +2147,7 @@ export class Messaging {
     /**
      * List subscribers
      *
-     * Get a list of all subscribers from the current Appwrite project.
+     * Get a list of all subscribers from the current Appconda project.
      *
      * @param {string} topicId
      * @param {string[]} queries

@@ -511,7 +511,7 @@ App.init()
         const referrer = request.getReferer();
         const parsedUrl = parse(referrer, true);
         const origin = parsedUrl.hostname ?? '';
-        const protocol = parsedUrl.protocol ?? '';
+        const protocol = parsedUrl.protocol?.slice(0, parsedUrl.protocol.length - 1) ?? '';
         const port = parsedUrl.port ?? '';
         /* const origin = new URL(request.getOrigin(referrer)).hostname;
         const protocol = new URL(request.getOrigin(referrer)).protocol;

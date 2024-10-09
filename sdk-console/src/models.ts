@@ -1,5 +1,5 @@
 /**
- * Appwrite Models
+ * Appconda Models
  */
 export namespace Models {
     /**
@@ -577,7 +577,7 @@ export namespace Models {
          */
         $updatedAt: string;
         /**
-         * Collection permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).
+         * Collection permissions. [Learn more about permissions](https://appconda.io/docs/permissions).
          */
         $permissions: string[];
         /**
@@ -593,7 +593,7 @@ export namespace Models {
          */
         enabled: boolean;
         /**
-         * Whether document-level permissions are enabled. [Learn more about permissions](https://appwrite.io/docs/permissions).
+         * Whether document-level permissions are enabled. [Learn more about permissions](https://appconda.io/docs/permissions).
          */
         documentSecurity: boolean;
         /**
@@ -1066,7 +1066,7 @@ export namespace Models {
          */
         $updatedAt: string;
         /**
-         * Document permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).
+         * Document permissions. [Learn more about permissions](https://appconda.io/docs/permissions).
          */
         $permissions: string[];
         [key: string]: any;
@@ -1104,7 +1104,7 @@ export namespace Models {
          */
         time: string;
         /**
-         * Operating system code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/os.json).
+         * Operating system code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/os.json).
          */
         osCode: string;
         /**
@@ -1120,7 +1120,7 @@ export namespace Models {
          */
         clientType: string;
         /**
-         * Client code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/clients.json).
+         * Client code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/clients.json).
          */
         clientCode: string;
         /**
@@ -1399,7 +1399,7 @@ export namespace Models {
          */
         ip: string;
         /**
-         * Operating system code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/os.json).
+         * Operating system code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/os.json).
          */
         osCode: string;
         /**
@@ -1415,7 +1415,7 @@ export namespace Models {
          */
         clientType: string;
         /**
-         * Client code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/clients.json).
+         * Client code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/clients.json).
          */
         clientCode: string;
         /**
@@ -1621,7 +1621,7 @@ export namespace Models {
          */
         $updatedAt: string;
         /**
-         * File permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).
+         * File permissions. [Learn more about permissions](https://appconda.io/docs/permissions).
          */
         $permissions: string[];
         /**
@@ -1666,11 +1666,11 @@ export namespace Models {
          */
         $updatedAt: string;
         /**
-         * Bucket permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).
+         * Bucket permissions. [Learn more about permissions](https://appconda.io/docs/permissions).
          */
         $permissions: string[];
         /**
-         * Whether file-level security is enabled. [Learn more about permissions](https://appwrite.io/docs/permissions).
+         * Whether file-level security is enabled. [Learn more about permissions](https://appconda.io/docs/permissions).
          */
         fileSecurity: boolean;
         /**
@@ -1821,7 +1821,7 @@ export namespace Models {
          */
         live: boolean;
         /**
-         * Whether executions will be logged. When set to false, executions will not be logged, but will reduce resource used by your Appwrite project.
+         * Whether executions will be logged. When set to false, executions will not be logged, but will reduce resource used by your Appconda project.
          */
         logging: boolean;
         /**
@@ -2962,7 +2962,7 @@ export namespace Models {
          */
         remoteTime: number;
         /**
-         * Current unix timestamp of local server where Appwrite runs.
+         * Current unix timestamp of local server where Appconda runs.
          */
         localTime: number;
         /**
@@ -3535,7 +3535,7 @@ export namespace Models {
      */
     export type ConsoleVariables = {
         /**
-         * CNAME target for your Appwrite custom domains.
+         * CNAME target for your Appconda custom domains.
          */
         _APP_DOMAIN_TARGET: string;
         /**
@@ -3922,7 +3922,7 @@ export namespace Models {
          */
         size: number;
         /**
-         * Version of the Appwrite instance to be migrated.
+         * Version of the Appconda instance to be migrated.
          */
         version: string;
     }

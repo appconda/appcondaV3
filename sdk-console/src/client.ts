@@ -257,12 +257,12 @@ class AppwriteException extends Error {
 
     /**
      * Error type.
-     * See [Error Types](https://appwrite.io/docs/response-codes#errorTypes) for more information.
+     * See [Error Types](https://appconda.io/docs/response-codes#errorTypes) for more information.
      */
     type: string;
 
     /**
-     * Initializes a Appwrite Exception.
+     * Initializes a Appconda Exception.
      *
      * @param {string} message - The error message.
      * @param {number} code - The error code. Default is 0.
@@ -280,7 +280,7 @@ class AppwriteException extends Error {
 }
 
 /**
- * Client that handles requests to Appwrite
+ * Client that handles requests to Appconda
  */
 class Client {
     static CHUNK_SIZE = 1024 * 1024 * 5;
@@ -289,7 +289,7 @@ class Client {
      * Holds configuration such as project.
      */
     config = {
-        endpoint: 'https://cloud.appwrite.io/v1',
+        endpoint: 'https://cloud.appconda.io/v1',
         endpointRealtime: '',
         project: '',
         key: '',
@@ -305,7 +305,7 @@ class Client {
         'x-sdk-platform': 'console',
         'x-sdk-language': 'web',
         'x-sdk-version': '1.0.1',
-        'X-Appwrite-Response-Format': '1.6.0',
+        'X-Appconda-Response-Format': '1.6.0',
     };
 
     /**
@@ -347,7 +347,7 @@ class Client {
      * @return {this}
      */
     setProject(value: string): this {
-        this.headers['X-Appwrite-Project'] = value;
+        this.headers['X-Appconda-Project'] = value;
         this.config.project = value;
         return this;
     }
@@ -361,7 +361,7 @@ class Client {
      * @return {this}
      */
     setKey(value: string): this {
-        this.headers['X-Appwrite-Key'] = value;
+        this.headers['X-Appconda-Key'] = value;
         this.config.key = value;
         return this;
     }
@@ -375,7 +375,7 @@ class Client {
      * @return {this}
      */
     setJWT(value: string): this {
-        this.headers['X-Appwrite-JWT'] = value;
+        this.headers['X-Appconda-JWT'] = value;
         this.config.jwt = value;
         return this;
     }
@@ -387,7 +387,7 @@ class Client {
      * @return {this}
      */
     setLocale(value: string): this {
-        this.headers['X-Appwrite-Locale'] = value;
+        this.headers['X-Appconda-Locale'] = value;
         this.config.locale = value;
         return this;
     }
@@ -399,7 +399,7 @@ class Client {
      * @return {this}
      */
     setMode(value: string): this {
-        this.headers['X-Appwrite-Mode'] = value;
+        this.headers['X-Appconda-Mode'] = value;
         this.config.mode = value;
         return this;
     }
@@ -544,7 +544,7 @@ class Client {
     }
 
     /**
-     * Subscribes to Appwrite events and passes you the payload in realtime.
+     * Subscribes to Appconda events and passes you the payload in realtime.
      *
      * @param {string|string[]} channels
      * Channel to subscribe - pass a single channel as a string or multiple with an array of strings.
@@ -672,7 +672,7 @@ class Client {
             }
 
             if (response && response.$id) {
-                headers['x-appwrite-id'] = response.$id;
+                headers['x-appconda-id'] = response.$id;
             }
 
             start = end;
@@ -688,7 +688,7 @@ class Client {
 
         const response = await fetch(uri, options);
 
-        const warnings = response.headers.get('x-appwrite-warning');
+        const warnings = response.headers.get('x-appconda-warning');
         if (warnings) {
             warnings.split(';').forEach((warning: string) => console.warn('Warning: ' + warning));
         }
@@ -710,7 +710,7 @@ class Client {
         const cookieFallback = response.headers.get('X-Fallback-Cookies');
 
         if (typeof window !== 'undefined' && window.localStorage && cookieFallback) {
-            window.console.warn('Appwrite is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
+            window.console.warn('Appconda is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
             window.localStorage.setItem('cookieFallback', cookieFallback);
         }
 

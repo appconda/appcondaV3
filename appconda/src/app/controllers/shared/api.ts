@@ -330,7 +330,7 @@ App.init()
             }
 
             const abuse = new Abuse(timeLimit);
-            const remaining = timeLimit.remaining();
+            const remaining = await timeLimit.remaining();
             const limit = timeLimit.limit();
             const time = new Date(timeLimit.time()).getTime() + route.getLabel('abuse-time', 3600) * 1000;
 

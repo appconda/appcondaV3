@@ -1,9 +1,9 @@
 /**
- * Appwrite Console SDK
+ * Appconda Console SDK
  *
- * This SDK is compatible with Appwrite server version 1.6.x. 
+ * This SDK is compatible with Appconda server version 1.6.x. 
  * For older versions, please check
- * [previous releases](https://github.com/appwrite/sdk-for-console/releases).
+ * [previous releases](https://github.com/appconda/sdk-for-console/releases).
  */
 export { Client, Query, AppwriteException } from './client';
 export { Account } from './services/account';

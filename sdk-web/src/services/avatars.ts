@@ -18,7 +18,7 @@ export class Avatars extends Service {
      *
      * You can use this endpoint to show different browser icons to your users.
      * The code argument receives the browser code as it appears in your user [GET
-     * /account/sessions](https://appwrite.io/docs/references/cloud/client-web/account#getSessions)
+     * /account/sessions](https://appconda.io/docs/references/cloud/client-web/account#getSessions)
      * endpoint. Use width, height and quality arguments to change the output
      * settings.
      * 

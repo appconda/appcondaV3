@@ -90,7 +90,7 @@ class AppwriteException extends Error {
 
 class Client {
     config = {
-        endpoint: 'https://cloud.appwrite.io/v1',
+        endpoint: 'https://cloud.appconda.io/v1',
         endpointRealtime: '',
         project: '',
         jwt: '',
@@ -102,7 +102,7 @@ class Client {
         'x-sdk-platform': 'client',
         'x-sdk-language': 'web',
         'x-sdk-version': '15.0.0',
-        'X-Appwrite-Response-Format': '1.5.0',
+        'X-Appconda-Response-Format': '1.5.0',
     };
 
     /**
@@ -144,7 +144,7 @@ class Client {
      * @return {this}
      */
     setProject(value: string): this {
-        this.headers['X-Appwrite-Project'] = value;
+        this.headers['X-Appconda-Project'] = value;
         this.config.project = value;
         return this;
     }
@@ -159,7 +159,7 @@ class Client {
      * @return {this}
      */
     setJWT(value: string): this {
-        this.headers['X-Appwrite-JWT'] = value;
+        this.headers['X-Appconda-JWT'] = value;
         this.config.jwt = value;
         return this;
     }
@@ -172,7 +172,7 @@ class Client {
      * @return {this}
      */
     setLocale(value: string): this {
-        this.headers['X-Appwrite-Locale'] = value;
+        this.headers['X-Appconda-Locale'] = value;
         this.config.locale = value;
         return this;
     }
@@ -187,7 +187,7 @@ class Client {
      * @return {this}
      */
     setSession(value: string): this {
-        this.headers['X-Appwrite-Session'] = value;
+        this.headers['X-Appconda-Session'] = value;
         this.config.session = value;
         return this;
     }
@@ -333,7 +333,7 @@ class Client {
     }
 
     /**
-     * Subscribes to Appwrite events and passes you the payload in realtime.
+     * Subscribes to Appconda events and passes you the payload in realtime.
      * 
      * @param {string|string[]} channels 
      * Channel to subscribe - pass a single channel as a string or multiple with an array of strings.
@@ -443,7 +443,7 @@ class Client {
             const cookieFallback = response.headers.get('X-Fallback-Cookies');
 
             if (typeof window !== 'undefined' && window.localStorage && cookieFallback) {
-                window.console.warn('Appwrite is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
+                window.console.warn('Appconda is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
                 window.localStorage.setItem('cookieFallback', cookieFallback);
             }
 

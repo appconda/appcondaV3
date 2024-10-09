@@ -48,7 +48,7 @@ export class Functions {
     /**
      * Create function
      *
-     * Create a new function. You can pass a list of [permissions](https://appwrite.io/docs/permissions) to allow different project users or team with access to execute the function using the client API.
+     * Create a new function. You can pass a list of [permissions](https://appconda.io/docs/permissions) to allow different project users or team with access to execute the function using the client API.
      *
      * @param {string} functionId
      * @param {string} name
@@ -516,7 +516,7 @@ export class Functions {
      *
      * Create a new function code deployment. Use this endpoint to upload a new version of your code function. To execute your newly uploaded code, you&#039;ll need to update the function&#039;s deployment to use your new deployment UID.
 
-This endpoint accepts a tar.gz file compressed with your code. Make sure to include any dependencies your code has within the compressed file. You can learn more about code packaging in the [Appwrite Cloud Functions tutorial](https://appwrite.io/docs/functions).
+This endpoint accepts a tar.gz file compressed with your code. Make sure to include any dependencies your code has within the compressed file. You can learn more about code packaging in the [Appconda Cloud Functions tutorial](https://appconda.io/docs/functions).
 
 Use the &quot;command&quot; param to set the entrypoint used to execute your code.
      *

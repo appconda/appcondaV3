@@ -49,7 +49,7 @@ export class Databases extends Service {
      *
      * Create a new Document. Before using this route, you should create a new
      * collection resource using either a [server
-     * integration](https://appwrite.io/docs/server/databases#databasesCreateCollection)
+     * integration](https://appconda.io/docs/server/databases#databasesCreateCollection)
      * API or directly from your database console.
      *
      * @param {string} databaseId

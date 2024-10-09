@@ -55,7 +55,7 @@ export class Project {
     /**
      * List Variables
      *
-     * Get a list of all project variables. These variables will be accessible in all Appwrite Functions at runtime.
+     * Get a list of all project variables. These variables will be accessible in all Appconda Functions at runtime.
      *
      * @throws {AppwriteException}
      * @returns {Promise<Models.VariableList>}
@@ -80,7 +80,7 @@ export class Project {
     /**
      * Create Variable
      *
-     * Create a new project variable. This variable will be accessible in all Appwrite Functions at runtime.
+     * Create a new project variable. This variable will be accessible in all Appconda Functions at runtime.
      *
      * @param {string} key
      * @param {string} value
@@ -148,7 +148,7 @@ export class Project {
     /**
      * Update Variable
      *
-     * Update project variable by its unique ID. This variable will be accessible in all Appwrite Functions at runtime.
+     * Update project variable by its unique ID. This variable will be accessible in all Appconda Functions at runtime.
      *
      * @param {string} variableId
      * @param {string} key

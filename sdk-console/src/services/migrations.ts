@@ -42,7 +42,7 @@ export class Migrations {
         );
     }
     /**
-     * Migrate Appwrite Data
+     * Migrate Appconda Data
      *
      *
      * @param {string[]} resources
@@ -65,7 +65,7 @@ export class Migrations {
         if (typeof apiKey === 'undefined') {
             throw new AppwriteException('Missing required parameter: "apiKey"');
         }
-        const apiPath = '/migrations/appwrite';
+        const apiPath = '/migrations/appconda';
         const payload: Payload = {};
         if (typeof resources !== 'undefined') {
             payload['resources'] = resources;
@@ -94,7 +94,7 @@ export class Migrations {
         );
     }
     /**
-     * Generate a report on Appwrite Data
+     * Generate a report on Appconda Data
      *
      *
      * @param {string[]} resources
@@ -117,7 +117,7 @@ export class Migrations {
         if (typeof key === 'undefined') {
             throw new AppwriteException('Missing required parameter: "key"');
         }
-        const apiPath = '/migrations/appwrite/report';
+        const apiPath = '/migrations/appconda/report';
         const payload: Payload = {};
         if (typeof resources !== 'undefined') {
             payload['resources'] = resources;
@@ -184,7 +184,7 @@ export class Migrations {
         );
     }
     /**
-     * Revoke Appwrite&#039;s authorization to access Firebase Projects
+     * Revoke Appconda&#039;s authorization to access Firebase Projects
      *
      *
      * @throws {AppwriteException}

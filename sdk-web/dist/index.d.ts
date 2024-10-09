@@ -92,7 +92,7 @@ class Client {
             */
         setSession(value: string): this;
         /**
-            * Subscribes to Appwrite events and passes you the payload in realtime.
+            * Subscribes to Appconda events and passes you the payload in realtime.
             *
             * @param {string|string[]} channels
             * Channel to subscribe - pass a single channel as a string or multiple with an array of strings.
@@ -139,10 +139,10 @@ export class Account extends Service {
             * Use this endpoint to allow a new user to register a new account in your
             * project. After the user registration completes successfully, you can use
             * the
-            * [/account/verfication](https://appwrite.io/docs/references/cloud/client-web/account#createVerification)
+            * [/account/verfication](https://appconda.io/docs/references/cloud/client-web/account#createVerification)
             * route to start verifying the user email address. To allow the new user to
             * login to their new account, you need to create a new [account
-            * session](https://appwrite.io/docs/references/cloud/client-web/account#createEmailSession).
+            * session](https://appconda.io/docs/references/cloud/client-web/account#createEmailSession).
             *
             * @param {string} userId
             * @param {string} email
@@ -195,7 +195,7 @@ export class Account extends Service {
             *
             * Use this endpoint to create a JSON Web Token. You can use the resulting JWT
             * to authenticate on behalf of the current user when working with the
-            * Appwrite server-side API and SDKs. The JWT secret is valid for 15 minutes
+            * Appconda server-side API and SDKs. The JWT secret is valid for 15 minutes
             * from its creation and will be invalid if the user will logout in that time
             * frame.
             *
@@ -363,7 +363,7 @@ export class Account extends Service {
             * Update the currently logged in user's phone number. After updating the
             * phone number, the phone verification status will be reset. A confirmation
             * SMS is not sent automatically, however you can use the [POST
-            * /account/verification/phone](https://appwrite.io/docs/references/cloud/client-web/account#createPhoneVerification)
+            * /account/verification/phone](https://appconda.io/docs/references/cloud/client-web/account#createPhoneVerification)
             * endpoint to send a confirmation SMS.
             *
             * @param {string} phone
@@ -401,7 +401,7 @@ export class Account extends Service {
             * app password reset URL with the secret key and email address values
             * attached to the URL query string. Use the query string params to submit a
             * request to the [PUT
-            * /account/recovery](https://appwrite.io/docs/references/cloud/client-web/account#updateRecovery)
+            * /account/recovery](https://appconda.io/docs/references/cloud/client-web/account#updateRecovery)
             * endpoint to complete the process. The verification link sent to the user's
             * email address is valid for 1 hour.
             *
@@ -417,7 +417,7 @@ export class Account extends Service {
             * Use this endpoint to complete the user account password reset. Both the
             * **userId** and **secret** arguments will be passed as query parameters to
             * the redirect URL you have provided when sending your request to the [POST
-            * /account/recovery](https://appwrite.io/docs/references/cloud/client-web/account#createRecovery)
+            * /account/recovery](https://appconda.io/docs/references/cloud/client-web/account#createRecovery)
             * endpoint.
             *
             * Please note that in order to avoid a [Redirect
@@ -459,9 +459,9 @@ export class Account extends Service {
             * your project. This route will also create a new session for the user. To
             * allow the new user to convert an anonymous account to a normal account, you
             * need to update its [email and
-            * password](https://appwrite.io/docs/references/cloud/client-web/account#updateEmail)
+            * password](https://appconda.io/docs/references/cloud/client-web/account#updateEmail)
             * or create an [OAuth2
-            * session](https://appwrite.io/docs/references/cloud/client-web/account#CreateOAuth2Session).
+            * session](https://appconda.io/docs/references/cloud/client-web/account#CreateOAuth2Session).
             *
             * @throws {AppwriteException}
             * @returns {Promise}
@@ -475,7 +475,7 @@ export class Account extends Service {
             *
             * A user is limited to 10 active sessions at a time by default. [Learn more
             * about session
-            * limits](https://appwrite.io/docs/authentication-security#limits).
+            * limits](https://appconda.io/docs/authentication-security#limits).
             *
             * @param {string} email
             * @param {string} password
@@ -500,7 +500,7 @@ export class Account extends Service {
             * Create OAuth2 session
             *
             * Allow the user to login to their account using the OAuth2 provider of their
-            * choice. Each OAuth2 provider should be enabled from the Appwrite console
+            * choice. Each OAuth2 provider should be enabled from the Appconda console
             * first. Use the success and failure arguments to provide a redirect URL's
             * back to your app when login is completed.
             *
@@ -513,7 +513,7 @@ export class Account extends Service {
             *
             * A user is limited to 10 active sessions at a time by default. [Learn more
             * about session
-            * limits](https://appwrite.io/docs/authentication-security#limits).
+            * limits](https://appconda.io/docs/authentication-security#limits).
             *
             *
             * @param {OAuthProvider} provider
@@ -579,7 +579,7 @@ export class Account extends Service {
             * Logout the user. Use 'current' as the session ID to logout on this device,
             * use a session ID to logout on another device. If you're looking to logout
             * the user on all devices, use [Delete
-            * Sessions](https://appwrite.io/docs/references/cloud/client-web/account#deleteSessions)
+            * Sessions](https://appconda.io/docs/references/cloud/client-web/account#deleteSessions)
             * instead.
             *
             * @param {string} sessionId
@@ -634,13 +634,13 @@ export class Account extends Service {
             * Sends the user an email with a secret key for creating a session. If the
             * provided user ID has not be registered, a new user will be created. Use the
             * returned user ID and secret and submit a request to the [POST
-            * /v1/account/sessions/token](https://appwrite.io/docs/references/cloud/client-web/account#createSession)
+            * /v1/account/sessions/token](https://appconda.io/docs/references/cloud/client-web/account#createSession)
             * endpoint to complete the login process. The secret sent to the user's email
             * is valid for 15 minutes.
             *
             * A user is limited to 10 active sessions at a time by default. [Learn more
             * about session
-            * limits](https://appwrite.io/docs/authentication-security#limits).
+            * limits](https://appconda.io/docs/authentication-security#limits).
             *
             * @param {string} userId
             * @param {string} email
@@ -658,15 +658,15 @@ export class Account extends Service {
             * URL you provided with the secret key and userId values attached to the URL
             * query string. Use the query string parameters to submit a request to the
             * [POST
-            * /v1/account/sessions/token](https://appwrite.io/docs/references/cloud/client-web/account#createSession)
+            * /v1/account/sessions/token](https://appconda.io/docs/references/cloud/client-web/account#createSession)
             * endpoint to complete the login process. The link sent to the user's email
             * address is valid for 1 hour. If you are on a mobile device you can leave
             * the URL parameter empty, so that the login completion will be handled by
-            * your Appwrite instance by default.
+            * your Appconda instance by default.
             *
             * A user is limited to 10 active sessions at a time by default. [Learn more
             * about session
-            * limits](https://appwrite.io/docs/authentication-security#limits).
+            * limits](https://appconda.io/docs/authentication-security#limits).
             *
             *
             * @param {string} userId
@@ -681,19 +681,19 @@ export class Account extends Service {
             * Create OAuth2 token
             *
             * Allow the user to login to their account using the OAuth2 provider of their
-            * choice. Each OAuth2 provider should be enabled from the Appwrite console
+            * choice. Each OAuth2 provider should be enabled from the Appconda console
             * first. Use the success and failure arguments to provide a redirect URL's
             * back to your app when login is completed.
             *
             * If authentication succeeds, `userId` and `secret` of a token will be
             * appended to the success URL as query parameters. These can be used to
             * create a new session using the [Create
-            * session](https://appwrite.io/docs/references/cloud/client-web/account#createSession)
+            * session](https://appconda.io/docs/references/cloud/client-web/account#createSession)
             * endpoint.
             *
             * A user is limited to 10 active sessions at a time by default. [Learn more
             * about session
-            * limits](https://appwrite.io/docs/authentication-security#limits).
+            * limits](https://appconda.io/docs/authentication-security#limits).
             *
             * @param {OAuthProvider} provider
             * @param {string} success
@@ -709,13 +709,13 @@ export class Account extends Service {
             * Sends the user an SMS with a secret key for creating a session. If the
             * provided user ID has not be registered, a new user will be created. Use the
             * returned user ID and secret and submit a request to the [POST
-            * /v1/account/sessions/token](https://appwrite.io/docs/references/cloud/client-web/account#createSession)
+            * /v1/account/sessions/token](https://appconda.io/docs/references/cloud/client-web/account#createSession)
             * endpoint to complete the login process. The secret sent to the user's phone
             * is valid for 15 minutes.
             *
             * A user is limited to 10 active sessions at a time by default. [Learn more
             * about session
-            * limits](https://appwrite.io/docs/authentication-security#limits).
+            * limits](https://appconda.io/docs/authentication-security#limits).
             *
             * @param {string} userId
             * @param {string} phone
@@ -733,7 +733,7 @@ export class Account extends Service {
             * should redirect the user back to your app and allow you to complete the
             * verification process by verifying both the **userId** and **secret**
             * parameters. Learn more about how to [complete the verification
-            * process](https://appwrite.io/docs/references/cloud/client-web/account#updateVerification).
+            * process](https://appconda.io/docs/references/cloud/client-web/account#updateVerification).
             * The verification link sent to the user's email address is valid for 7 days.
             *
             * Please note that in order to avoid a [Redirect
@@ -767,9 +767,9 @@ export class Account extends Service {
             * Use this endpoint to send a verification SMS to the currently logged in
             * user. This endpoint is meant for use after updating a user's phone number
             * using the
-            * [accountUpdatePhone](https://appwrite.io/docs/references/cloud/client-web/account#updatePhone)
+            * [accountUpdatePhone](https://appconda.io/docs/references/cloud/client-web/account#updatePhone)
             * endpoint. Learn more about how to [complete the verification
-            * process](https://appwrite.io/docs/references/cloud/client-web/account#updatePhoneVerification).
+            * process](https://appconda.io/docs/references/cloud/client-web/account#updatePhoneVerification).
             * The verification code sent to the user's phone number is valid for 15
             * minutes.
             *
@@ -800,7 +800,7 @@ export class Avatars extends Service {
             *
             * You can use this endpoint to show different browser icons to your users.
             * The code argument receives the browser code as it appears in your user [GET
-            * /account/sessions](https://appwrite.io/docs/references/cloud/client-web/account#getSessions)
+            * /account/sessions](https://appconda.io/docs/references/cloud/client-web/account#getSessions)
             * endpoint. Use width, height and quality arguments to change the output
             * settings.
             *
@@ -958,7 +958,7 @@ export class Databases extends Service {
             *
             * Create a new Document. Before using this route, you should create a new
             * collection resource using either a [server
-            * integration](https://appwrite.io/docs/server/databases#databasesCreateCollection)
+            * integration](https://appconda.io/docs/server/databases#databasesCreateCollection)
             * API or directly from your database console.
             *
             * @param {string} databaseId
@@ -1219,8 +1219,8 @@ export class Storage extends Service {
             *
             * Create a new file. Before using this route, you should create a new bucket
             * resource using either a [server
-            * integration](https://appwrite.io/docs/server/storage#storageCreateBucket)
-            * API or directly from your Appwrite console.
+            * integration](https://appconda.io/docs/server/storage#storageCreateBucket)
+            * API or directly from your Appconda console.
             *
             * Larger files should be uploaded using multiple requests with the
             * [content-range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range)
@@ -1229,10 +1229,10 @@ export class Storage extends Service {
             *
             * When the first request is sent, the server will return the **File** object,
             * and the subsequent part request must include the file's **id** in
-            * `x-appwrite-id` header to allow the server to know that the partial upload
+            * `x-appconda-id` header to allow the server to know that the partial upload
             * is for the existing file and not for a new one.
             *
-            * If you're creating a new file using one of the Appwrite SDKs, all the
+            * If you're creating a new file using one of the Appconda SDKs, all the
             * chunking logic will be managed by the SDK internally.
             *
             *
@@ -1414,24 +1414,24 @@ export class Teams extends Service {
             *
             * Invite a new member to join your team. Provide an ID for existing users, or
             * invite unregistered users using an email or phone number. If initiated from
-            * a Client SDK, Appwrite will send an email or sms with a link to join the
+            * a Client SDK, Appconda will send an email or sms with a link to join the
             * team to the invited user, and an account will be created for them if one
             * doesn't exist. If initiated from a Server SDK, the new member will be added
             * automatically to the team.
             *
-            * You only need to provide one of a user ID, email, or phone number. Appwrite
+            * You only need to provide one of a user ID, email, or phone number. Appconda
             * will prioritize accepting the user ID > email > phone number if you provide
             * more than one of these parameters.
             *
             * Use the `url` parameter to redirect the user from the invitation email to
             * your app. After the user is redirected, use the [Update Team Membership
-            * Status](https://appwrite.io/docs/references/cloud/client-web/teams#updateMembershipStatus)
+            * Status](https://appconda.io/docs/references/cloud/client-web/teams#updateMembershipStatus)
             * endpoint to allow the user to accept the invitation to the team.
             *
             * Please note that to avoid a [Redirect
             * Attack](https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.md)
-            * Appwrite will accept the only redirect URLs under the domains you have
-            * added as a platform on the Appwrite Console.
+            * Appconda will accept the only redirect URLs under the domains you have
+            * added as a platform on the Appconda Console.
             *
             *
             * @param {string} teamId
@@ -1462,7 +1462,7 @@ export class Teams extends Service {
             *
             * Modify the roles of a team member. Only team members with the owner role
             * have access to this endpoint. Learn more about [roles and
-            * permissions](https://appwrite.io/docs/permissions).
+            * permissions](https://appconda.io/docs/permissions).
             *
             *
             * @param {string} teamId
@@ -1509,7 +1509,7 @@ export class Teams extends Service {
             *
             * Get the team's shared preferences by its unique ID. If a preference doesn't
             * need to be shared by all team members, prefer storing them in [user
-            * preferences](https://appwrite.io/docs/references/cloud/client-web/account#getPrefs).
+            * preferences](https://appconda.io/docs/references/cloud/client-web/account#getPrefs).
             *
             * @param {string} teamId
             * @throws {AppwriteException}
@@ -2175,7 +2175,7 @@ export namespace Models {
                     */
                 $updatedAt: string;
                 /**
-                    * Document permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).
+                    * Document permissions. [Learn more about permissions](https://appconda.io/docs/permissions).
                     */
                 $permissions: string[];
                 [key: string]: any;
@@ -2213,7 +2213,7 @@ export namespace Models {
                     */
                 time: string;
                 /**
-                    * Operating system code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/os.json).
+                    * Operating system code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/os.json).
                     */
                 osCode: string;
                 /**
@@ -2229,7 +2229,7 @@ export namespace Models {
                     */
                 clientType: string;
                 /**
-                    * Client code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/clients.json).
+                    * Client code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/clients.json).
                     */
                 clientCode: string;
                 /**
@@ -2508,7 +2508,7 @@ export namespace Models {
                     */
                 ip: string;
                 /**
-                    * Operating system code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/os.json).
+                    * Operating system code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/os.json).
                     */
                 osCode: string;
                 /**
@@ -2524,7 +2524,7 @@ export namespace Models {
                     */
                 clientType: string;
                 /**
-                    * Client code name. View list of [available options](https://github.com/appwrite/appwrite/blob/master/docs/lists/clients.json).
+                    * Client code name. View list of [available options](https://github.com/appconda/appconda/blob/master/docs/lists/clients.json).
                     */
                 clientCode: string;
                 /**
@@ -2730,7 +2730,7 @@ export namespace Models {
                     */
                 $updatedAt: string;
                 /**
-                    * File permissions. [Learn more about permissions](https://appwrite.io/docs/permissions).
+                    * File permissions. [Learn more about permissions](https://appconda.io/docs/permissions).
                     */
                 $permissions: string[];
                 /**

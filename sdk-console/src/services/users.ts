@@ -97,7 +97,7 @@ export class Users {
     /**
      * Create user with Argon2 password
      *
-     * Create a new user. Password provided must be hashed with the [Argon2](https://en.wikipedia.org/wiki/Argon2) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [Argon2](https://en.wikipedia.org/wiki/Argon2) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -147,7 +147,7 @@ export class Users {
     /**
      * Create user with bcrypt password
      *
-     * Create a new user. Password provided must be hashed with the [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -259,7 +259,7 @@ export class Users {
     /**
      * Create user with MD5 password
      *
-     * Create a new user. Password provided must be hashed with the [MD5](https://en.wikipedia.org/wiki/MD5) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [MD5](https://en.wikipedia.org/wiki/MD5) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -309,7 +309,7 @@ export class Users {
     /**
      * Create user with PHPass password
      *
-     * Create a new user. Password provided must be hashed with the [PHPass](https://www.openwall.com/phpass/) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [PHPass](https://www.openwall.com/phpass/) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -359,7 +359,7 @@ export class Users {
     /**
      * Create user with Scrypt password
      *
-     * Create a new user. Password provided must be hashed with the [Scrypt](https://github.com/Tarsnap/scrypt) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [Scrypt](https://github.com/Tarsnap/scrypt) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -444,7 +444,7 @@ export class Users {
     /**
      * Create user with Scrypt modified password
      *
-     * Create a new user. Password provided must be hashed with the [Scrypt Modified](https://gist.github.com/Meldiron/eecf84a0225eccb5a378d45bb27462cc) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [Scrypt Modified](https://gist.github.com/Meldiron/eecf84a0225eccb5a378d45bb27462cc) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -515,7 +515,7 @@ export class Users {
     /**
      * Create user with SHA password
      *
-     * Create a new user. Password provided must be hashed with the [SHA](https://en.wikipedia.org/wiki/Secure_Hash_Algorithm) algorithm. Use the [POST /users](https://appwrite.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
+     * Create a new user. Password provided must be hashed with the [SHA](https://en.wikipedia.org/wiki/Secure_Hash_Algorithm) algorithm. Use the [POST /users](https://appconda.io/docs/server/users#usersCreate) endpoint to create users with a plain text password.
      *
      * @param {string} userId
      * @param {string} email
@@ -626,7 +626,7 @@ export class Users {
     /**
      * Delete user
      *
-     * Delete a user by its unique ID, thereby releasing it&#039;s ID. Since ID is released and can be reused, all user-related resources like documents or storage files should be deleted before user deletion. If you want to keep ID reserved, use the [updateStatus](https://appwrite.io/docs/server/users#usersUpdateStatus) endpoint instead.
+     * Delete a user by its unique ID, thereby releasing it&#039;s ID. Since ID is released and can be reused, all user-related resources like documents or storage files should be deleted before user deletion. If you want to keep ID reserved, use the [updateStatus](https://appconda.io/docs/server/users#usersUpdateStatus) endpoint instead.
      *
      * @param {string} userId
      * @throws {AppwriteException}
@@ -730,7 +730,7 @@ export class Users {
      *
      * Update the user labels by its unique ID. 
 
-Labels can be used to grant access to resources. While teams are a way for user&#039;s to share access to a resource, labels can be defined by the developer to grant access without an invitation. See the [Permissions docs](https://appwrite.io/docs/permissions) for more info.
+Labels can be used to grant access to resources. While teams are a way for user&#039;s to share access to a resource, labels can be defined by the developer to grant access without an invitation. See the [Permissions docs](https://appconda.io/docs/permissions) for more info.
      *
      * @param {string} userId
      * @param {string[]} labels
@@ -1217,7 +1217,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
      *
      * Creates a session for a user. Returns an immediately usable session object.
 
-If you want to generate a token for a custom authentication flow, use the [POST /users/{userId}/tokens](https://appwrite.io/docs/server/users#createToken) endpoint.
+If you want to generate a token for a custom authentication flow, use the [POST /users/{userId}/tokens](https://appconda.io/docs/server/users#createToken) endpoint.
      *
      * @param {string} userId
      * @throws {AppwriteException}
@@ -1546,7 +1546,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
     /**
      * Create token
      *
-     * Returns a token with a secret key for creating a session. Use the user ID and secret and submit a request to the [PUT /account/sessions/token](https://appwrite.io/docs/references/cloud/client-web/account#createSession) endpoint to complete the login process.
+     * Returns a token with a secret key for creating a session. Use the user ID and secret and submit a request to the [PUT /account/sessions/token](https://appconda.io/docs/references/cloud/client-web/account#createSession) endpoint to complete the login process.
 
      *
      * @param {string} userId

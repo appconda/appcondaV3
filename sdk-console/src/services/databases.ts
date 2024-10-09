@@ -16,7 +16,7 @@ export class Databases {
     /**
      * List databases
      *
-     * Get a list of all databases from the current Appwrite project. You can use the search parameter to filter your results.
+     * Get a list of all databases from the current Appconda project. You can use the search parameter to filter your results.
      *
      * @param {string[]} queries
      * @param {string} search
@@ -256,7 +256,7 @@ export class Databases {
     /**
      * Create collection
      *
-     * Create a new Collection. Before using this route, you should create a new database resource using either a [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection) API or directly from your database console.
+     * Create a new Collection. Before using this route, you should create a new database resource using either a [server integration](https://appconda.io/docs/server/databases#databasesCreateCollection) API or directly from your database console.
      *
      * @param {string} databaseId
      * @param {string} collectionId
@@ -1277,7 +1277,7 @@ export class Databases {
     /**
      * Create relationship attribute
      *
-     * Create relationship attribute. [Learn more about relationship attributes](https://appwrite.io/docs/databases-relationships#relationship-attributes).
+     * Create relationship attribute. [Learn more about relationship attributes](https://appconda.io/docs/databases-relationships#relationship-attributes).
 
      *
      * @param {string} databaseId
@@ -1642,7 +1642,7 @@ export class Databases {
     /**
      * Update relationship attribute
      *
-     * Update relationship attribute. [Learn more about relationship attributes](https://appwrite.io/docs/databases-relationships#relationship-attributes).
+     * Update relationship attribute. [Learn more about relationship attributes](https://appconda.io/docs/databases-relationships#relationship-attributes).
 
      *
      * @param {string} databaseId
@@ -1721,7 +1721,7 @@ export class Databases {
     /**
      * Create document
      *
-     * Create a new Document. Before using this route, you should create a new collection resource using either a [server integration](https://appwrite.io/docs/server/databases#databasesCreateCollection) API or directly from your database console.
+     * Create a new Document. Before using this route, you should create a new collection resource using either a [server integration](https://appconda.io/docs/server/databases#databasesCreateCollection) API or directly from your database console.
      *
      * @param {string} databaseId
      * @param {string} collectionId
