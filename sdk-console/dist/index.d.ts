@@ -69,7 +69,7 @@ type UploadProgress = {
 /**
     * Exception thrown by the  package
     */
-class AppwriteException extends Error {
+class AppcondaException extends Error {
         /**
             * The error code associated with the exception.
             */
@@ -212,7 +212,7 @@ class Client {
         call(method: string, url: URL, headers?: Headers, params?: Payload, responseType?: string): Promise<any>;
         static flatten(data: Payload, prefix?: string): Payload;
 }
-export { Client, AppwriteException };
+export { Client, AppcondaException };
 export type { Models, Payload, UploadProgress };
 export type { RealtimeResponseEvent };
 
@@ -224,7 +224,7 @@ export class Account {
             *
             * Get the currently logged in user.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         get<Preferences extends Models.Preferences>(): Promise<Models.User<Preferences>>;
@@ -237,7 +237,7 @@ export class Account {
             * @param {string} email
             * @param {string} password
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         create<Preferences extends Models.Preferences>(userId: string, email: string, password: string, name?: string): Promise<Models.User<Preferences>>;
@@ -246,7 +246,7 @@ export class Account {
             *
             * Delete the currently logged in user.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(): Promise<{}>;
@@ -259,7 +259,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * @param {string} email
             * @param {string} password
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateEmail<Preferences extends Models.Preferences>(email: string, password: string): Promise<Models.User<Preferences>>;
@@ -269,7 +269,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Get the list of identities for the currently logged in user.
             *
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.IdentityList>}
             */
         listIdentities(queries?: string[]): Promise<Models.IdentityList>;
@@ -279,7 +279,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Delete an identity by its unique ID.
             *
             * @param {string} identityId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteIdentity(identityId: string): Promise<{}>;
@@ -288,7 +288,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * Use this endpoint to create a JSON Web Token. You can use the resulting JWT to authenticate on behalf of the current user when working with the Appconda server-side API and SDKs. The JWT secret is valid for 15 minutes from its creation and will be invalid if the user will logout in that time frame.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Jwt>}
             */
         createJWT(): Promise<Models.Jwt>;
@@ -298,7 +298,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Get the list of latest security activity logs for the currently logged in user. Each log returns user IP address, location and date and time of log.
             *
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listLogs(queries?: string[]): Promise<Models.LogList>;
@@ -308,7 +308,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Enable or disable MFA on an account.
             *
             * @param {boolean} mfa
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateMFA<Preferences extends Models.Preferences>(mfa: boolean): Promise<Models.User<Preferences>>;
@@ -318,7 +318,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Add an authenticator app to be used as an MFA factor. Verify the authenticator using the [verify authenticator](/docs/references/cloud/client-web/account#updateMfaAuthenticator) method.
             *
             * @param {AuthenticatorType} type
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaType>}
             */
         createMfaAuthenticator(type: AuthenticatorType): Promise<Models.MfaType>;
@@ -329,7 +329,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * @param {AuthenticatorType} type
             * @param {string} otp
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateMfaAuthenticator<Preferences extends Models.Preferences>(type: AuthenticatorType, otp: string): Promise<Models.User<Preferences>>;
@@ -339,7 +339,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Delete an authenticator for a user by ID.
             *
             * @param {AuthenticatorType} type
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteMfaAuthenticator(type: AuthenticatorType): Promise<{}>;
@@ -349,7 +349,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Begin the process of MFA verification after sign-in. Finish the flow with [updateMfaChallenge](/docs/references/cloud/client-web/account#updateMfaChallenge) method.
             *
             * @param {AuthenticationFactor} factor
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaChallenge>}
             */
         createMfaChallenge(factor: AuthenticationFactor): Promise<Models.MfaChallenge>;
@@ -360,7 +360,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * @param {string} challengeId
             * @param {string} otp
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         updateMfaChallenge(challengeId: string, otp: string): Promise<{}>;
@@ -369,7 +369,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * List the factors available on the account to be used as a MFA challange.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaFactors>}
             */
         listMfaFactors(): Promise<Models.MfaFactors>;
@@ -378,7 +378,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * Get recovery codes that can be used as backup for MFA flow. Before getting codes, they must be generated using [createMfaRecoveryCodes](/docs/references/cloud/client-web/account#createMfaRecoveryCodes) method. An OTP challenge is required to read recovery codes.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaRecoveryCodes>}
             */
         getMfaRecoveryCodes(): Promise<Models.MfaRecoveryCodes>;
@@ -387,7 +387,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * Generate recovery codes as backup for MFA flow. It&#039;s recommended to generate and show then immediately after user successfully adds their authehticator. Recovery codes can be used as a MFA verification type in [createMfaChallenge](/docs/references/cloud/client-web/account#createMfaChallenge) method.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaRecoveryCodes>}
             */
         createMfaRecoveryCodes(): Promise<Models.MfaRecoveryCodes>;
@@ -396,7 +396,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * Regenerate recovery codes that can be used as backup for MFA flow. Before regenerating codes, they must be first generated using [createMfaRecoveryCodes](/docs/references/cloud/client-web/account#createMfaRecoveryCodes) method. An OTP challenge is required to regenreate recovery codes.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaRecoveryCodes>}
             */
         updateMfaRecoveryCodes(): Promise<Models.MfaRecoveryCodes>;
@@ -406,7 +406,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Update currently logged in user account name.
             *
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateName<Preferences extends Models.Preferences>(name: string): Promise<Models.User<Preferences>>;
@@ -417,7 +417,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * @param {string} password
             * @param {string} oldPassword
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updatePassword<Preferences extends Models.Preferences>(password: string, oldPassword?: string): Promise<Models.User<Preferences>>;
@@ -428,7 +428,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * @param {string} phone
             * @param {string} password
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updatePhone<Preferences extends Models.Preferences>(phone: string, password: string): Promise<Models.User<Preferences>>;
@@ -437,7 +437,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * Get the preferences as a key-value object for the currently logged in user.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Preferences>}
             */
         getPrefs<Preferences extends Models.Preferences>(): Promise<Preferences>;
@@ -447,7 +447,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             * Update currently logged in user account preferences. The object you pass is stored as is, and replaces any previous value. The maximum allowed prefs size is 64kB and throws error if exceeded.
             *
             * @param {Partial<Preferences>} prefs
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updatePrefs<Preferences extends Models.Preferences>(prefs: Partial<Preferences>): Promise<Models.User<Preferences>>;
@@ -458,7 +458,7 @@ This endpoint can also be used to convert an anonymous account to a normal one, 
             *
             * @param {string} email
             * @param {string} url
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createRecovery(email: string, url: string): Promise<Models.Token>;
@@ -472,7 +472,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             * @param {string} userId
             * @param {string} secret
             * @param {string} password
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         updateRecovery(userId: string, secret: string, password: string): Promise<Models.Token>;
@@ -481,7 +481,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             *
             * Get the list of active sessions across different devices for the currently logged in user.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SessionList>}
             */
         listSessions(): Promise<Models.SessionList>;
@@ -490,7 +490,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             *
             * Delete all sessions from the user account and remove any sessions cookies from the end client.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteSessions(): Promise<{}>;
@@ -499,7 +499,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             *
             * Use this endpoint to allow a new user to register an anonymous account in your project. This route will also create a new session for the user. To allow the new user to convert an anonymous account to a normal account, you need to update its [email and password](https://appconda.io/docs/references/cloud/client-web/account#updateEmail) or create an [OAuth2 session](https://appconda.io/docs/references/cloud/client-web/account#CreateOAuth2Session).
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         createAnonymousSession(): Promise<Models.Session>;
@@ -512,7 +512,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * @param {string} email
             * @param {string} password
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         createEmailPasswordSession(email: string, password: string): Promise<Models.Session>;
@@ -523,7 +523,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * @param {string} userId
             * @param {string} secret
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         updateMagicURLSession(userId: string, secret: string): Promise<Models.Session>;
@@ -541,7 +541,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * @param {string} success
             * @param {string} failure
             * @param {string[]} scopes
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<void | string>}
             */
         createOAuth2Session(provider: OAuthProvider, success?: string, failure?: string, scopes?: string[]): Promise<void | string>;
@@ -552,7 +552,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * @param {string} userId
             * @param {string} secret
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         updatePhoneSession(userId: string, secret: string): Promise<Models.Session>;
@@ -563,7 +563,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * @param {string} userId
             * @param {string} secret
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         createSession(userId: string, secret: string): Promise<Models.Session>;
@@ -573,7 +573,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * Use this endpoint to get a logged in user&#039;s session using a Session ID. Inputting &#039;current&#039; will return the current session being used.
             *
             * @param {string} sessionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         getSession(sessionId: string): Promise<Models.Session>;
@@ -583,7 +583,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * Use this endpoint to extend a session&#039;s length. Extending a session is useful when session expiry is short. If the session was created using an OAuth provider, this endpoint refreshes the access token from the provider.
             *
             * @param {string} sessionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         updateSession(sessionId: string): Promise<Models.Session>;
@@ -593,7 +593,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * Logout the user. Use &#039;current&#039; as the session ID to logout on this device, use a session ID to logout on another device. If you&#039;re looking to logout the user on all devices, use [Delete Sessions](https://appconda.io/docs/references/cloud/client-web/account#deleteSessions) instead.
             *
             * @param {string} sessionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteSession(sessionId: string): Promise<{}>;
@@ -602,7 +602,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * Block the currently logged in user account. Behind the scene, the user record is not deleted but permanently blocked from any access. To completely delete a user, use the Users API instead.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateStatus<Preferences extends Models.Preferences>(): Promise<Models.User<Preferences>>;
@@ -613,7 +613,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * @param {string} targetId
             * @param {string} identifier
             * @param {string} providerId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Target>}
             */
         createPushTarget(targetId: string, identifier: string, providerId?: string): Promise<Models.Target>;
@@ -623,7 +623,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * @param {string} targetId
             * @param {string} identifier
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Target>}
             */
         updatePushTarget(targetId: string, identifier: string): Promise<Models.Target>;
@@ -632,7 +632,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             *
             * @param {string} targetId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deletePushTarget(targetId: string): Promise<{}>;
@@ -646,7 +646,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * @param {string} userId
             * @param {string} email
             * @param {boolean} phrase
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createEmailToken(userId: string, email: string, phrase?: boolean): Promise<Models.Token>;
@@ -662,7 +662,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * @param {string} email
             * @param {string} url
             * @param {boolean} phrase
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createMagicURLToken(userId: string, email: string, url?: string, phrase?: boolean): Promise<Models.Token>;
@@ -679,7 +679,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             * @param {string} success
             * @param {string} failure
             * @param {string[]} scopes
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<void | string>}
             */
         createOAuth2Token(provider: OAuthProvider, success?: string, failure?: string, scopes?: string[]): Promise<void | string>;
@@ -692,7 +692,7 @@ A user is limited to 10 active sessions at a time by default. [Learn more about 
             *
             * @param {string} userId
             * @param {string} phone
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createPhoneToken(userId: string, phone: string): Promise<Models.Token>;
@@ -705,7 +705,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
 
             *
             * @param {string} url
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createVerification(url: string): Promise<Models.Token>;
@@ -716,7 +716,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             *
             * @param {string} userId
             * @param {string} secret
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         updateVerification(userId: string, secret: string): Promise<Models.Token>;
@@ -725,7 +725,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             *
             * Use this endpoint to send a verification SMS to the currently logged in user. This endpoint is meant for use after updating a user&#039;s phone number using the [accountUpdatePhone](https://appconda.io/docs/references/cloud/client-web/account#updatePhone) endpoint. Learn more about how to [complete the verification process](https://appconda.io/docs/references/cloud/client-web/account#updatePhoneVerification). The verification code sent to the user&#039;s phone number is valid for 15 minutes.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createPhoneVerification(): Promise<Models.Token>;
@@ -736,7 +736,7 @@ Please note that in order to avoid a [Redirect Attack](https://github.com/OWASP/
             *
             * @param {string} userId
             * @param {string} secret
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         updatePhoneVerification(userId: string, secret: string): Promise<Models.Token>;
@@ -756,7 +756,7 @@ When one dimension is specified and the other is 0, the image is scaled with pre
             * @param {number} width
             * @param {number} height
             * @param {number} quality
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getBrowser(code: Browser, width?: number, height?: number, quality?: number): string;
@@ -772,7 +772,7 @@ When one dimension is specified and the other is 0, the image is scaled with pre
             * @param {number} width
             * @param {number} height
             * @param {number} quality
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getCreditCard(code: CreditCard, width?: number, height?: number, quality?: number): string;
@@ -784,7 +784,7 @@ When one dimension is specified and the other is 0, the image is scaled with pre
 This endpoint does not follow HTTP redirects.
             *
             * @param {string} url
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getFavicon(url: string): string;
@@ -800,7 +800,7 @@ When one dimension is specified and the other is 0, the image is scaled with pre
             * @param {number} width
             * @param {number} height
             * @param {number} quality
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getFlag(code: Flag, width?: number, height?: number, quality?: number): string;
@@ -816,7 +816,7 @@ This endpoint does not follow HTTP redirects.
             * @param {string} url
             * @param {number} width
             * @param {number} height
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getImage(url: string, width?: number, height?: number): string;
@@ -834,7 +834,7 @@ When one dimension is specified and the other is 0, the image is scaled with pre
             * @param {number} width
             * @param {number} height
             * @param {string} background
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getInitials(name?: string, width?: number, height?: number, background?: string): string;
@@ -848,7 +848,7 @@ When one dimension is specified and the other is 0, the image is scaled with pre
             * @param {number} size
             * @param {number} margin
             * @param {boolean} download
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getQR(text: string, size?: number, margin?: number, download?: boolean): string;
@@ -862,7 +862,7 @@ export class Assistant {
       *
       *
       * @param {string} prompt
-      * @throws {AppwriteException}
+      * @throws {AppcondaException}
       * @returns {Promise<{}>}
       */
     chat(prompt: string): Promise<{}>;
@@ -876,7 +876,7 @@ export class Console {
       *
       * Get all Environment Variables that are relevant for the console.
       *
-      * @throws {AppwriteException}
+      * @throws {AppcondaException}
       * @returns {Promise<Models.ConsoleVariables>}
       */
     variables(): Promise<Models.ConsoleVariables>;
@@ -892,7 +892,7 @@ export class Databases {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.DatabaseList>}
             */
         list(queries?: string[], search?: string): Promise<Models.DatabaseList>;
@@ -905,7 +905,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} name
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Database>}
             */
         create(databaseId: string, name: string, enabled?: boolean): Promise<Models.Database>;
@@ -914,7 +914,7 @@ export class Databases {
             *
             *
             * @param {DatabaseUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageDatabases>}
             */
         getUsage(range?: DatabaseUsageRange): Promise<Models.UsageDatabases>;
@@ -924,7 +924,7 @@ export class Databases {
             * Get a database by its unique ID. This endpoint response returns a JSON object with the database metadata.
             *
             * @param {string} databaseId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Database>}
             */
         get(databaseId: string): Promise<Models.Database>;
@@ -936,7 +936,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} name
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Database>}
             */
         update(databaseId: string, name: string, enabled?: boolean): Promise<Models.Database>;
@@ -946,7 +946,7 @@ export class Databases {
             * Delete a database by its unique ID. Only API keys with with databases.write scope can delete a database.
             *
             * @param {string} databaseId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(databaseId: string): Promise<{}>;
@@ -958,7 +958,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.CollectionList>}
             */
         listCollections(databaseId: string, queries?: string[], search?: string): Promise<Models.CollectionList>;
@@ -973,7 +973,7 @@ export class Databases {
             * @param {string[]} permissions
             * @param {boolean} documentSecurity
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Collection>}
             */
         createCollection(databaseId: string, collectionId: string, name: string, permissions?: string[], documentSecurity?: boolean, enabled?: boolean): Promise<Models.Collection>;
@@ -984,7 +984,7 @@ export class Databases {
             *
             * @param {string} databaseId
             * @param {string} collectionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Collection>}
             */
         getCollection(databaseId: string, collectionId: string): Promise<Models.Collection>;
@@ -999,7 +999,7 @@ export class Databases {
             * @param {string[]} permissions
             * @param {boolean} documentSecurity
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Collection>}
             */
         updateCollection(databaseId: string, collectionId: string, name: string, permissions?: string[], documentSecurity?: boolean, enabled?: boolean): Promise<Models.Collection>;
@@ -1010,7 +1010,7 @@ export class Databases {
             *
             * @param {string} databaseId
             * @param {string} collectionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteCollection(databaseId: string, collectionId: string): Promise<{}>;
@@ -1022,7 +1022,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeList>}
             */
         listAttributes(databaseId: string, collectionId: string, queries?: string[]): Promise<Models.AttributeList>;
@@ -1038,7 +1038,7 @@ export class Databases {
             * @param {boolean} required
             * @param {boolean} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeBoolean>}
             */
         createBooleanAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: boolean, array?: boolean): Promise<Models.AttributeBoolean>;
@@ -1052,7 +1052,7 @@ export class Databases {
             * @param {string} key
             * @param {boolean} required
             * @param {boolean} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeBoolean>}
             */
         updateBooleanAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: boolean): Promise<Models.AttributeBoolean>;
@@ -1067,7 +1067,7 @@ export class Databases {
             * @param {boolean} required
             * @param {string} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeDatetime>}
             */
         createDatetimeAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string, array?: boolean): Promise<Models.AttributeDatetime>;
@@ -1081,7 +1081,7 @@ export class Databases {
             * @param {string} key
             * @param {boolean} required
             * @param {string} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeDatetime>}
             */
         updateDatetimeAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string): Promise<Models.AttributeDatetime>;
@@ -1097,7 +1097,7 @@ export class Databases {
             * @param {boolean} required
             * @param {string} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeEmail>}
             */
         createEmailAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string, array?: boolean): Promise<Models.AttributeEmail>;
@@ -1112,7 +1112,7 @@ export class Databases {
             * @param {string} key
             * @param {boolean} required
             * @param {string} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeEmail>}
             */
         updateEmailAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string): Promise<Models.AttributeEmail>;
@@ -1129,7 +1129,7 @@ export class Databases {
             * @param {boolean} required
             * @param {string} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeEnum>}
             */
         createEnumAttribute(databaseId: string, collectionId: string, key: string, elements: string[], required: boolean, xdefault?: string, array?: boolean): Promise<Models.AttributeEnum>;
@@ -1145,7 +1145,7 @@ export class Databases {
             * @param {string[]} elements
             * @param {boolean} required
             * @param {string} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeEnum>}
             */
         updateEnumAttribute(databaseId: string, collectionId: string, key: string, elements: string[], required: boolean, xdefault?: string): Promise<Models.AttributeEnum>;
@@ -1163,7 +1163,7 @@ export class Databases {
             * @param {number} max
             * @param {number} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeFloat>}
             */
         createFloatAttribute(databaseId: string, collectionId: string, key: string, required: boolean, min?: number, max?: number, xdefault?: number, array?: boolean): Promise<Models.AttributeFloat>;
@@ -1180,7 +1180,7 @@ export class Databases {
             * @param {number} min
             * @param {number} max
             * @param {number} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeFloat>}
             */
         updateFloatAttribute(databaseId: string, collectionId: string, key: string, required: boolean, min: number, max: number, xdefault?: number): Promise<Models.AttributeFloat>;
@@ -1198,7 +1198,7 @@ export class Databases {
             * @param {number} max
             * @param {number} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeInteger>}
             */
         createIntegerAttribute(databaseId: string, collectionId: string, key: string, required: boolean, min?: number, max?: number, xdefault?: number, array?: boolean): Promise<Models.AttributeInteger>;
@@ -1215,7 +1215,7 @@ export class Databases {
             * @param {number} min
             * @param {number} max
             * @param {number} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeInteger>}
             */
         updateIntegerAttribute(databaseId: string, collectionId: string, key: string, required: boolean, min: number, max: number, xdefault?: number): Promise<Models.AttributeInteger>;
@@ -1231,7 +1231,7 @@ export class Databases {
             * @param {boolean} required
             * @param {string} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeIp>}
             */
         createIpAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string, array?: boolean): Promise<Models.AttributeIp>;
@@ -1246,7 +1246,7 @@ export class Databases {
             * @param {string} key
             * @param {boolean} required
             * @param {string} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeIp>}
             */
         updateIpAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string): Promise<Models.AttributeIp>;
@@ -1264,7 +1264,7 @@ export class Databases {
             * @param {string} key
             * @param {string} twoWayKey
             * @param {RelationMutate} onDelete
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeRelationship>}
             */
         createRelationshipAttribute(databaseId: string, collectionId: string, relatedCollectionId: string, type: RelationshipType, twoWay?: boolean, key?: string, twoWayKey?: string, onDelete?: RelationMutate): Promise<Models.AttributeRelationship>;
@@ -1282,7 +1282,7 @@ export class Databases {
             * @param {string} xdefault
             * @param {boolean} array
             * @param {boolean} encrypt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeString>}
             */
         createStringAttribute(databaseId: string, collectionId: string, key: string, size: number, required: boolean, xdefault?: string, array?: boolean, encrypt?: boolean): Promise<Models.AttributeString>;
@@ -1297,7 +1297,7 @@ export class Databases {
             * @param {string} key
             * @param {boolean} required
             * @param {string} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeString>}
             */
         updateStringAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string): Promise<Models.AttributeString>;
@@ -1313,7 +1313,7 @@ export class Databases {
             * @param {boolean} required
             * @param {string} xdefault
             * @param {boolean} array
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeUrl>}
             */
         createUrlAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string, array?: boolean): Promise<Models.AttributeUrl>;
@@ -1328,7 +1328,7 @@ export class Databases {
             * @param {string} key
             * @param {boolean} required
             * @param {string} xdefault
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeUrl>}
             */
         updateUrlAttribute(databaseId: string, collectionId: string, key: string, required: boolean, xdefault?: string): Promise<Models.AttributeUrl>;
@@ -1340,7 +1340,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string} key
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         getAttribute(databaseId: string, collectionId: string, key: string): Promise<{}>;
@@ -1352,7 +1352,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string} key
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteAttribute(databaseId: string, collectionId: string, key: string): Promise<{}>;
@@ -1366,7 +1366,7 @@ export class Databases {
             * @param {string} collectionId
             * @param {string} key
             * @param {RelationMutate} onDelete
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.AttributeRelationship>}
             */
         updateRelationshipAttribute(databaseId: string, collectionId: string, key: string, onDelete?: RelationMutate): Promise<Models.AttributeRelationship>;
@@ -1378,7 +1378,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.DocumentList<Document>>}
             */
         listDocuments<Document extends Models.Document>(databaseId: string, collectionId: string, queries?: string[]): Promise<Models.DocumentList<Document>>;
@@ -1392,7 +1392,7 @@ export class Databases {
             * @param {string} documentId
             * @param {Omit<Document, keyof Models.Document>} data
             * @param {string[]} permissions
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Document>}
             */
         createDocument<Document extends Models.Document>(databaseId: string, collectionId: string, documentId: string, data: Omit<Document, keyof Models.Document>, permissions?: string[]): Promise<Document>;
@@ -1405,7 +1405,7 @@ export class Databases {
             * @param {string} collectionId
             * @param {string} documentId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Document>}
             */
         getDocument<Document extends Models.Document>(databaseId: string, collectionId: string, documentId: string, queries?: string[]): Promise<Document>;
@@ -1419,7 +1419,7 @@ export class Databases {
             * @param {string} documentId
             * @param {Partial<Omit<Document, keyof Models.Document>>} data
             * @param {string[]} permissions
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Document>}
             */
         updateDocument<Document extends Models.Document>(databaseId: string, collectionId: string, documentId: string, data?: Partial<Omit<Document, keyof Models.Document>>, permissions?: string[]): Promise<Document>;
@@ -1431,7 +1431,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string} documentId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteDocument(databaseId: string, collectionId: string, documentId: string): Promise<{}>;
@@ -1444,7 +1444,7 @@ export class Databases {
             * @param {string} collectionId
             * @param {string} documentId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listDocumentLogs(databaseId: string, collectionId: string, documentId: string, queries?: string[]): Promise<Models.LogList>;
@@ -1456,7 +1456,7 @@ export class Databases {
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.IndexList>}
             */
         listIndexes(databaseId: string, collectionId: string, queries?: string[]): Promise<Models.IndexList>;
@@ -1472,7 +1472,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             * @param {IndexType} type
             * @param {string[]} attributes
             * @param {string[]} orders
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Index>}
             */
         createIndex(databaseId: string, collectionId: string, key: string, type: IndexType, attributes: string[], orders?: string[]): Promise<Models.Index>;
@@ -1484,7 +1484,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string} key
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Index>}
             */
         getIndex(databaseId: string, collectionId: string, key: string): Promise<Models.Index>;
@@ -1496,7 +1496,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string} key
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteIndex(databaseId: string, collectionId: string, key: string): Promise<{}>;
@@ -1508,7 +1508,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listCollectionLogs(databaseId: string, collectionId: string, queries?: string[]): Promise<Models.LogList>;
@@ -1519,7 +1519,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             * @param {string} databaseId
             * @param {string} collectionId
             * @param {DatabaseUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageCollection>}
             */
         getCollectionUsage(databaseId: string, collectionId: string, range?: DatabaseUsageRange): Promise<Models.UsageCollection>;
@@ -1530,7 +1530,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             *
             * @param {string} databaseId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listLogs(databaseId: string, queries?: string[]): Promise<Models.LogList>;
@@ -1540,7 +1540,7 @@ Attributes can be `key`, `fulltext`, and `unique`.
             *
             * @param {string} databaseId
             * @param {DatabaseUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageDatabase>}
             */
         getDatabaseUsage(databaseId: string, range?: DatabaseUsageRange): Promise<Models.UsageDatabase>;
@@ -1556,7 +1556,7 @@ export class Functions {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.FunctionList>}
             */
         list(queries?: string[], search?: string): Promise<Models.FunctionList>;
@@ -1587,7 +1587,7 @@ export class Functions {
             * @param {string} templateRootDirectory
             * @param {string} templateVersion
             * @param {string} specification
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Function>}
             */
         create(functionId: string, name: string, runtime: Runtime, execute?: string[], events?: string[], schedule?: string, timeout?: number, enabled?: boolean, logging?: boolean, entrypoint?: string, commands?: string, scopes?: string[], installationId?: string, providerRepositoryId?: string, providerBranch?: string, providerSilentMode?: boolean, providerRootDirectory?: string, templateRepository?: string, templateOwner?: string, templateRootDirectory?: string, templateVersion?: string, specification?: string): Promise<Models.Function>;
@@ -1596,7 +1596,7 @@ export class Functions {
             *
             * Get a list of all runtimes that are currently active on your instance.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.RuntimeList>}
             */
         listRuntimes(): Promise<Models.RuntimeList>;
@@ -1606,7 +1606,7 @@ export class Functions {
             * List allowed function specifications for this instance.
 
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SpecificationList>}
             */
         listSpecifications(): Promise<Models.SpecificationList>;
@@ -1619,7 +1619,7 @@ export class Functions {
             * @param {string[]} useCases
             * @param {number} limit
             * @param {number} offset
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.TemplateFunctionList>}
             */
         listTemplates(runtimes?: string[], useCases?: string[], limit?: number, offset?: number): Promise<Models.TemplateFunctionList>;
@@ -1629,7 +1629,7 @@ export class Functions {
             * Get a function template using ID. You can use template details in [createFunction](/docs/references/cloud/server-nodejs/functions#create) method.
             *
             * @param {string} templateId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.TemplateFunction>}
             */
         getTemplate(templateId: string): Promise<Models.TemplateFunction>;
@@ -1638,7 +1638,7 @@ export class Functions {
             *
             *
             * @param {FunctionUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageFunctions>}
             */
         getUsage(range?: FunctionUsageRange): Promise<Models.UsageFunctions>;
@@ -1648,7 +1648,7 @@ export class Functions {
             * Get a function by its unique ID.
             *
             * @param {string} functionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Function>}
             */
         get(functionId: string): Promise<Models.Function>;
@@ -1675,7 +1675,7 @@ export class Functions {
             * @param {boolean} providerSilentMode
             * @param {string} providerRootDirectory
             * @param {string} specification
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Function>}
             */
         update(functionId: string, name: string, runtime?: Runtime, execute?: string[], events?: string[], schedule?: string, timeout?: number, enabled?: boolean, logging?: boolean, entrypoint?: string, commands?: string, scopes?: string[], installationId?: string, providerRepositoryId?: string, providerBranch?: string, providerSilentMode?: boolean, providerRootDirectory?: string, specification?: string): Promise<Models.Function>;
@@ -1685,7 +1685,7 @@ export class Functions {
             * Delete a function by its unique ID.
             *
             * @param {string} functionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(functionId: string): Promise<{}>;
@@ -1697,7 +1697,7 @@ export class Functions {
             * @param {string} functionId
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.DeploymentList>}
             */
         listDeployments(functionId: string, queries?: string[], search?: string): Promise<Models.DeploymentList>;
@@ -1715,7 +1715,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * @param {boolean} activate
             * @param {string} entrypoint
             * @param {string} commands
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Deployment>}
             */
         createDeployment(functionId: string, code: File, activate: boolean, entrypoint?: string, commands?: string, onProgress?: (progress: UploadProgress) => void): Promise<Models.Deployment>;
@@ -1726,7 +1726,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} deploymentId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Deployment>}
             */
         getDeployment(functionId: string, deploymentId: string): Promise<Models.Deployment>;
@@ -1737,7 +1737,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} deploymentId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Function>}
             */
         updateDeployment(functionId: string, deploymentId: string): Promise<Models.Function>;
@@ -1748,7 +1748,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} deploymentId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteDeployment(functionId: string, deploymentId: string): Promise<{}>;
@@ -1759,7 +1759,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * @param {string} functionId
             * @param {string} deploymentId
             * @param {string} buildId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         createBuild(functionId: string, deploymentId: string, buildId?: string): Promise<{}>;
@@ -1769,7 +1769,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} deploymentId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Build>}
             */
         updateDeploymentBuild(functionId: string, deploymentId: string): Promise<Models.Build>;
@@ -1780,7 +1780,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} deploymentId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getDeploymentDownload(functionId: string, deploymentId: string): string;
@@ -1792,7 +1792,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * @param {string} functionId
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ExecutionList>}
             */
         listExecutions(functionId: string, queries?: string[], search?: string): Promise<Models.ExecutionList>;
@@ -1808,7 +1808,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * @param {ExecutionMethod} method
             * @param {object} headers
             * @param {string} scheduledAt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Execution>}
             */
         createExecution(functionId: string, body?: string, async?: boolean, xpath?: string, method?: ExecutionMethod, headers?: object, scheduledAt?: string): Promise<Models.Execution>;
@@ -1819,7 +1819,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} executionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Execution>}
             */
         getExecution(functionId: string, executionId: string): Promise<Models.Execution>;
@@ -1831,7 +1831,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} executionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteExecution(functionId: string, executionId: string): Promise<{}>;
@@ -1841,7 +1841,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {FunctionUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageFunction>}
             */
         getFunctionUsage(functionId: string, range?: FunctionUsageRange): Promise<Models.UsageFunction>;
@@ -1851,7 +1851,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * Get a list of all variables of a specific function.
             *
             * @param {string} functionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.VariableList>}
             */
         listVariables(functionId: string): Promise<Models.VariableList>;
@@ -1863,7 +1863,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * @param {string} functionId
             * @param {string} key
             * @param {string} value
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Variable>}
             */
         createVariable(functionId: string, key: string, value: string): Promise<Models.Variable>;
@@ -1874,7 +1874,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} variableId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Variable>}
             */
         getVariable(functionId: string, variableId: string): Promise<Models.Variable>;
@@ -1887,7 +1887,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             * @param {string} variableId
             * @param {string} key
             * @param {string} value
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Variable>}
             */
         updateVariable(functionId: string, variableId: string, key: string, value?: string): Promise<Models.Variable>;
@@ -1898,7 +1898,7 @@ Use the &quot;command&quot; param to set the entrypoint used to execute your cod
             *
             * @param {string} functionId
             * @param {string} variableId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteVariable(functionId: string, variableId: string): Promise<{}>;
@@ -1913,7 +1913,7 @@ export class Graphql {
             * Execute a GraphQL mutation.
             *
             * @param {object} query
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         query(query: object): Promise<{}>;
@@ -1923,7 +1923,7 @@ export class Graphql {
             * Execute a GraphQL mutation.
             *
             * @param {object} query
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         mutation(query: object): Promise<{}>;
@@ -1937,7 +1937,7 @@ export class Health {
             *
             * Check the Appconda HTTP server is up and responsive.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         get(): Promise<Models.HealthStatus>;
@@ -1946,7 +1946,7 @@ export class Health {
             *
             * Check the Appconda Antivirus server is up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthAntivirus>}
             */
         getAntivirus(): Promise<Models.HealthAntivirus>;
@@ -1955,7 +1955,7 @@ export class Health {
             *
             * Check the Appconda in-memory cache servers are up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         getCache(): Promise<Models.HealthStatus>;
@@ -1965,7 +1965,7 @@ export class Health {
             * Get the SSL certificate for a domain
             *
             * @param {string} domain
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthCertificate>}
             */
         getCertificate(domain?: string): Promise<Models.HealthCertificate>;
@@ -1974,7 +1974,7 @@ export class Health {
             *
             * Check the Appconda database servers are up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         getDB(): Promise<Models.HealthStatus>;
@@ -1983,7 +1983,7 @@ export class Health {
             *
             * Check the Appconda pub-sub servers are up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         getPubSub(): Promise<Models.HealthStatus>;
@@ -1992,7 +1992,7 @@ export class Health {
             *
             * Check the Appconda queue messaging servers are up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         getQueue(): Promise<Models.HealthStatus>;
@@ -2002,7 +2002,7 @@ export class Health {
             * Get the number of builds that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueBuilds(threshold?: number): Promise<Models.HealthQueue>;
@@ -2012,7 +2012,7 @@ export class Health {
             * Get the number of certificates that are waiting to be issued against [Letsencrypt](https://letsencrypt.org/) in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueCertificates(threshold?: number): Promise<Models.HealthQueue>;
@@ -2023,7 +2023,7 @@ export class Health {
             *
             * @param {string} name
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueDatabases(name?: string, threshold?: number): Promise<Models.HealthQueue>;
@@ -2033,7 +2033,7 @@ export class Health {
             * Get the number of background destructive changes that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueDeletes(threshold?: number): Promise<Models.HealthQueue>;
@@ -2045,7 +2045,7 @@ export class Health {
             *
             * @param {Name} name
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getFailedJobs(name: Name, threshold?: number): Promise<Models.HealthQueue>;
@@ -2055,7 +2055,7 @@ export class Health {
             * Get the number of function executions that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueFunctions(threshold?: number): Promise<Models.HealthQueue>;
@@ -2065,7 +2065,7 @@ export class Health {
             * Get the number of logs that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueLogs(threshold?: number): Promise<Models.HealthQueue>;
@@ -2075,7 +2075,7 @@ export class Health {
             * Get the number of mails that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueMails(threshold?: number): Promise<Models.HealthQueue>;
@@ -2085,7 +2085,7 @@ export class Health {
             * Get the number of messages that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueMessaging(threshold?: number): Promise<Models.HealthQueue>;
@@ -2095,7 +2095,7 @@ export class Health {
             * Get the number of migrations that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueMigrations(threshold?: number): Promise<Models.HealthQueue>;
@@ -2105,7 +2105,7 @@ export class Health {
             * Get the number of metrics that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueUsage(threshold?: number): Promise<Models.HealthQueue>;
@@ -2115,7 +2115,7 @@ export class Health {
             * Get the number of projects containing metrics that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueUsageDump(threshold?: number): Promise<Models.HealthQueue>;
@@ -2125,7 +2125,7 @@ export class Health {
             * Get the number of webhooks that are waiting to be processed in the Appconda internal queue server.
             *
             * @param {number} threshold
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthQueue>}
             */
         getQueueWebhooks(threshold?: number): Promise<Models.HealthQueue>;
@@ -2134,7 +2134,7 @@ export class Health {
             *
             * Check the Appconda storage device is up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         getStorage(): Promise<Models.HealthStatus>;
@@ -2143,7 +2143,7 @@ export class Health {
             *
             * Check the Appconda local storage device is up and connection is successful.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthStatus>}
             */
         getStorageLocal(): Promise<Models.HealthStatus>;
@@ -2152,7 +2152,7 @@ export class Health {
             *
             * Check the Appconda server time is synced with Google remote NTP server. We use this technology to smoothly handle leap seconds with no disruptive events. The [Network Time Protocol](https://en.wikipedia.org/wiki/Network_Time_Protocol) (NTP) is used by hundreds of millions of computers and devices to synchronize their clocks over the Internet. If your computer sets its own clock, it likely uses NTP.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.HealthTime>}
             */
         getTime(): Promise<Models.HealthTime>;
@@ -2168,7 +2168,7 @@ export class Locale {
 
 ([IP Geolocation by DB-IP](https://db-ip.com))
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Locale>}
             */
         get(): Promise<Models.Locale>;
@@ -2177,7 +2177,7 @@ export class Locale {
             *
             * List of all locale codes in [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LocaleCodeList>}
             */
         listCodes(): Promise<Models.LocaleCodeList>;
@@ -2186,7 +2186,7 @@ export class Locale {
             *
             * List of all continents. You can use the locale header to get the data in a supported language.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ContinentList>}
             */
         listContinents(): Promise<Models.ContinentList>;
@@ -2195,7 +2195,7 @@ export class Locale {
             *
             * List of all countries. You can use the locale header to get the data in a supported language.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.CountryList>}
             */
         listCountries(): Promise<Models.CountryList>;
@@ -2204,7 +2204,7 @@ export class Locale {
             *
             * List of all countries that are currently members of the EU. You can use the locale header to get the data in a supported language.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.CountryList>}
             */
         listCountriesEU(): Promise<Models.CountryList>;
@@ -2213,7 +2213,7 @@ export class Locale {
             *
             * List of all countries phone codes. You can use the locale header to get the data in a supported language.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.PhoneList>}
             */
         listCountriesPhones(): Promise<Models.PhoneList>;
@@ -2222,7 +2222,7 @@ export class Locale {
             *
             * List of all currencies, including currency symbol, name, plural, and decimal digits for all major and minor currencies. You can use the locale header to get the data in a supported language.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.CurrencyList>}
             */
         listCurrencies(): Promise<Models.CurrencyList>;
@@ -2231,7 +2231,7 @@ export class Locale {
             *
             * List of all languages classified by ISO 639-1 including 2-letter code, name in English, and name in the respective language.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LanguageList>}
             */
         listLanguages(): Promise<Models.LanguageList>;
@@ -2247,7 +2247,7 @@ export class Messaging {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MessageList>}
             */
         listMessages(queries?: string[], search?: string): Promise<Models.MessageList>;
@@ -2268,7 +2268,7 @@ export class Messaging {
             * @param {boolean} draft
             * @param {boolean} html
             * @param {string} scheduledAt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         createEmail(messageId: string, subject: string, content: string, topics?: string[], users?: string[], targets?: string[], cc?: string[], bcc?: string[], attachments?: string[], draft?: boolean, html?: boolean, scheduledAt?: string): Promise<Models.Message>;
@@ -2290,7 +2290,7 @@ export class Messaging {
             * @param {string[]} bcc
             * @param {string} scheduledAt
             * @param {string[]} attachments
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         updateEmail(messageId: string, topics?: string[], users?: string[], targets?: string[], subject?: string, content?: string, draft?: boolean, html?: boolean, cc?: string[], bcc?: string[], scheduledAt?: string, attachments?: string[]): Promise<Models.Message>;
@@ -2315,7 +2315,7 @@ export class Messaging {
             * @param {string} badge
             * @param {boolean} draft
             * @param {string} scheduledAt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         createPush(messageId: string, title: string, body: string, topics?: string[], users?: string[], targets?: string[], data?: object, action?: string, image?: string, icon?: string, sound?: string, color?: string, tag?: string, badge?: string, draft?: boolean, scheduledAt?: string): Promise<Models.Message>;
@@ -2341,7 +2341,7 @@ export class Messaging {
             * @param {number} badge
             * @param {boolean} draft
             * @param {string} scheduledAt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         updatePush(messageId: string, topics?: string[], users?: string[], targets?: string[], title?: string, body?: string, data?: object, action?: string, image?: string, icon?: string, sound?: string, color?: string, tag?: string, badge?: number, draft?: boolean, scheduledAt?: string): Promise<Models.Message>;
@@ -2357,7 +2357,7 @@ export class Messaging {
             * @param {string[]} targets
             * @param {boolean} draft
             * @param {string} scheduledAt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         createSms(messageId: string, content: string, topics?: string[], users?: string[], targets?: string[], draft?: boolean, scheduledAt?: string): Promise<Models.Message>;
@@ -2374,7 +2374,7 @@ export class Messaging {
             * @param {string} content
             * @param {boolean} draft
             * @param {string} scheduledAt
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         updateSms(messageId: string, topics?: string[], users?: string[], targets?: string[], content?: string, draft?: boolean, scheduledAt?: string): Promise<Models.Message>;
@@ -2385,7 +2385,7 @@ export class Messaging {
 
             *
             * @param {string} messageId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Message>}
             */
         getMessage(messageId: string): Promise<Models.Message>;
@@ -2395,7 +2395,7 @@ export class Messaging {
             * Delete a message. If the message is not a draft or scheduled, but has been sent, this will not recall the message.
             *
             * @param {string} messageId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(messageId: string): Promise<{}>;
@@ -2406,7 +2406,7 @@ export class Messaging {
             *
             * @param {string} messageId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listMessageLogs(messageId: string, queries?: string[]): Promise<Models.LogList>;
@@ -2417,7 +2417,7 @@ export class Messaging {
             *
             * @param {string} messageId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.TargetList>}
             */
         listTargets(messageId: string, queries?: string[]): Promise<Models.TargetList>;
@@ -2428,7 +2428,7 @@ export class Messaging {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProviderList>}
             */
         listProviders(queries?: string[], search?: string): Promise<Models.ProviderList>;
@@ -2445,7 +2445,7 @@ export class Messaging {
             * @param {string} bundleId
             * @param {boolean} sandbox
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createApnsProvider(providerId: string, name: string, authKey?: string, authKeyId?: string, teamId?: string, bundleId?: string, sandbox?: boolean, enabled?: boolean): Promise<Models.Provider>;
@@ -2462,7 +2462,7 @@ export class Messaging {
             * @param {string} teamId
             * @param {string} bundleId
             * @param {boolean} sandbox
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateApnsProvider(providerId: string, name?: string, enabled?: boolean, authKey?: string, authKeyId?: string, teamId?: string, bundleId?: string, sandbox?: boolean): Promise<Models.Provider>;
@@ -2475,7 +2475,7 @@ export class Messaging {
             * @param {string} name
             * @param {object} serviceAccountJSON
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createFcmProvider(providerId: string, name: string, serviceAccountJSON?: object, enabled?: boolean): Promise<Models.Provider>;
@@ -2488,7 +2488,7 @@ export class Messaging {
             * @param {string} name
             * @param {boolean} enabled
             * @param {object} serviceAccountJSON
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateFcmProvider(providerId: string, name?: string, enabled?: boolean, serviceAccountJSON?: object): Promise<Models.Provider>;
@@ -2507,7 +2507,7 @@ export class Messaging {
             * @param {string} replyToName
             * @param {string} replyToEmail
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createMailgunProvider(providerId: string, name: string, apiKey?: string, domain?: string, isEuRegion?: boolean, fromName?: string, fromEmail?: string, replyToName?: string, replyToEmail?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2526,7 +2526,7 @@ export class Messaging {
             * @param {string} fromEmail
             * @param {string} replyToName
             * @param {string} replyToEmail
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateMailgunProvider(providerId: string, name?: string, apiKey?: string, domain?: string, isEuRegion?: boolean, enabled?: boolean, fromName?: string, fromEmail?: string, replyToName?: string, replyToEmail?: string): Promise<Models.Provider>;
@@ -2541,7 +2541,7 @@ export class Messaging {
             * @param {string} senderId
             * @param {string} authKey
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createMsg91Provider(providerId: string, name: string, templateId?: string, senderId?: string, authKey?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2556,7 +2556,7 @@ export class Messaging {
             * @param {string} templateId
             * @param {string} senderId
             * @param {string} authKey
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateMsg91Provider(providerId: string, name?: string, enabled?: boolean, templateId?: string, senderId?: string, authKey?: string): Promise<Models.Provider>;
@@ -2573,7 +2573,7 @@ export class Messaging {
             * @param {string} replyToName
             * @param {string} replyToEmail
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createSendgridProvider(providerId: string, name: string, apiKey?: string, fromName?: string, fromEmail?: string, replyToName?: string, replyToEmail?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2590,7 +2590,7 @@ export class Messaging {
             * @param {string} fromEmail
             * @param {string} replyToName
             * @param {string} replyToEmail
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateSendgridProvider(providerId: string, name?: string, enabled?: boolean, apiKey?: string, fromName?: string, fromEmail?: string, replyToName?: string, replyToEmail?: string): Promise<Models.Provider>;
@@ -2613,7 +2613,7 @@ export class Messaging {
             * @param {string} replyToName
             * @param {string} replyToEmail
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createSmtpProvider(providerId: string, name: string, host: string, port?: number, username?: string, password?: string, encryption?: SmtpEncryption, autoTLS?: boolean, mailer?: string, fromName?: string, fromEmail?: string, replyToName?: string, replyToEmail?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2636,7 +2636,7 @@ export class Messaging {
             * @param {string} replyToName
             * @param {string} replyToEmail
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateSmtpProvider(providerId: string, name?: string, host?: string, port?: number, username?: string, password?: string, encryption?: SmtpEncryption, autoTLS?: boolean, mailer?: string, fromName?: string, fromEmail?: string, replyToName?: string, replyToEmail?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2651,7 +2651,7 @@ export class Messaging {
             * @param {string} customerId
             * @param {string} apiKey
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createTelesignProvider(providerId: string, name: string, from?: string, customerId?: string, apiKey?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2666,7 +2666,7 @@ export class Messaging {
             * @param {string} customerId
             * @param {string} apiKey
             * @param {string} from
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateTelesignProvider(providerId: string, name?: string, enabled?: boolean, customerId?: string, apiKey?: string, from?: string): Promise<Models.Provider>;
@@ -2681,7 +2681,7 @@ export class Messaging {
             * @param {string} username
             * @param {string} apiKey
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createTextmagicProvider(providerId: string, name: string, from?: string, username?: string, apiKey?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2696,7 +2696,7 @@ export class Messaging {
             * @param {string} username
             * @param {string} apiKey
             * @param {string} from
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateTextmagicProvider(providerId: string, name?: string, enabled?: boolean, username?: string, apiKey?: string, from?: string): Promise<Models.Provider>;
@@ -2711,7 +2711,7 @@ export class Messaging {
             * @param {string} accountSid
             * @param {string} authToken
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createTwilioProvider(providerId: string, name: string, from?: string, accountSid?: string, authToken?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2726,7 +2726,7 @@ export class Messaging {
             * @param {string} accountSid
             * @param {string} authToken
             * @param {string} from
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateTwilioProvider(providerId: string, name?: string, enabled?: boolean, accountSid?: string, authToken?: string, from?: string): Promise<Models.Provider>;
@@ -2741,7 +2741,7 @@ export class Messaging {
             * @param {string} apiKey
             * @param {string} apiSecret
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         createVonageProvider(providerId: string, name: string, from?: string, apiKey?: string, apiSecret?: string, enabled?: boolean): Promise<Models.Provider>;
@@ -2756,7 +2756,7 @@ export class Messaging {
             * @param {string} apiKey
             * @param {string} apiSecret
             * @param {string} from
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         updateVonageProvider(providerId: string, name?: string, enabled?: boolean, apiKey?: string, apiSecret?: string, from?: string): Promise<Models.Provider>;
@@ -2767,7 +2767,7 @@ export class Messaging {
 
             *
             * @param {string} providerId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Provider>}
             */
         getProvider(providerId: string): Promise<Models.Provider>;
@@ -2777,7 +2777,7 @@ export class Messaging {
             * Delete a provider by its unique ID.
             *
             * @param {string} providerId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteProvider(providerId: string): Promise<{}>;
@@ -2788,7 +2788,7 @@ export class Messaging {
             *
             * @param {string} providerId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listProviderLogs(providerId: string, queries?: string[]): Promise<Models.LogList>;
@@ -2799,7 +2799,7 @@ export class Messaging {
             *
             * @param {string} subscriberId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listSubscriberLogs(subscriberId: string, queries?: string[]): Promise<Models.LogList>;
@@ -2810,7 +2810,7 @@ export class Messaging {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.TopicList>}
             */
         listTopics(queries?: string[], search?: string): Promise<Models.TopicList>;
@@ -2822,7 +2822,7 @@ export class Messaging {
             * @param {string} topicId
             * @param {string} name
             * @param {string[]} subscribe
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Topic>}
             */
         createTopic(topicId: string, name: string, subscribe?: string[]): Promise<Models.Topic>;
@@ -2833,7 +2833,7 @@ export class Messaging {
 
             *
             * @param {string} topicId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Topic>}
             */
         getTopic(topicId: string): Promise<Models.Topic>;
@@ -2846,7 +2846,7 @@ export class Messaging {
             * @param {string} topicId
             * @param {string} name
             * @param {string[]} subscribe
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Topic>}
             */
         updateTopic(topicId: string, name?: string, subscribe?: string[]): Promise<Models.Topic>;
@@ -2856,7 +2856,7 @@ export class Messaging {
             * Delete a topic by its unique ID.
             *
             * @param {string} topicId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteTopic(topicId: string): Promise<{}>;
@@ -2867,7 +2867,7 @@ export class Messaging {
             *
             * @param {string} topicId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listTopicLogs(topicId: string, queries?: string[]): Promise<Models.LogList>;
@@ -2879,7 +2879,7 @@ export class Messaging {
             * @param {string} topicId
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SubscriberList>}
             */
         listSubscribers(topicId: string, queries?: string[], search?: string): Promise<Models.SubscriberList>;
@@ -2891,7 +2891,7 @@ export class Messaging {
             * @param {string} topicId
             * @param {string} subscriberId
             * @param {string} targetId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Subscriber>}
             */
         createSubscriber(topicId: string, subscriberId: string, targetId: string): Promise<Models.Subscriber>;
@@ -2903,7 +2903,7 @@ export class Messaging {
             *
             * @param {string} topicId
             * @param {string} subscriberId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Subscriber>}
             */
         getSubscriber(topicId: string, subscriberId: string): Promise<Models.Subscriber>;
@@ -2914,7 +2914,7 @@ export class Messaging {
             *
             * @param {string} topicId
             * @param {string} subscriberId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteSubscriber(topicId: string, subscriberId: string): Promise<{}>;
@@ -2929,7 +2929,7 @@ export class Migrations {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MigrationList>}
             */
         list(queries?: string[], search?: string): Promise<Models.MigrationList>;
@@ -2941,7 +2941,7 @@ export class Migrations {
             * @param {string} endpoint
             * @param {string} projectId
             * @param {string} apiKey
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         createAppwriteMigration(resources: string[], endpoint: string, projectId: string, apiKey: string): Promise<Models.Migration>;
@@ -2953,7 +2953,7 @@ export class Migrations {
             * @param {string} endpoint
             * @param {string} projectID
             * @param {string} key
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MigrationReport>}
             */
         getAppwriteReport(resources: string[], endpoint: string, projectID: string, key: string): Promise<Models.MigrationReport>;
@@ -2963,7 +2963,7 @@ export class Migrations {
             *
             * @param {string[]} resources
             * @param {string} serviceAccount
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         createFirebaseMigration(resources: string[], serviceAccount: string): Promise<Models.Migration>;
@@ -2971,7 +2971,7 @@ export class Migrations {
             * Revoke Appconda&#039;s authorization to access Firebase Projects
             *
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteFirebaseAuth(): Promise<{}>;
@@ -2981,7 +2981,7 @@ export class Migrations {
             *
             * @param {string[]} resources
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         createFirebaseOAuthMigration(resources: string[], projectId: string): Promise<Models.Migration>;
@@ -2989,7 +2989,7 @@ export class Migrations {
             * List Firebase Projects
             *
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.FirebaseProjectList>}
             */
         listFirebaseProjects(): Promise<Models.FirebaseProjectList>;
@@ -2999,7 +2999,7 @@ export class Migrations {
             *
             * @param {string[]} resources
             * @param {string} serviceAccount
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MigrationReport>}
             */
         getFirebaseReport(resources: string[], serviceAccount: string): Promise<Models.MigrationReport>;
@@ -3009,7 +3009,7 @@ export class Migrations {
             *
             * @param {string[]} resources
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MigrationReport>}
             */
         getFirebaseReportOAuth(resources: string[], projectId: string): Promise<Models.MigrationReport>;
@@ -3025,7 +3025,7 @@ export class Migrations {
             * @param {string} username
             * @param {string} password
             * @param {number} port
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         createNHostMigration(resources: string[], subdomain: string, region: string, adminSecret: string, database: string, username: string, password: string, port?: number): Promise<Models.Migration>;
@@ -3041,7 +3041,7 @@ export class Migrations {
             * @param {string} username
             * @param {string} password
             * @param {number} port
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MigrationReport>}
             */
         getNHostReport(resources: string[], subdomain: string, region: string, adminSecret: string, database: string, username: string, password: string, port?: number): Promise<Models.MigrationReport>;
@@ -3056,7 +3056,7 @@ export class Migrations {
             * @param {string} username
             * @param {string} password
             * @param {number} port
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         createSupabaseMigration(resources: string[], endpoint: string, apiKey: string, databaseHost: string, username: string, password: string, port?: number): Promise<Models.Migration>;
@@ -3071,7 +3071,7 @@ export class Migrations {
             * @param {string} username
             * @param {string} password
             * @param {number} port
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MigrationReport>}
             */
         getSupabaseReport(resources: string[], endpoint: string, apiKey: string, databaseHost: string, username: string, password: string, port?: number): Promise<Models.MigrationReport>;
@@ -3080,7 +3080,7 @@ export class Migrations {
             *
             *
             * @param {string} migrationId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         get(migrationId: string): Promise<Models.Migration>;
@@ -3089,7 +3089,7 @@ export class Migrations {
             *
             *
             * @param {string} migrationId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Migration>}
             */
         retry(migrationId: string): Promise<Models.Migration>;
@@ -3098,7 +3098,7 @@ export class Migrations {
             *
             *
             * @param {string} migrationId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(migrationId: string): Promise<{}>;
@@ -3114,7 +3114,7 @@ export class Project {
             * @param {string} startDate
             * @param {string} endDate
             * @param {ProjectUsageRange} period
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageProject>}
             */
         getUsage(startDate: string, endDate: string, period?: ProjectUsageRange): Promise<Models.UsageProject>;
@@ -3123,7 +3123,7 @@ export class Project {
             *
             * Get a list of all project variables. These variables will be accessible in all Appconda Functions at runtime.
             *
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.VariableList>}
             */
         listVariables(): Promise<Models.VariableList>;
@@ -3134,7 +3134,7 @@ export class Project {
             *
             * @param {string} key
             * @param {string} value
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Variable>}
             */
         createVariable(key: string, value: string): Promise<Models.Variable>;
@@ -3144,7 +3144,7 @@ export class Project {
             * Get a project variable by its unique ID.
             *
             * @param {string} variableId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Variable>}
             */
         getVariable(variableId: string): Promise<Models.Variable>;
@@ -3156,7 +3156,7 @@ export class Project {
             * @param {string} variableId
             * @param {string} key
             * @param {string} value
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Variable>}
             */
         updateVariable(variableId: string, key: string, value?: string): Promise<Models.Variable>;
@@ -3166,7 +3166,7 @@ export class Project {
             * Delete a project variable by its unique ID.
             *
             * @param {string} variableId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteVariable(variableId: string): Promise<{}>;
@@ -3181,7 +3181,7 @@ export class Projects {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProjectList>}
             */
         list(queries?: string[], search?: string): Promise<Models.ProjectList>;
@@ -3202,7 +3202,7 @@ export class Projects {
             * @param {string} legalCity
             * @param {string} legalAddress
             * @param {string} legalTaxId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         create(projectId: string, name: string, teamId: string, region?: Region, description?: string, logo?: string, url?: string, legalName?: string, legalCountry?: string, legalState?: string, legalCity?: string, legalAddress?: string, legalTaxId?: string): Promise<Models.Project>;
@@ -3211,7 +3211,7 @@ export class Projects {
             *
             *
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         get(projectId: string): Promise<Models.Project>;
@@ -3230,7 +3230,7 @@ export class Projects {
             * @param {string} legalCity
             * @param {string} legalAddress
             * @param {string} legalTaxId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         update(projectId: string, name: string, description?: string, logo?: string, url?: string, legalName?: string, legalCountry?: string, legalState?: string, legalCity?: string, legalAddress?: string, legalTaxId?: string): Promise<Models.Project>;
@@ -3239,7 +3239,7 @@ export class Projects {
             *
             *
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(projectId: string): Promise<{}>;
@@ -3250,7 +3250,7 @@ export class Projects {
             * @param {string} projectId
             * @param {Api} api
             * @param {boolean} status
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateApiStatus(projectId: string, api: Api, status: boolean): Promise<Models.Project>;
@@ -3260,7 +3260,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {boolean} status
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateApiStatusAll(projectId: string, status: boolean): Promise<Models.Project>;
@@ -3270,7 +3270,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {number} duration
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateAuthDuration(projectId: string, duration: number): Promise<Models.Project>;
@@ -3280,7 +3280,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {number} limit
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateAuthLimit(projectId: string, limit: number): Promise<Models.Project>;
@@ -3290,7 +3290,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {number} limit
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateAuthSessionsLimit(projectId: string, limit: number): Promise<Models.Project>;
@@ -3300,7 +3300,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {object[]} numbers
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateMockNumbers(projectId: string, numbers: object[]): Promise<Models.Project>;
@@ -3310,7 +3310,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateAuthPasswordDictionary(projectId: string, enabled: boolean): Promise<Models.Project>;
@@ -3320,7 +3320,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {number} limit
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateAuthPasswordHistory(projectId: string, limit: number): Promise<Models.Project>;
@@ -3330,7 +3330,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updatePersonalDataCheck(projectId: string, enabled: boolean): Promise<Models.Project>;
@@ -3340,7 +3340,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {boolean} alerts
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateSessionAlerts(projectId: string, alerts: boolean): Promise<Models.Project>;
@@ -3351,7 +3351,7 @@ export class Projects {
             * @param {string} projectId
             * @param {AuthMethod} method
             * @param {boolean} status
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateAuthStatus(projectId: string, method: AuthMethod, status: boolean): Promise<Models.Project>;
@@ -3362,7 +3362,7 @@ export class Projects {
             * @param {string} projectId
             * @param {string[]} scopes
             * @param {number} duration
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Jwt>}
             */
         createJWT(projectId: string, scopes: string[], duration?: number): Promise<Models.Jwt>;
@@ -3371,7 +3371,7 @@ export class Projects {
             *
             *
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.KeyList>}
             */
         listKeys(projectId: string): Promise<Models.KeyList>;
@@ -3383,7 +3383,7 @@ export class Projects {
             * @param {string} name
             * @param {string[]} scopes
             * @param {string} expire
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Key>}
             */
         createKey(projectId: string, name: string, scopes: string[], expire?: string): Promise<Models.Key>;
@@ -3393,7 +3393,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} keyId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Key>}
             */
         getKey(projectId: string, keyId: string): Promise<Models.Key>;
@@ -3406,7 +3406,7 @@ export class Projects {
             * @param {string} name
             * @param {string[]} scopes
             * @param {string} expire
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Key>}
             */
         updateKey(projectId: string, keyId: string, name: string, scopes: string[], expire?: string): Promise<Models.Key>;
@@ -3416,7 +3416,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} keyId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteKey(projectId: string, keyId: string): Promise<{}>;
@@ -3429,7 +3429,7 @@ export class Projects {
             * @param {string} appId
             * @param {string} secret
             * @param {boolean} enabled
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateOAuth2(projectId: string, provider: OAuthProvider, appId?: string, secret?: string, enabled?: boolean): Promise<Models.Project>;
@@ -3438,7 +3438,7 @@ export class Projects {
             *
             *
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.PlatformList>}
             */
         listPlatforms(projectId: string): Promise<Models.PlatformList>;
@@ -3452,7 +3452,7 @@ export class Projects {
             * @param {string} key
             * @param {string} store
             * @param {string} hostname
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Platform>}
             */
         createPlatform(projectId: string, type: PlatformType, name: string, key?: string, store?: string, hostname?: string): Promise<Models.Platform>;
@@ -3462,7 +3462,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} platformId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Platform>}
             */
         getPlatform(projectId: string, platformId: string): Promise<Models.Platform>;
@@ -3476,7 +3476,7 @@ export class Projects {
             * @param {string} key
             * @param {string} store
             * @param {string} hostname
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Platform>}
             */
         updatePlatform(projectId: string, platformId: string, name: string, key?: string, store?: string, hostname?: string): Promise<Models.Platform>;
@@ -3486,7 +3486,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} platformId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deletePlatform(projectId: string, platformId: string): Promise<{}>;
@@ -3497,7 +3497,7 @@ export class Projects {
             * @param {string} projectId
             * @param {ApiService} service
             * @param {boolean} status
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateServiceStatus(projectId: string, service: ApiService, status: boolean): Promise<Models.Project>;
@@ -3507,7 +3507,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {boolean} status
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateServiceStatusAll(projectId: string, status: boolean): Promise<Models.Project>;
@@ -3525,7 +3525,7 @@ export class Projects {
             * @param {string} username
             * @param {string} password
             * @param {SMTPSecure} secure
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateSmtp(projectId: string, enabled: boolean, senderName?: string, senderEmail?: string, replyTo?: string, host?: string, port?: number, username?: string, password?: string, secure?: SMTPSecure): Promise<Models.Project>;
@@ -3543,7 +3543,7 @@ export class Projects {
             * @param {string} username
             * @param {string} password
             * @param {SMTPSecure} secure
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         createSmtpTest(projectId: string, emails: string[], senderName: string, senderEmail: string, host: string, replyTo?: string, port?: number, username?: string, password?: string, secure?: SMTPSecure): Promise<{}>;
@@ -3553,7 +3553,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} teamId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateTeam(projectId: string, teamId: string): Promise<Models.Project>;
@@ -3564,7 +3564,7 @@ export class Projects {
             * @param {string} projectId
             * @param {EmailTemplateType} type
             * @param {EmailTemplateLocale} locale
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.EmailTemplate>}
             */
         getEmailTemplate(projectId: string, type: EmailTemplateType, locale: EmailTemplateLocale): Promise<Models.EmailTemplate>;
@@ -3580,7 +3580,7 @@ export class Projects {
             * @param {string} senderName
             * @param {string} senderEmail
             * @param {string} replyTo
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Project>}
             */
         updateEmailTemplate(projectId: string, type: EmailTemplateType, locale: EmailTemplateLocale, subject: string, message: string, senderName?: string, senderEmail?: string, replyTo?: string): Promise<Models.Project>;
@@ -3591,7 +3591,7 @@ export class Projects {
             * @param {string} projectId
             * @param {EmailTemplateType} type
             * @param {EmailTemplateLocale} locale
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.EmailTemplate>}
             */
         deleteEmailTemplate(projectId: string, type: EmailTemplateType, locale: EmailTemplateLocale): Promise<Models.EmailTemplate>;
@@ -3602,7 +3602,7 @@ export class Projects {
             * @param {string} projectId
             * @param {SmsTemplateType} type
             * @param {SmsTemplateLocale} locale
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SmsTemplate>}
             */
         getSmsTemplate(projectId: string, type: SmsTemplateType, locale: SmsTemplateLocale): Promise<Models.SmsTemplate>;
@@ -3614,7 +3614,7 @@ export class Projects {
             * @param {SmsTemplateType} type
             * @param {SmsTemplateLocale} locale
             * @param {string} message
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SmsTemplate>}
             */
         updateSmsTemplate(projectId: string, type: SmsTemplateType, locale: SmsTemplateLocale, message: string): Promise<Models.SmsTemplate>;
@@ -3625,7 +3625,7 @@ export class Projects {
             * @param {string} projectId
             * @param {SmsTemplateType} type
             * @param {SmsTemplateLocale} locale
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SmsTemplate>}
             */
         deleteSmsTemplate(projectId: string, type: SmsTemplateType, locale: SmsTemplateLocale): Promise<Models.SmsTemplate>;
@@ -3634,7 +3634,7 @@ export class Projects {
             *
             *
             * @param {string} projectId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.WebhookList>}
             */
         listWebhooks(projectId: string): Promise<Models.WebhookList>;
@@ -3650,7 +3650,7 @@ export class Projects {
             * @param {boolean} enabled
             * @param {string} httpUser
             * @param {string} httpPass
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Webhook>}
             */
         createWebhook(projectId: string, name: string, events: string[], url: string, security: boolean, enabled?: boolean, httpUser?: string, httpPass?: string): Promise<Models.Webhook>;
@@ -3660,7 +3660,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} webhookId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Webhook>}
             */
         getWebhook(projectId: string, webhookId: string): Promise<Models.Webhook>;
@@ -3677,7 +3677,7 @@ export class Projects {
             * @param {boolean} enabled
             * @param {string} httpUser
             * @param {string} httpPass
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Webhook>}
             */
         updateWebhook(projectId: string, webhookId: string, name: string, events: string[], url: string, security: boolean, enabled?: boolean, httpUser?: string, httpPass?: string): Promise<Models.Webhook>;
@@ -3687,7 +3687,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} webhookId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteWebhook(projectId: string, webhookId: string): Promise<{}>;
@@ -3697,7 +3697,7 @@ export class Projects {
             *
             * @param {string} projectId
             * @param {string} webhookId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Webhook>}
             */
         updateWebhookSignature(projectId: string, webhookId: string): Promise<Models.Webhook>;
@@ -3713,7 +3713,7 @@ export class Proxy {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProxyRuleList>}
             */
         listRules(queries?: string[], search?: string): Promise<Models.ProxyRuleList>;
@@ -3725,7 +3725,7 @@ export class Proxy {
             * @param {string} domain
             * @param {ResourceType} resourceType
             * @param {string} resourceId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProxyRule>}
             */
         createRule(domain: string, resourceType: ResourceType, resourceId?: string): Promise<Models.ProxyRule>;
@@ -3735,7 +3735,7 @@ export class Proxy {
             * Get a proxy rule by its unique ID.
             *
             * @param {string} ruleId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProxyRule>}
             */
         getRule(ruleId: string): Promise<Models.ProxyRule>;
@@ -3745,7 +3745,7 @@ export class Proxy {
             * Delete a proxy rule by its unique ID.
             *
             * @param {string} ruleId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteRule(ruleId: string): Promise<{}>;
@@ -3754,7 +3754,7 @@ export class Proxy {
             *
             *
             * @param {string} ruleId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProxyRule>}
             */
         updateRuleVerification(ruleId: string): Promise<Models.ProxyRule>;
@@ -3770,7 +3770,7 @@ export class Storage {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.BucketList>}
             */
         listBuckets(queries?: string[], search?: string): Promise<Models.BucketList>;
@@ -3789,7 +3789,7 @@ export class Storage {
             * @param {Compression} compression
             * @param {boolean} encryption
             * @param {boolean} antivirus
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Bucket>}
             */
         createBucket(bucketId: string, name: string, permissions?: string[], fileSecurity?: boolean, enabled?: boolean, maximumFileSize?: number, allowedFileExtensions?: string[], compression?: Compression, encryption?: boolean, antivirus?: boolean): Promise<Models.Bucket>;
@@ -3799,7 +3799,7 @@ export class Storage {
             * Get a storage bucket by its unique ID. This endpoint response returns a JSON object with the storage bucket metadata.
             *
             * @param {string} bucketId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Bucket>}
             */
         getBucket(bucketId: string): Promise<Models.Bucket>;
@@ -3818,7 +3818,7 @@ export class Storage {
             * @param {Compression} compression
             * @param {boolean} encryption
             * @param {boolean} antivirus
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Bucket>}
             */
         updateBucket(bucketId: string, name: string, permissions?: string[], fileSecurity?: boolean, enabled?: boolean, maximumFileSize?: number, allowedFileExtensions?: string[], compression?: Compression, encryption?: boolean, antivirus?: boolean): Promise<Models.Bucket>;
@@ -3828,7 +3828,7 @@ export class Storage {
             * Delete a storage bucket by its unique ID.
             *
             * @param {string} bucketId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteBucket(bucketId: string): Promise<{}>;
@@ -3840,7 +3840,7 @@ export class Storage {
             * @param {string} bucketId
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.FileList>}
             */
         listFiles(bucketId: string, queries?: string[], search?: string): Promise<Models.FileList>;
@@ -3860,7 +3860,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             * @param {string} fileId
             * @param {File} file
             * @param {string[]} permissions
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.File>}
             */
         createFile(bucketId: string, fileId: string, file: File, permissions?: string[], onProgress?: (progress: UploadProgress) => void): Promise<Models.File>;
@@ -3871,7 +3871,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             *
             * @param {string} bucketId
             * @param {string} fileId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.File>}
             */
         getFile(bucketId: string, fileId: string): Promise<Models.File>;
@@ -3884,7 +3884,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             * @param {string} fileId
             * @param {string} name
             * @param {string[]} permissions
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.File>}
             */
         updateFile(bucketId: string, fileId: string, name?: string, permissions?: string[]): Promise<Models.File>;
@@ -3895,7 +3895,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             *
             * @param {string} bucketId
             * @param {string} fileId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteFile(bucketId: string, fileId: string): Promise<{}>;
@@ -3906,7 +3906,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             *
             * @param {string} bucketId
             * @param {string} fileId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getFileDownload(bucketId: string, fileId: string): string;
@@ -3928,7 +3928,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             * @param {number} rotation
             * @param {string} background
             * @param {ImageFormat} output
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getFilePreview(bucketId: string, fileId: string, width?: number, height?: number, gravity?: ImageGravity, quality?: number, borderWidth?: number, borderColor?: string, borderRadius?: number, opacity?: number, rotation?: number, background?: string, output?: ImageFormat): string;
@@ -3939,7 +3939,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             *
             * @param {string} bucketId
             * @param {string} fileId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {string}
             */
         getFileView(bucketId: string, fileId: string): string;
@@ -3948,7 +3948,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             *
             *
             * @param {StorageUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageStorage>}
             */
         getUsage(range?: StorageUsageRange): Promise<Models.UsageStorage>;
@@ -3958,7 +3958,7 @@ If you&#039;re creating a new file using one of the Appconda SDKs, all the chunk
             *
             * @param {string} bucketId
             * @param {StorageUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageBuckets>}
             */
         getBucketUsage(bucketId: string, range?: StorageUsageRange): Promise<Models.UsageBuckets>;
@@ -3974,7 +3974,7 @@ export class Teams {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.TeamList<Preferences>>}
             */
         list<Preferences extends Models.Preferences>(queries?: string[], search?: string): Promise<Models.TeamList<Preferences>>;
@@ -3986,7 +3986,7 @@ export class Teams {
             * @param {string} teamId
             * @param {string} name
             * @param {string[]} roles
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Team<Preferences>>}
             */
         create<Preferences extends Models.Preferences>(teamId: string, name: string, roles?: string[]): Promise<Models.Team<Preferences>>;
@@ -3996,7 +3996,7 @@ export class Teams {
             * Get a team by its ID. All team members have read access for this resource.
             *
             * @param {string} teamId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Team<Preferences>>}
             */
         get<Preferences extends Models.Preferences>(teamId: string): Promise<Models.Team<Preferences>>;
@@ -4007,7 +4007,7 @@ export class Teams {
             *
             * @param {string} teamId
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Team<Preferences>>}
             */
         updateName<Preferences extends Models.Preferences>(teamId: string, name: string): Promise<Models.Team<Preferences>>;
@@ -4017,7 +4017,7 @@ export class Teams {
             * Delete a team using its ID. Only team members with the owner role can delete the team.
             *
             * @param {string} teamId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(teamId: string): Promise<{}>;
@@ -4028,7 +4028,7 @@ export class Teams {
             *
             * @param {string} teamId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listLogs(teamId: string, queries?: string[]): Promise<Models.LogList>;
@@ -4040,7 +4040,7 @@ export class Teams {
             * @param {string} teamId
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MembershipList>}
             */
         listMemberships(teamId: string, queries?: string[], search?: string): Promise<Models.MembershipList>;
@@ -4063,7 +4063,7 @@ Please note that to avoid a [Redirect Attack](https://github.com/OWASP/CheatShee
             * @param {string} phone
             * @param {string} url
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Membership>}
             */
         createMembership(teamId: string, roles: string[], email?: string, userId?: string, phone?: string, url?: string, name?: string): Promise<Models.Membership>;
@@ -4074,7 +4074,7 @@ Please note that to avoid a [Redirect Attack](https://github.com/OWASP/CheatShee
             *
             * @param {string} teamId
             * @param {string} membershipId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Membership>}
             */
         getMembership(teamId: string, membershipId: string): Promise<Models.Membership>;
@@ -4087,7 +4087,7 @@ Please note that to avoid a [Redirect Attack](https://github.com/OWASP/CheatShee
             * @param {string} teamId
             * @param {string} membershipId
             * @param {string[]} roles
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Membership>}
             */
         updateMembership(teamId: string, membershipId: string, roles: string[]): Promise<Models.Membership>;
@@ -4098,7 +4098,7 @@ Please note that to avoid a [Redirect Attack](https://github.com/OWASP/CheatShee
             *
             * @param {string} teamId
             * @param {string} membershipId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteMembership(teamId: string, membershipId: string): Promise<{}>;
@@ -4114,7 +4114,7 @@ If the request is successful, a session for the user is automatically created.
             * @param {string} membershipId
             * @param {string} userId
             * @param {string} secret
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Membership>}
             */
         updateMembershipStatus(teamId: string, membershipId: string, userId: string, secret: string): Promise<Models.Membership>;
@@ -4124,7 +4124,7 @@ If the request is successful, a session for the user is automatically created.
             * Get the team&#039;s shared preferences by its unique ID. If a preference doesn&#039;t need to be shared by all team members, prefer storing them in [user preferences](https://appconda.io/docs/references/cloud/client-web/account#getPrefs).
             *
             * @param {string} teamId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Preferences>}
             */
         getPrefs<Preferences extends Models.Preferences>(teamId: string): Promise<Preferences>;
@@ -4135,7 +4135,7 @@ If the request is successful, a session for the user is automatically created.
             *
             * @param {string} teamId
             * @param {object} prefs
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Preferences>}
             */
         updatePrefs<Preferences extends Models.Preferences>(teamId: string, prefs: object): Promise<Preferences>;
@@ -4151,7 +4151,7 @@ export class Users {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UserList<Preferences>>}
             */
         list<Preferences extends Models.Preferences>(queries?: string[], search?: string): Promise<Models.UserList<Preferences>>;
@@ -4165,7 +4165,7 @@ export class Users {
             * @param {string} phone
             * @param {string} password
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         create<Preferences extends Models.Preferences>(userId: string, email?: string, phone?: string, password?: string, name?: string): Promise<Models.User<Preferences>>;
@@ -4178,7 +4178,7 @@ export class Users {
             * @param {string} email
             * @param {string} password
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createArgon2User<Preferences extends Models.Preferences>(userId: string, email: string, password: string, name?: string): Promise<Models.User<Preferences>>;
@@ -4191,7 +4191,7 @@ export class Users {
             * @param {string} email
             * @param {string} password
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createBcryptUser<Preferences extends Models.Preferences>(userId: string, email: string, password: string, name?: string): Promise<Models.User<Preferences>>;
@@ -4202,7 +4202,7 @@ export class Users {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.IdentityList>}
             */
         listIdentities(queries?: string[], search?: string): Promise<Models.IdentityList>;
@@ -4212,7 +4212,7 @@ export class Users {
             * Delete an identity by its unique ID.
             *
             * @param {string} identityId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteIdentity(identityId: string): Promise<{}>;
@@ -4225,7 +4225,7 @@ export class Users {
             * @param {string} email
             * @param {string} password
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createMD5User<Preferences extends Models.Preferences>(userId: string, email: string, password: string, name?: string): Promise<Models.User<Preferences>>;
@@ -4238,7 +4238,7 @@ export class Users {
             * @param {string} email
             * @param {string} password
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createPHPassUser<Preferences extends Models.Preferences>(userId: string, email: string, password: string, name?: string): Promise<Models.User<Preferences>>;
@@ -4256,7 +4256,7 @@ export class Users {
             * @param {number} passwordParallel
             * @param {number} passwordLength
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createScryptUser<Preferences extends Models.Preferences>(userId: string, email: string, password: string, passwordSalt: string, passwordCpu: number, passwordMemory: number, passwordParallel: number, passwordLength: number, name?: string): Promise<Models.User<Preferences>>;
@@ -4272,7 +4272,7 @@ export class Users {
             * @param {string} passwordSaltSeparator
             * @param {string} passwordSignerKey
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createScryptModifiedUser<Preferences extends Models.Preferences>(userId: string, email: string, password: string, passwordSalt: string, passwordSaltSeparator: string, passwordSignerKey: string, name?: string): Promise<Models.User<Preferences>>;
@@ -4286,7 +4286,7 @@ export class Users {
             * @param {string} password
             * @param {PasswordHash} passwordVersion
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         createSHAUser<Preferences extends Models.Preferences>(userId: string, email: string, password: string, passwordVersion?: PasswordHash, name?: string): Promise<Models.User<Preferences>>;
@@ -4295,7 +4295,7 @@ export class Users {
             *
             *
             * @param {UserUsageRange} range
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.UsageUsers>}
             */
         getUsage(range?: UserUsageRange): Promise<Models.UsageUsers>;
@@ -4305,7 +4305,7 @@ export class Users {
             * Get a user by its unique ID.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         get<Preferences extends Models.Preferences>(userId: string): Promise<Models.User<Preferences>>;
@@ -4315,7 +4315,7 @@ export class Users {
             * Delete a user by its unique ID, thereby releasing it&#039;s ID. Since ID is released and can be reused, all user-related resources like documents or storage files should be deleted before user deletion. If you want to keep ID reserved, use the [updateStatus](https://appconda.io/docs/server/users#usersUpdateStatus) endpoint instead.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         delete(userId: string): Promise<{}>;
@@ -4326,7 +4326,7 @@ export class Users {
             *
             * @param {string} userId
             * @param {string} email
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateEmail<Preferences extends Models.Preferences>(userId: string, email: string): Promise<Models.User<Preferences>>;
@@ -4338,7 +4338,7 @@ export class Users {
             * @param {string} userId
             * @param {string} sessionId
             * @param {number} duration
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Jwt>}
             */
         createJWT(userId: string, sessionId?: string, duration?: number): Promise<Models.Jwt>;
@@ -4351,7 +4351,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {string[]} labels
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateLabels<Preferences extends Models.Preferences>(userId: string, labels: string[]): Promise<Models.User<Preferences>>;
@@ -4362,7 +4362,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.LogList>}
             */
         listLogs(userId: string, queries?: string[]): Promise<Models.LogList>;
@@ -4372,7 +4372,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * Get the user membership list by its unique ID.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MembershipList>}
             */
         listMemberships(userId: string): Promise<Models.MembershipList>;
@@ -4383,7 +4383,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {boolean} mfa
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateMfa<Preferences extends Models.Preferences>(userId: string, mfa: boolean): Promise<Models.User<Preferences>>;
@@ -4394,7 +4394,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {AuthenticatorType} type
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         deleteMfaAuthenticator<Preferences extends Models.Preferences>(userId: string, type: AuthenticatorType): Promise<Models.User<Preferences>>;
@@ -4404,7 +4404,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * List the factors available on the account to be used as a MFA challange.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaFactors>}
             */
         listMfaFactors(userId: string): Promise<Models.MfaFactors>;
@@ -4414,7 +4414,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * Get recovery codes that can be used as backup for MFA flow by User ID. Before getting codes, they must be generated using [createMfaRecoveryCodes](/docs/references/cloud/client-web/account#createMfaRecoveryCodes) method.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaRecoveryCodes>}
             */
         getMfaRecoveryCodes(userId: string): Promise<Models.MfaRecoveryCodes>;
@@ -4424,7 +4424,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * Regenerate recovery codes that can be used as backup for MFA flow by User ID. Before regenerating codes, they must be first generated using [createMfaRecoveryCodes](/docs/references/cloud/client-web/account#createMfaRecoveryCodes) method.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaRecoveryCodes>}
             */
         updateMfaRecoveryCodes(userId: string): Promise<Models.MfaRecoveryCodes>;
@@ -4434,7 +4434,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * Generate recovery codes used as backup for MFA flow for User ID. Recovery codes can be used as a MFA verification type in [createMfaChallenge](/docs/references/cloud/client-web/account#createMfaChallenge) method by client SDK.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.MfaRecoveryCodes>}
             */
         createMfaRecoveryCodes(userId: string): Promise<Models.MfaRecoveryCodes>;
@@ -4445,7 +4445,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateName<Preferences extends Models.Preferences>(userId: string, name: string): Promise<Models.User<Preferences>>;
@@ -4456,7 +4456,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {string} password
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updatePassword<Preferences extends Models.Preferences>(userId: string, password: string): Promise<Models.User<Preferences>>;
@@ -4467,7 +4467,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {string} number
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updatePhone<Preferences extends Models.Preferences>(userId: string, number: string): Promise<Models.User<Preferences>>;
@@ -4477,7 +4477,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * Get the user preferences by its unique ID.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Preferences>}
             */
         getPrefs<Preferences extends Models.Preferences>(userId: string): Promise<Preferences>;
@@ -4488,7 +4488,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             *
             * @param {string} userId
             * @param {object} prefs
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Preferences>}
             */
         updatePrefs<Preferences extends Models.Preferences>(userId: string, prefs: object): Promise<Preferences>;
@@ -4498,7 +4498,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
             * Get the user sessions list by its unique ID.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.SessionList>}
             */
         listSessions(userId: string): Promise<Models.SessionList>;
@@ -4510,7 +4510,7 @@ Labels can be used to grant access to resources. While teams are a way for user&
 If you want to generate a token for a custom authentication flow, use the [POST /users/{userId}/tokens](https://appconda.io/docs/server/users#createToken) endpoint.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Session>}
             */
         createSession(userId: string): Promise<Models.Session>;
@@ -4520,7 +4520,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             * Delete all user&#039;s sessions by using the user&#039;s unique ID.
             *
             * @param {string} userId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteSessions(userId: string): Promise<{}>;
@@ -4531,7 +4531,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {string} sessionId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteSession(userId: string, sessionId: string): Promise<{}>;
@@ -4542,7 +4542,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {boolean} status
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateStatus<Preferences extends Models.Preferences>(userId: string, status: boolean): Promise<Models.User<Preferences>>;
@@ -4553,7 +4553,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {string[]} queries
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.TargetList>}
             */
         listTargets(userId: string, queries?: string[]): Promise<Models.TargetList>;
@@ -4568,7 +4568,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             * @param {string} identifier
             * @param {string} providerId
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Target>}
             */
         createTarget(userId: string, targetId: string, providerType: MessagingProviderType, identifier: string, providerId?: string, name?: string): Promise<Models.Target>;
@@ -4579,7 +4579,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {string} targetId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Target>}
             */
         getTarget(userId: string, targetId: string): Promise<Models.Target>;
@@ -4593,7 +4593,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             * @param {string} identifier
             * @param {string} providerId
             * @param {string} name
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Target>}
             */
         updateTarget(userId: string, targetId: string, identifier?: string, providerId?: string, name?: string): Promise<Models.Target>;
@@ -4604,7 +4604,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {string} targetId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteTarget(userId: string, targetId: string): Promise<{}>;
@@ -4617,7 +4617,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             * @param {string} userId
             * @param {number} length
             * @param {number} expire
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Token>}
             */
         createToken(userId: string, length?: number, expire?: number): Promise<Models.Token>;
@@ -4628,7 +4628,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {boolean} emailVerification
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updateEmailVerification<Preferences extends Models.Preferences>(userId: string, emailVerification: boolean): Promise<Models.User<Preferences>>;
@@ -4639,7 +4639,7 @@ If you want to generate a token for a custom authentication flow, use the [POST 
             *
             * @param {string} userId
             * @param {boolean} phoneVerification
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.User<Preferences>>}
             */
         updatePhoneVerification<Preferences extends Models.Preferences>(userId: string, phoneVerification: boolean): Promise<Models.User<Preferences>>;
@@ -4654,7 +4654,7 @@ export class Vcs {
             *
             * @param {string} installationId
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProviderRepositoryList>}
             */
         listRepositories(installationId: string, search?: string): Promise<Models.ProviderRepositoryList>;
@@ -4665,7 +4665,7 @@ export class Vcs {
             * @param {string} installationId
             * @param {string} name
             * @param {boolean} xprivate
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProviderRepository>}
             */
         createRepository(installationId: string, name: string, xprivate: boolean): Promise<Models.ProviderRepository>;
@@ -4675,7 +4675,7 @@ export class Vcs {
             *
             * @param {string} installationId
             * @param {string} providerRepositoryId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.ProviderRepository>}
             */
         getRepository(installationId: string, providerRepositoryId: string): Promise<Models.ProviderRepository>;
@@ -4685,7 +4685,7 @@ export class Vcs {
             *
             * @param {string} installationId
             * @param {string} providerRepositoryId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.BranchList>}
             */
         listRepositoryBranches(installationId: string, providerRepositoryId: string): Promise<Models.BranchList>;
@@ -4696,7 +4696,7 @@ export class Vcs {
             * @param {string} installationId
             * @param {string} providerRepositoryId
             * @param {string} providerRootDirectory
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.VcsContentList>}
             */
         getRepositoryContents(installationId: string, providerRepositoryId: string, providerRootDirectory?: string): Promise<Models.VcsContentList>;
@@ -4707,7 +4707,7 @@ export class Vcs {
             * @param {string} installationId
             * @param {string} providerRepositoryId
             * @param {string} providerRootDirectory
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Detection>}
             */
         createRepositoryDetection(installationId: string, providerRepositoryId: string, providerRootDirectory?: string): Promise<Models.Detection>;
@@ -4718,7 +4718,7 @@ export class Vcs {
             * @param {string} installationId
             * @param {string} repositoryId
             * @param {string} providerPullRequestId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         updateExternalDeployments(installationId: string, repositoryId: string, providerPullRequestId: string): Promise<{}>;
@@ -4728,7 +4728,7 @@ export class Vcs {
             *
             * @param {string[]} queries
             * @param {string} search
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.InstallationList>}
             */
         listInstallations(queries?: string[], search?: string): Promise<Models.InstallationList>;
@@ -4737,7 +4737,7 @@ export class Vcs {
             *
             *
             * @param {string} installationId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<Models.Installation>}
             */
         getInstallation(installationId: string): Promise<Models.Installation>;
@@ -4746,7 +4746,7 @@ export class Vcs {
             *
             *
             * @param {string} installationId
-            * @throws {AppwriteException}
+            * @throws {AppcondaException}
             * @returns {Promise<{}>}
             */
         deleteInstallation(installationId: string): Promise<{}>;

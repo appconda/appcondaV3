@@ -403,7 +403,7 @@ export class App {
         const groups = route.getGroups();
         const pathValues = route.getPathValues(request);
 
-       // try {
+        try {
             if (route.getHook()) {
                 for (const hook of App._init) { // Global init hooks
                     if (hook.getGroups().includes('*')) {
@@ -458,7 +458,7 @@ export class App {
                     }
                 }
             }
-        /* } catch (e) {
+     } catch (e) {
           
              App.setResource('error', async () => e);
 
@@ -495,7 +495,7 @@ export class App {
             }
 
             throw new Error(e); 
-        } */
+        } 
 
         return this;
     }

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { FunctionComponent } from "../common/types";
 import { Client, Account } from "@appconda/console-sdk";
 import { HStack, Text, VStack } from "tuval";
+import { useRouter } from "@tanstack/react-router";
 
 const client = new Client()
 	.setEndpoint('http://localhost/v1') // Your API Endpoint
@@ -13,10 +14,15 @@ const account = new Account(client);
 
 export const Home = (): FunctionComponent => {
 	const { t, i18n } = useTranslation();
-
+	const router = useRouter();
 	const deleteSession = async (): Promise<void> => {
-		const result = await account.deleteSession('current');
-		console.log(result);
+		try {	
+			const result = await account.deleteSession('current');
+			console.log(result);
+			router.navigate({ to: '/login' });
+		} catch (error) {
+			console.log(error);
+		}
 	}
 
 	const onTranslateButtonClick = async (): Promise<void> => {
