@@ -5,7 +5,7 @@ import { Text, VStack } from "tuval";
 import { useRouter } from "@tanstack/react-router";
 
 const client = new Client()
-	.setEndpoint('http://localhost/v1') // Your API Endpoint
+	.setEndpoint('http://appconda/v1') // Your API Endpoint
 	.setProject('console');
 
 const account = new Account(client);

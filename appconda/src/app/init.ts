@@ -441,7 +441,7 @@ Database.addFilter(
         return;
     },
     async (value: any, document: Document, database: Database) => {
-        const sessions =  await Authorization.skip(async () => await database.find('sessions', [
+        const sessions = await Authorization.skip(async () => await database.find('sessions', [
             Query.equal('userInternalId', [document.getInternalId()]),
             Query.limit(APP_LIMIT_SUBQUERY),
         ]));
@@ -592,7 +592,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryTargets',
-   async (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -605,7 +605,7 @@ Database.addFilter(
 
 Database.addFilter(
     'subQueryTopicTargets',
-   async (value: any) => {
+    async (value: any) => {
         return;
     },
     async (value: any, document: Document, database: Database) => {
@@ -642,7 +642,7 @@ Database.addFilter(
 
 Database.addFilter(
     'topicSearch',
-   async (value: any, topic: Document) => {
+    async (value: any, topic: Document) => {
         const searchValues = [
             topic.getId(),
             topic.getAttribute('name', ''),
@@ -845,6 +845,14 @@ register.set('pools', () => {
                 throw new Error("Invalid console database scheme");
             }
 
+            console.log({
+                host: dsnHost,
+                port: dsnPort,
+                user: dsnUser,
+                password: dsnPass,
+                database: dsnDatabase,
+            })
+
             const resource = (() => {
                 switch (dsnScheme) {
                     case 'mysql':
@@ -892,9 +900,9 @@ register.set('pools', () => {
                         adapter = (() => {
                             switch (dsnScheme) {
                                 case 'redis':
-                                   /*  const redis = new Redis(Number.parseInt(dsnPort), dsnHost, {});
-                                    return redis; */
-                                 return new RedisConnection(dsnHost, dsnPort as any);
+                                    /*  const redis = new Redis(Number.parseInt(dsnPort), dsnHost, {});
+                                     return redis; */
+                                    return new RedisConnection(dsnHost, dsnPort as any);
                                 default:
                                     return null;
                             }
@@ -1130,8 +1138,8 @@ App.setResource('user', async ({ mode, project, console, request, response, dbFo
         Auth.setCookieName('a_session_' + console.getAttribute('$id', ''));
     }
 
-    const a =  request.getCookie(Auth.cookieName);
-    const aa =  request.getCookie('a_session_');
+    const a = request.getCookie(Auth.cookieName);
+    const aa = request.getCookie('a_session_');
     let session = Auth.decodeSession(
         request.getCookie(Auth.cookieName) || request.getCookie(Auth.cookieName + '_legacy') || ''
     );
