@@ -229,7 +229,8 @@ export default class WebServerService extends BaseService {
             App.setResource('expressRequest', async () => req); // Wrap Request in a function
             App.setResource('expressResponse', async () => res);
 
-            if (Files.isFileLoaded(request.getURI())) {
+            const uri = request.getURI();
+            if (Files.isFileLoaded(uri)) {
                 const time = (60 * 60 * 24 * 365 * 2); // 45 days cache
 
                 response

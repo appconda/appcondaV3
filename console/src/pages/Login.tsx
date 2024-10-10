@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Client, Account } from "@appconda/console-sdk";
-import { redirect, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 
 const client = new Client()
-	.setEndpoint('http://localhost/v1') // Your API Endpoint
-	.setProject('console');
+    .setEndpoint('http://localhost/v1') // Your API Endpoint
+    .setProject('console');
 
 const account = new Account(client);
 
@@ -13,25 +13,25 @@ export const Login = () => {
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const router = useRouter();
-  
-    const handleSubmit = async (event) => {
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-  
+
         // Simple validation
         if (!email || !password) {
             setErrorMessage("Please fill in both fields.");
             return;
         }
-  
+
         try {
-            const session = await account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
+            await account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
             router.navigate({ to: '/profile' });
 
         } catch (error) {
             setErrorMessage("An error occurred. Please try again.");
         }
     };
-  
+
     return (
         <div className='container'>
             <h2>Login</h2>
@@ -61,7 +61,6 @@ export const Login = () => {
             </form>
         </div>
     );
-  };
-  
-  
-  
+};
+
+

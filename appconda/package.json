@@ -79,7 +79,7 @@
     "soap": "^1.0.0",
     "striptags": "^3.2.0",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^1.1.8",
+    "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.6.2",
     "typescript": "^5.6.2",

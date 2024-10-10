@@ -1,4 +1,17 @@
 export default {
+    'web/console': {
+        key: 'web/console',
+        name: 'Console',
+        subtitle: '',
+        description: '',
+        controller: 'web/console.ts',
+        sdk: false,
+        docs: false,
+        docsUrl: '',
+        tests: false,
+        optional: false,
+        icon: '',
+    },
    /*  'web/home': {
         key: 'web/home',
         name: 'Home',
@@ -12,19 +25,7 @@ export default {
         optional: false,
         icon: '',
     },
-    'web/console': {
-        key: 'web/console',
-        name: 'Console',
-        subtitle: '',
-        description: '',
-        controller: 'web/console.php',
-        sdk: false,
-        docs: false,
-        docsUrl: '',
-        tests: false,
-        optional: false,
-        icon: '',
-    },
+    
     'web/appconda': {
         key: 'web/appconda',
         name: 'Console',

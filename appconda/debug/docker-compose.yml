@@ -29,6 +29,15 @@ services:
     volumes:
       - appconda-redis:/data:rw
 
+  console:
+    image: appconda/console
+    ports:
+      - "4501:80"
+    networks:
+      - mysql-phpmyadmin
+    volumes:
+      - appconda-console:/data:rw
+
   # phpmyadmin
   phpmyadmin:
     depends_on:
@@ -46,6 +55,8 @@ services:
 networks:
   mysql-phpmyadmin:
 
+
 volumes:
   db_data:
   appconda-redis:
+  appconda-console:

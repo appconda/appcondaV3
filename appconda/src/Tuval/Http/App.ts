@@ -6,6 +6,7 @@ import { Response } from './Response';
 import { Validator } from '../../Tuval/Core';
 import { Router } from './Router';
 import { parse } from 'url';
+import { Console } from '../CLI';
 
 interface Param {
     default: string | ((...args: any[]) => any);
@@ -458,12 +459,12 @@ export class App {
                     }
                 }
             }
-     } catch (e) {
-          
-             App.setResource('error', async () => e);
+        } catch (e) {
+
+            App.setResource('error', async () => e);
 
             for (const group of groups) {
-                for (const errorHook of App.errors) { 
+                for (const errorHook of App.errors) {
                     if (errorHook.getGroups().includes(group)) {
                         try {
                             const args = await this.getArguments(errorHook, pathValues, request.getParams());
@@ -493,13 +494,16 @@ export class App {
                     }
                 }
             }
+            if (App.isDevelopment()) {
+                Console.error(e);
+            }
+            else {
+                throw new Error(e);
+            }
 
-            throw new Error(e); 
-        } 
-
-        return this;
+            return this;
+        }
     }
-
     /**
      * Get Arguments
      * @param hook

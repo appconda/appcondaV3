@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { FunctionComponent } from "../common/types";
 import { Client, Account } from "@appconda/console-sdk";
-import { HStack, Text, VStack } from "tuval";
+import { Text, VStack } from "tuval";
 import { useRouter } from "@tanstack/react-router";
 
 const client = new Client()
@@ -13,7 +13,7 @@ const account = new Account(client);
 
 
 export const Home = (): FunctionComponent => {
-	const { t, i18n } = useTranslation();
+	const { t } = useTranslation();
 	const router = useRouter();
 	const deleteSession = async (): Promise<void> => {
 		try {	
