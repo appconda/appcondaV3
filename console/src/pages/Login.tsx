@@ -1,12 +1,7 @@
 import { useState } from "react";
-import { Client, Account } from "@appconda/console-sdk";
 import { useRouter } from "@tanstack/react-router";
-
-const client = new Client()
-    .setEndpoint('http://localhost/v1') // Your API Endpoint
-    .setProject('console');
-
-const account = new Account(client);
+import { account } from "../sdk";
+import { Button, Input } from "@mantine/core";
 
 export const Login = () => {
     const [email, setEmail] = useState('');
@@ -27,9 +22,24 @@ export const Login = () => {
             await account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
             router.navigate({ to: '/profile' });
 
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMessage(error.message);
+        }
+    };
+
+    const onTranslateButtonClick = async (): Promise<void> => {
+
+
+
+        try {
+        const created = await account.create('mert', 'mert@example.com', 'AAA123bbb');
+        console.log(created);
         } catch (error) {
             setErrorMessage("An error occurred. Please try again.");
         }
+
+      
     };
 
     return (
@@ -37,27 +47,25 @@ export const Login = () => {
             <h2>Login</h2>
             {errorMessage && <p className={'error'}>{errorMessage}</p>}
             <form onSubmit={handleSubmit} className="form">
-                <div>
-                    <label>Email:</label>
-                    <input
-                        type="email"
+                <Input.Wrapper label="Email">
+                    <Input  type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="input"
-                        required
-                    />
-                </div>
-                <div>
-                    <label>Password:</label>
-                    <input
-                        type="password"
+                        required/>
+                </Input.Wrapper>
+               
+              
+                    <Input.Wrapper label="Password">
+                        <Input  type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="input"
-                        required
-                    />
-                </div>
-                <button type="submit" className="button">Login</button>
+                        required/>
+                    </Input.Wrapper>
+                   
+                  <Button variant="filled" type="submit">Login</Button>
+                <Button variant="filled" onClick={onTranslateButtonClick}>SingUp</Button>
             </form>
         </div>
     );

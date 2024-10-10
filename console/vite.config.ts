@@ -7,15 +7,19 @@ import { defineConfig } from "vitest/config";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [react(), TanStackRouterVite(), 
-		viteStaticCopy({
+	build: {
+		outDir: '../appconda/src/app/console',
+	},
+	plugins: [react(), TanStackRouterVite(),
+	viteStaticCopy({
 		targets: [
-		  {
-			src: normalizePath(path.resolve('./src/assets/locales')),
-			dest: normalizePath(path.resolve('./dist'))
-		  }
+			{
+				src: normalizePath(path.resolve('./src/assets/locales')),
+				dest: normalizePath(path.resolve('./dist'))
+
+			}
 		]
-	  })],
+	})],
 	server: {
 		host: true,
 		strictPort: true,

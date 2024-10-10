@@ -1,11 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Client, Account } from "@appconda/console-sdk";
+import { account } from '../sdk';
 
-const client = new Client()
-	.setEndpoint('http://appconda/v1') // Your API Endpoint
-	.setProject('console');
 
-const account = new Account(client);
 
 
 export const Route = createFileRoute('/profile')({

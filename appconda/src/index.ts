@@ -1,9 +1,6 @@
 
 import { BaseService } from './BaseService';
 import { BaseComponent } from './BaseComponent';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 (global as any)['BaseService'] = BaseService;
 (global as any)['RealmoceanService'] = BaseService;
@@ -84,7 +81,7 @@ const services = require('./services/config/services');
 
 for (const [key, value] of Object.entries(services)) {
   const service = value as any;
-  const fromPath = path.join(__dirname,'services', service.service);
+  const fromPath = path.join(__dirname, 'services', service.service);
 
   const stat = fs.statSync(fromPath);
 

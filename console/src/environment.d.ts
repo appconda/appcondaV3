@@ -6,6 +6,7 @@
 
 interface ImportMetaEnv {
 	readonly VITE_APP_TITLE: string;
+	readonly APPCONDA_HOST: string;
 	// more env variables...
 }
 

@@ -24,7 +24,7 @@ interface Injection {
 
 export class App {
     /**
-     * Request method constants
+     * İstek methodu sabitleri
      */
     public static readonly REQUEST_METHOD_GET = 'GET';
     public static readonly REQUEST_METHOD_POST = 'POST';
@@ -35,7 +35,7 @@ export class App {
     public static readonly REQUEST_METHOD_HEAD = 'HEAD';
 
     /**
-     * Mode Type
+     * Mod Türü
      */
     public static readonly MODE_TYPE_DEVELOPMENT = 'development';
     public static readonly MODE_TYPE_STAGE = 'stage';
@@ -54,7 +54,7 @@ export class App {
     protected static resourcesCallbacks: Record<string, { callback: Function; injections: string[]; reset: boolean }> = {};
 
     /**
-     * Current running mode
+     * Şu anki çalıştırma modu
      */
     protected static mode: string = '';
 

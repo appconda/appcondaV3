@@ -1,22 +1,38 @@
-import { useTranslation } from "react-i18next";
-import type { FunctionComponent } from "../common/types";
-import { Client, Account } from "@appconda/console-sdk";
-import { Text, VStack } from "tuval";
 import { useRouter } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { Text, VStack } from "tuval";
+import type { FunctionComponent } from "../common/types";
+import { account } from "../sdk";
 
-const client = new Client()
-	.setEndpoint('http://appconda/v1') // Your API Endpoint
-	.setProject('console');
+import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
+import { useState } from "react";
 
-const account = new Account(client);
+import { Input } from '@mantine/core';
 
+const AppHome = () => (
+	<div
+	/>
+);
+
+// Dropdown for navigation items
+const NavDropdown = () => (
+	<DropdownMenu trigger="Menu">
+		<DropdownItemGroup>
+			<DropdownItem href="#">Item 1</DropdownItem>
+			<DropdownItem href="#">Item 2</DropdownItem>
+			<DropdownItem href="#">Item 3</DropdownItem>
+		</DropdownItemGroup>
+	</DropdownMenu>
+);
+
+const AtlassianProductHome = () => <div />;
 
 
 export const Home = (): FunctionComponent => {
 	const { t } = useTranslation();
 	const router = useRouter();
 	const deleteSession = async (): Promise<void> => {
-		try {	
+		try {
 			const result = await account.deleteSession('current');
 			console.log(result);
 			router.navigate({ to: '/login' });
@@ -86,25 +102,19 @@ export const Home = (): FunctionComponent => {
 		} */
 	};
 
+	const [open, setOpen] = useState(false)
+
 	return (
 		VStack(
+
+			VStack(
+				<Input.Wrapper label="Input label">
+				<Input />
+			  </Input.Wrapper>
+			).display('block').height(),
 			VStack(
 				Text('Hello World')
 			),
-			VStack(
-				<div className="bg-blue-300  font-bold w-screen h-screen flex flex-col justify-center items-center">
-					<p className="text-white text-6xl">{t("home.greeting")}</p>
-					<button type="submit" onClick={onTranslateButtonClick}>
-						login
-					</button>
-					<button type="submit" onClick={onLogin}>
-						prefs
-					</button>
-					<button type="submit" onClick={deleteSession}>
-						logout
-					</button>
-				</div>
-			)
 
 		).render()
 	);
