@@ -231,7 +231,7 @@ App.get('/v1/projects')
     .param('search', '', new Text(256), 'Search term to filter your list results. Max length: 256 chars.', true)
     .inject('response')
     .inject('dbForConsole')
-    .action(async ({ queries, search, response, dbForConsole }: { queries: any[], search: string, response: Response, dbForConsole: Database }) => {
+    .action(async (queries: any[], search: string, response: Response, dbForConsole: Database ) => {
 
         try {
             queries = Query.parseQueries(queries);

@@ -1,10 +1,10 @@
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import { Login } from '../pages/Login'
-import { account } from '../sdk';
+import { sdk } from '../sdk';
 
 export const Route = createFileRoute('/login')({
   loader: async () => {
-    const user = await account.get();
+    const user = await sdk.account.get();
     if (user) {
       throw redirect({
         to: '/',

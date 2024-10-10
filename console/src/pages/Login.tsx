@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { account } from "../sdk";
 import { Button, Input } from "@mantine/core";
+import { sdk } from "../sdk";
 
 export const Login = () => {
     const [email, setEmail] = useState('');
@@ -19,7 +19,7 @@ export const Login = () => {
         }
 
         try {
-            await account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
+            await sdk.account.createEmailPasswordSession(email, password);
             router.navigate({ to: '/profile' });
 
         } catch (error: any) {
@@ -33,7 +33,7 @@ export const Login = () => {
 
 
         try {
-        const created = await account.create('mert', 'mert@example.com', 'AAA123bbb');
+        const created = await sdk.account.create('mert', 'mert@example.com', 'AAA123bbb');
         console.log(created);
         } catch (error) {
             setErrorMessage("An error occurred. Please try again.");

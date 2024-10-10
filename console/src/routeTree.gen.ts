@@ -14,6 +14,8 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as ProfileImport } from './routes/profile'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
+import { Route as ProjectsIndexImport } from './routes/projects/index'
+import { Route as ProjectsProjectListImport } from './routes/projects/project/list'
 
 // Create/Update Routes
 
@@ -29,6 +31,16 @@ const LoginRoute = LoginImport.update({
 
 const IndexRoute = IndexImport.update({
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsIndexRoute = ProjectsIndexImport.update({
+  path: '/projects/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectListRoute = ProjectsProjectListImport.update({
+  path: '/projects/project/list',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -57,6 +69,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileImport
       parentRoute: typeof rootRoute
     }
+    '/projects/': {
+      id: '/projects/'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/project/list': {
+      id: '/projects/project/list'
+      path: '/projects/project/list'
+      fullPath: '/projects/project/list'
+      preLoaderRoute: typeof ProjectsProjectListImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -66,6 +92,8 @@ export const routeTree = rootRoute.addChildren({
   IndexRoute,
   LoginRoute,
   ProfileRoute,
+  ProjectsIndexRoute,
+  ProjectsProjectListRoute,
 })
 
 /* prettier-ignore-end */
@@ -74,11 +102,13 @@ export const routeTree = rootRoute.addChildren({
 {
   "routes": {
     "__root__": {
-      "filePath": "__root.ts",
+      "filePath": "__root.tsx",
       "children": [
         "/",
         "/login",
-        "/profile"
+        "/profile",
+        "/projects/",
+        "/projects/project/list"
       ]
     },
     "/": {
@@ -89,6 +119,12 @@ export const routeTree = rootRoute.addChildren({
     },
     "/profile": {
       "filePath": "profile.tsx"
+    },
+    "/projects/": {
+      "filePath": "projects/index.tsx"
+    },
+    "/projects/project/list": {
+      "filePath": "projects/project/list.tsx"
     }
   }
 }

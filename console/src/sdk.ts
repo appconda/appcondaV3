@@ -1,4 +1,4 @@
-import { Client, Account } from "@appconda/console-sdk";
+import { Client, Account, Projects } from "@appconda/console-sdk";
 
 function getPortAndHostname(urlString: string): { hostname: string; port: string; protocol: string } {
     try {
@@ -34,4 +34,7 @@ if (import.meta.env.MODE === "development") {
     //}
 }
 
-export const account = new Account(client);
+export namespace sdk {
+    export const account = new Account(client);
+    export const projects = new Projects(client);
+}

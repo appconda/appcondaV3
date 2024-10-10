@@ -2,12 +2,12 @@ import { useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Text, VStack } from "tuval";
 import type { FunctionComponent } from "../common/types";
-import { account } from "../sdk";
 
 import DropdownMenu, { DropdownItem, DropdownItemGroup } from '@atlaskit/dropdown-menu';
 import { useState } from "react";
 
 import { Input } from '@mantine/core';
+import { sdk } from "../sdk";
 
 const AppHome = () => (
 	<div
@@ -33,7 +33,7 @@ export const Home = (): FunctionComponent => {
 	const router = useRouter();
 	const deleteSession = async (): Promise<void> => {
 		try {
-			const result = await account.deleteSession('current');
+			const result = await sdk.account.deleteSession('current');
 			console.log(result);
 			router.navigate({ to: '/login' });
 		} catch (error) {
@@ -44,7 +44,7 @@ export const Home = (): FunctionComponent => {
 	const onTranslateButtonClick = async (): Promise<void> => {
 
 
-		const promise = account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
+		const promise = sdk.account.createEmailPasswordSession('mert@example.com', 'AAA123bbb');
 
 		promise.then(function (response) {
 			console.log(response); // Success
