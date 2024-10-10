@@ -1,5 +1,5 @@
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
-import { Login } from '../pages/Login'
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { Login } from '../pages/Login';
 import { sdk } from '../sdk';
 
 export const Route = createFileRoute('/login')({

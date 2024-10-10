@@ -11,13 +11,18 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ProjectsImport } from './routes/projects'
 import { Route as ProfileImport } from './routes/profile'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
-import { Route as ProjectsIndexImport } from './routes/projects/index'
-import { Route as ProjectsProjectListImport } from './routes/projects/project/list'
+import { Route as ProjectsListImport } from './routes/projects/list'
 
 // Create/Update Routes
+
+const ProjectsRoute = ProjectsImport.update({
+  path: '/projects',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const ProfileRoute = ProfileImport.update({
   path: '/profile',
@@ -34,14 +39,9 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ProjectsIndexRoute = ProjectsIndexImport.update({
-  path: '/projects/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ProjectsProjectListRoute = ProjectsProjectListImport.update({
-  path: '/projects/project/list',
-  getParentRoute: () => rootRoute,
+const ProjectsListRoute = ProjectsListImport.update({
+  path: '/list',
+  getParentRoute: () => ProjectsRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -69,19 +69,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileImport
       parentRoute: typeof rootRoute
     }
-    '/projects/': {
-      id: '/projects/'
+    '/projects': {
+      id: '/projects'
       path: '/projects'
       fullPath: '/projects'
-      preLoaderRoute: typeof ProjectsIndexImport
+      preLoaderRoute: typeof ProjectsImport
       parentRoute: typeof rootRoute
     }
-    '/projects/project/list': {
-      id: '/projects/project/list'
-      path: '/projects/project/list'
-      fullPath: '/projects/project/list'
-      preLoaderRoute: typeof ProjectsProjectListImport
-      parentRoute: typeof rootRoute
+    '/projects/list': {
+      id: '/projects/list'
+      path: '/list'
+      fullPath: '/projects/list'
+      preLoaderRoute: typeof ProjectsListImport
+      parentRoute: typeof ProjectsImport
     }
   }
 }
@@ -92,8 +92,7 @@ export const routeTree = rootRoute.addChildren({
   IndexRoute,
   LoginRoute,
   ProfileRoute,
-  ProjectsIndexRoute,
-  ProjectsProjectListRoute,
+  ProjectsRoute: ProjectsRoute.addChildren({ ProjectsListRoute }),
 })
 
 /* prettier-ignore-end */
@@ -107,8 +106,7 @@ export const routeTree = rootRoute.addChildren({
         "/",
         "/login",
         "/profile",
-        "/projects/",
-        "/projects/project/list"
+        "/projects"
       ]
     },
     "/": {
@@ -120,11 +118,15 @@ export const routeTree = rootRoute.addChildren({
     "/profile": {
       "filePath": "profile.tsx"
     },
-    "/projects/": {
-      "filePath": "projects/index.tsx"
+    "/projects": {
+      "filePath": "projects.tsx",
+      "children": [
+        "/projects/list"
+      ]
     },
-    "/projects/project/list": {
-      "filePath": "projects/project/list.tsx"
+    "/projects/list": {
+      "filePath": "projects/list.tsx",
+      "parent": "/projects"
     }
   }
 }

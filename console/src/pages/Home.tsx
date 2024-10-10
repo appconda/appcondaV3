@@ -68,7 +68,7 @@ export const Home = (): FunctionComponent => {
 
 	const onLogin = async (): Promise<void> => {
 
-		const result = await account.get();
+		const result = await sdk.account.get();
 
 		console.log(result);
 
@@ -102,7 +102,6 @@ export const Home = (): FunctionComponent => {
 		} */
 	};
 
-	const [open, setOpen] = useState(false)
 
 	return (
 		VStack(
